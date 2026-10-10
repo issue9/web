@@ -130,7 +130,7 @@ func TestContext_Render(t *testing.T) {
 		Equal(ctx.Charset(), header.UTF8)
 	ctx.Render(http.StatusCreated, "任意值")
 	ctx.freeContext()
-	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 
 	// outputMimetype.Marshal 返回错误
 	w = httptest.NewRecorder()
@@ -142,7 +142,7 @@ func TestContext_Render(t *testing.T) {
 		Equal(ctx.Charset(), header.UTF8)
 	ctx.Render(http.StatusCreated, errors.New("error"))
 	ctx.freeContext()
-	a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
+	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 }
 
 func TestContext_Wrap(t *testing.T) {

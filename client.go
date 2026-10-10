@@ -69,37 +69,37 @@ func NewClient(
 	}
 }
 
-func (c *Client) Get[R any, E any](path string) (*R, error) {
+func (c *Client) Get[R any, E any](path string) (*R, *Problem, error) {
 	return c.Do[R, E](http.MethodGet, path, nil)
 }
 
-func (c *Client) Delete[R any, E any](path string) (*R, error) {
+func (c *Client) Delete[R any, E any](path string) (*R, *Problem, error) {
 	return c.Do[R, E](http.MethodDelete, path, nil)
 }
 
-func (c *Client) Post[R any, E any](path string, body any) (*R, error) {
+func (c *Client) Post[R any, E any](path string, body any) (*R, *Problem, error) {
 	return c.Do[R, E](http.MethodPost, path, body)
 }
 
-func (c *Client) Put[R any, E any](path string, body any) (*R, error) {
+func (c *Client) Put[R any, E any](path string, body any) (*R, *Problem, error) {
 	return c.Do[R, E](http.MethodPut, path, body)
 }
 
-func (c *Client) Patch[R any, E any](path string, body any) (*R, error) {
+func (c *Client) Patch[R any, E any](path string, body any) (*R, *Problem, error) {
 	return c.Do[R, E](http.MethodPatch, path, body)
 }
 
 // Do 开始新的请求
 //
 // body 为提交的对象，最终是由初始化参数的 marshal 进行编码；
-func (c *Client) Do[R any, E any](method, path string, body any) (*R, error) {
+func (c *Client) Do[R any, E any](method, path string, body any) (*R, *Problem, error) {
 	r, err := c.NewRequest(method, path, body)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	rsp, err := c.Client().Do(r)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	return c.ParseResponse[R, E](rsp)
@@ -109,30 +109,30 @@ func (c *Client) Do[R any, E any](method, path string, body any) (*R, error) {
 //
 // R 表示正常解析之后返回的类型，该值不能为指针类型；
 // E 表示出错时返回的 Problem.Extensions 的类型，大部分情况该值为 any 即可；
-func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, err error) {
+func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Problem, err error) {
 	if rsp.ContentLength == 0 { // 204 可能为空
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	var reader io.Reader = rsp.Body
 	encName := rsp.Header.Get(header.ContentEncoding)
 	reader, err = c.codec.contentEncoding(encName, reader)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var inputMimetype UnmarshalFunc
 	var inputCharset encoding.Encoding
 	if h := rsp.Header.Get(header.ContentType); h != "" {
 		if inputMimetype, inputCharset, err = c.codec.contentType(h); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		if inputMimetype == nil {
-			return nil, NewLocaleError("not found unmarshaler for the server content-type %s", h)
+			return nil, nil, NewLocaleError("not found unmarshaler for the server content-type %s", h)
 		}
 	} else {
-		return nil, NewLocaleError("the server miss content-type header")
+		return nil, nil, NewLocaleError("the server miss content-type header")
 	}
 
 	if !qheader.CharsetIsNop(inputCharset) {
@@ -143,16 +143,16 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, err erro
 		var e E
 		p := &Problem{Extensions: e}
 		if err := inputMimetype(reader, p); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return nil, p
+		return nil, p, nil
 	}
 
 	var resp R
 	if err = inputMimetype(reader, &resp); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return &resp, nil
+	return &resp, nil, nil
 }
 
 // NewRequest 生成 [http.Request]

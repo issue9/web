@@ -212,19 +212,19 @@ func TestContext_IsXHR(t *testing.T) {
 	a.True(ctx.IsXHR())
 }
 
-func TestContext_Idempotent(t *testing.T) {
+func TestContext_IsIdempotent(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
 	ctx := s.NewContext(w, r, types.NewRoute())
-	a.True(ctx.Idempotent())
+	a.True(ctx.IsIdempotent())
 
 	w = httptest.NewRecorder()
 	r = httptest.NewRequest(http.MethodPatch, "/p", nil)
 	ctx = s.NewContext(w, r, types.NewRoute())
-	a.False(ctx.Idempotent())
+	a.False(ctx.IsIdempotent())
 }
 
 func TestServer_acceptLanguage(t *testing.T) {

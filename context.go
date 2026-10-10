@@ -364,10 +364,10 @@ func (ctx *Context) IsXHR() bool {
 
 var idempotentMethods = []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodDelete, http.MethodOptions, http.MethodTrace}
 
-// Idempotent 请求方法是否为[幂等]
+// IsIdempotent 请求方法是否为[幂等]
 //
-// [幂等]: https://developer.mozilla.org/zh-CN/docs/Glossary/Idempotent
-func (ctx *Context) Idempotent() bool {
+// [幂等]: https://developer.mozilla.org/zh-CN/docs/Glossary/IsIdempotent
+func (ctx *Context) IsIdempotent() bool {
 	return slices.Contains(idempotentMethods, ctx.Request().Method)
 }
 

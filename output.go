@@ -22,7 +22,7 @@ import (
 type Responser interface {
 	// Apply 通过 [Context] 将当前内容渲染到客户端
 	//
-	// 在调用 Apply 之后，就不再使用 [Responser] 对象。
+	// 在调用 Apply 之后，就不再使用此对象。
 	// 如果你的对象支持 [sync.Pool] 的复用方式，可以在此方法中回收内存。
 	Apply(*Context)
 }
@@ -55,10 +55,13 @@ func (ctx *Context) Wrap(f func(http.ResponseWriter) http.ResponseWriter) {
 // Render 向客户端输出对象
 //
 // status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
-// body 表示输出的对象，该对象最终调用 [Context.Marshal] 编码；
+// body 表示输出的对象，该对象最终调用 [Context.Marshal] 编码，不会考虑 body 是否实现了 [Responser]；
 func (ctx *Context) Render(status int, body any) {
 	// NOTE: 此方法不返回错误代码，所有错误在方法内直接处理。输出对象时若出错，
 	// 状态码也已经输出，此时向调用方报告错误，除了输出错误日志，也没有其它面向客户的补救措施。
+
+	// NOTE: 不考虑 body 为 [Responser] 的情况，
+	// 因为 [Responser] 可能改状态码，而 Render 本身已经指定了状态码。
 
 	if ctx.s.onRender != nil {
 		status, body = ctx.s.onRender(status, body)
@@ -76,13 +79,12 @@ func (ctx *Context) Render(status int, body any) {
 	}
 
 	data, err := ctx.Marshal(body)
-	if err != nil {
-		// [Problem.Apply] 并未调用 [Context.Render]，应该不会死循环。
-		if p, ok := errors.AsType[*Problem](err); ok {
-			p.Apply(ctx)
-		} else {
-			ctx.Error(err, ProblemNotAcceptable).Apply(ctx)
+	if err != nil { // Problem.Apply 并未调用 Context.Render，应该不会死循环。
+		p, ok := errors.AsType[*Problem](err)
+		if !ok {
+			p = ctx.Error(err, ProblemInternalServerError) // 编码出的问题属于服务端出错
 		}
+		p.Apply(ctx)
 		return
 	}
 
@@ -239,7 +241,7 @@ func Status(code int, kv ...string) Responser {
 	})
 }
 
-// Response 输出状态和对象至客户端
+// Response 构建一个 [Responser] 对象
 //
 // body 表示需要输出的对象，该对象最终会被转换成相应的编码；
 // kv 为报头，必须以偶数数量出现，奇数位为报头名，偶数位为对应的报头值；

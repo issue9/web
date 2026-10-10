@@ -25,6 +25,8 @@ var problemPool = &sync.Pool{New: func() any { return &Problem{} }}
 type (
 	// Problem 基于 [RFC7807] 用于描述错误信息的对象
 	//
+	// 这是一个提供给客户端的信息，不能将敏感信息放于其中。
+	//
 	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
 	Problem struct {
 		XMLName struct{} `xml:"problem" form:"-" cbor:"-" json:"-" html:"-" yaml:"-"`
@@ -91,6 +93,9 @@ func (p *Problem) MarshalHTML() (string, any) { return "problem", p }
 func (p *Problem) Error() string { return p.Title }
 
 func (p *Problem) Apply(ctx *Context) {
+	// NOTE: Problem.Apply 作为一个特殊的 Responser 实现，
+	// 会在 Context.Render 中被调用，所以当前函数中不能调用 Context.Render 方法。
+
 	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(true), ctx.Charset()))
 	if id := ctx.LanguageTag().String(); id != "" {
 		ctx.Header().Set(header.ContentLanguage, id)

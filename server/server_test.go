@@ -269,31 +269,34 @@ func TestHTTPServer_NewClient(t *testing.T) {
 	c := s.NewClient(nil, sel, header.JSON, func(a any) ([]byte, error) { return sj.Marshal(a) })
 	a.NotNil(c)
 
-	resp, err := c.Get[object, any]("/get")
-	a.NotError(err).Equal(resp, &object{Name: "name"})
+	resp, p, err := c.Get[object, any]("/get")
+	a.NotError(err).
+		Equal(resp, &object{Name: "name"}).
+		Nil(p)
 
-	resp, err = c.Delete[object, any]("/get")
-	a.Error(err).Zero(resp)
-	p, ok := err.(*web.Problem)
-	a.True(ok).NotNil(p).
+	resp, p, err = c.Delete[object, any]("/get")
+	a.NotError(err).
+		Zero(resp).
+		NotNil(p).
 		Equal(p.Type, web.ProblemMethodNotAllowed).
 		Equal(p.Status, http.StatusMethodNotAllowed)
 
-	resp, err = c.Post[object, *object]("/post", nil)
-	a.Error(err).Zero(resp)
-	p, ok = err.(*web.Problem)
-	a.True(ok).NotNil(p).
+	resp, p, err = c.Post[object, *object]("/post", nil)
+	a.NotError(err).
+		Zero(resp).
+		NotNil(p).
 		Equal(p.Type, web.ProblemBadRequest).
 		Equal(p.Extensions, &object{Name: "name"})
 
-	resp, err = c.Post[object, any]("/post", &object{Age: 1, Name: "name"})
+	resp, p, err = c.Post[object, any]("/post", &object{Age: 1, Name: "name"})
 	a.NotError(err).
+		Nil(p).
 		Equal(resp, &object{Age: 1, Name: "name"})
 
-	resp, err = c.Patch[object, any]("/not-exists", nil)
-	a.Error(err).Zero(resp)
-	p, ok = err.(*web.Problem)
-	a.True(ok).NotNil(p).
+	resp, p, err = c.Patch[object, any]("/not-exists", nil)
+	a.NotError(err).
+		Zero(resp).
+		NotNil(p).
 		Equal(p.Type, web.ProblemNotFound)
 }
 
