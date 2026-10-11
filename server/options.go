@@ -79,6 +79,8 @@ type (
 		IDGenerator func() string
 
 		// 路由选项
+		//
+		// 不要指定 [mux.WithRecovery] 选项，会被覆盖。
 		RoutersOptions []web.RouterOption
 
 		// 指定获取 x-request-id 内容的报头名

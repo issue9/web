@@ -5,6 +5,7 @@
 package web
 
 import (
+	"errors"
 	"iter"
 	"net/http"
 	"strconv"
@@ -99,24 +100,31 @@ func (r *Routers) Routers() iter.Seq[*Router] { return r.g.Routers() }
 // Use 对所有的路由使用中间件
 func (r *Routers) Use(m ...Middleware) { r.g.Use(m...) }
 
-// WithRecovery 在路由崩溃之后的处理方式
-//
-// 相对于 [mux.WithRecovery]，提供了对 [NewProblemError] 错误的处理。
-func WithRecovery(status int, l *Logger) RouterOption {
+// 相对于 [mux.withRecovery]，提供了对 [NewProblemError] 错误的处理。
+func withRecovery(s Server) RouterOption {
+	// 即使失败了，再次触发 panic，还有 http.Server 兜底。
+	// 所以此方法的对错误的处理，依然还是尽量输出符合要求的 Problem 对象。
+
+	const status = http.StatusInternalServerError
+
 	return mux.WithRecovery(func(w http.ResponseWriter, msg any) {
 		err, ok := msg.(error)
 		if !ok {
 			http.Error(w, http.StatusText(status), status)
-			l.String(source.Stack(4, true, err))
+			s.Logs().ERROR().String(source.Stack(4, true, err))
 			return
 		}
 
-		he, ok := errors.AsType[*errs.HTTP](err)
+		he, ok := errors.AsType[*problemError](err)
 		if !ok {
-			he = &errs.HTTP{Status: status, Message: err}
+			he = &problemError{id: strconv.Itoa(status), err: err}
 		}
-		http.Error(w, http.StatusText(he.Status), he.Status)
-		l.String(source.Stack(4, true, he.Message))
+
+		p := newProblem()
+		s.Problems().initProblem(p, he.id, s.Locale().Printer())
+
+		http.Error(w, http.StatusText(p.Status), p.Status)
+		s.Logs().ERROR().String(source.Stack(4, true, err))
 	})
 }
 
@@ -148,3 +156,7 @@ func WithWordInterceptor(rule string) RouterOption { return mux.WithWordIntercep
 func WithInterceptor(f types.InterceptorFunc, rule ...string) RouterOption {
 	return mux.WithInterceptor(f, rule...)
 }
+
+func WithCleanPath(v bool) RouterOption { return mux.WithCleanPath(v) }
+
+func WithCaseInsensitive(v bool) RouterOption { return mux.WithCaseInsensitive(v) }

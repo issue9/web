@@ -13,7 +13,6 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/issue9/assert/v5"
-	"github.com/issue9/logs/v7"
 )
 
 func TestCertificate_sanitize(t *testing.T) {
@@ -31,21 +30,20 @@ func TestCertificate_sanitize(t *testing.T) {
 
 func TestHTTP_sanitize(t *testing.T) {
 	a := assert.New(t, false)
-	l := logs.New(logs.NewNopHandler())
 
 	http := &httpConfig{}
 	http.ReadTimeout = -1
-	ferr := http.sanitize(l)
+	ferr := http.sanitize()
 	a.Equal(ferr.Field, "readTimeout")
 
 	http.ReadTimeout = 0
 	http.IdleTimeout = -1
-	ferr = http.sanitize(l)
+	ferr = http.sanitize()
 	a.Equal(ferr.Field, "idleTimeout")
 
 	http.IdleTimeout = 0
 	http.ReadHeaderTimeout = -1
-	ferr = http.sanitize(l)
+	ferr = http.sanitize()
 	a.Equal(ferr.Field, "readHeaderTimeout")
 }
 

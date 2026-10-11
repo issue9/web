@@ -12,7 +12,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v10/header"
 	"golang.org/x/crypto/acme/autocert"
 
@@ -66,11 +65,6 @@ type (
 
 		// MaxHeaderBytes 对应 [http.Server.MaxHeaderBytes] 字段
 		MaxHeaderBytes int `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,attr,omitempty" toml:"maxHeaderBytes,omitempty"`
-
-		// Recovery 拦截 panic 时反馈给客户端的状态码
-		//
-		// NOTE: 这些设置对所有路径均有效，但会被 [web.Routers.New] 的参数修改。
-		Recovery int `yaml:"recovery,omitempty" json:"recovery,omitempty" xml:"recovery,attr,omitempty" toml:"recovery,omitempty"`
 
 		// 自定义报头功能
 		//
@@ -168,7 +162,7 @@ func (conf *configOf[T]) buildHTTP() *web.FieldError {
 	if conf.HTTP == nil {
 		conf.HTTP = &httpConfig{}
 	}
-	if err := conf.HTTP.sanitize(conf.Logs.logs); err != nil {
+	if err := conf.HTTP.sanitize(); err != nil {
 		return err.AddFieldParent("http")
 	}
 	if conf.HTTP.init != nil {
@@ -199,7 +193,7 @@ func (cert *certificateConfig) sanitize() *web.FieldError {
 	return nil
 }
 
-func (h *httpConfig) sanitize(l *logs.Logs) *web.FieldError {
+func (h *httpConfig) sanitize() *web.FieldError {
 	if durShouldGreatThan0(h.ReadTimeout) {
 		return web.NewFieldError("readTimeout", locales.ShouldGreatThan(0))
 	}
@@ -237,7 +231,7 @@ func (h *httpConfig) sanitize(l *logs.Logs) *web.FieldError {
 		return err
 	}
 
-	h.buildInit(l)
+	h.buildInit()
 	h.buildHTTPServer()
 	return nil
 }
@@ -254,7 +248,7 @@ func (h *httpConfig) buildHTTPServer() {
 	}
 }
 
-func (h *httpConfig) buildInit(l *logs.Logs) {
+func (h *httpConfig) buildInit() {
 	h.init = func(o *server.Options) {
 		if len(h.Headers) > 0 {
 			o.Plugins = append(o.Plugins, web.PluginFunc(func(s web.Server) {
@@ -267,10 +261,6 @@ func (h *httpConfig) buildInit(l *logs.Logs) {
 					}
 				}))
 			}))
-		}
-
-		if h.Recovery > 0 {
-			o.RoutersOptions = append(o.RoutersOptions, web.WithRecovery(h.Recovery, l.ERROR()))
 		}
 
 		if h.CORS != nil {

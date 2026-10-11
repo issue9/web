@@ -276,6 +276,7 @@ func InternalNewServer(
 	}
 	is.initServices()
 
+	o = append(o, withRecovery(s))
 	is.routers = &Routers{
 		g: mux.NewGroup(is.call,
 			notFound,
