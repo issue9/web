@@ -6,7 +6,6 @@ package web
 
 import (
 	"errors"
-	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,83 +17,59 @@ import (
 	"golang.org/x/text/message"
 )
 
-var (
-	_ Responser = &Problem{}
-	_ error     = &Problem{}
-)
+var _ Responser = &Problem{}
 
 // 此函数放最前，内有依赖行数的测试，心意减少其行数的变化。
-func TestContext_Error(t *testing.T) {
+func TestContext_Log(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv := newTestServer(a)
 
-	t.Run("id=empty", func(t *testing.T) {
+	t.Run("problemID=empty", func(t *testing.T) {
 		a := assert.New(t, false)
 		srv.logBuf.Reset()
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx := srv.NewContext(w, r, types.NewRoute())
-		ctx.Error(errors.New("log1 log2"), "").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:38"). // NOTE: 此测试依赖上一行的行号
+		ctx.Log(errors.New("log1 log2"), "").Apply(ctx)
+		a.Contains(srv.logBuf.String(), "problem_test.go:34"). // NOTE: 此测试依赖上一行的行号
 									Contains(srv.logBuf.String(), "log1 log2").
 									Contains(srv.logBuf.String(), header.XRequestID). // 包含 x-request-id 值
 									Equal(w.Code, http.StatusInternalServerError)
 
-		// errs.HTTP
+		// problemError
 
 		srv.logBuf.Reset()
 		w = httptest.NewRecorder()
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx = srv.NewContext(w, r, types.NewRoute())
-		ctx.Error(NewError(http.StatusBadRequest, errors.New("log1 log2")), "").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:50"). // NOTE: 此测试依赖上一行的行号
+		ctx.Log(NewProblemError(ProblemBadRequest, errors.New("log1 log2")), "").Apply(ctx)
+		a.Contains(srv.logBuf.String(), "problem_test.go:46"). // NOTE: 此测试依赖上一行的行号
 									Contains(srv.logBuf.String(), "log1 log2").
 									Contains(srv.logBuf.String(), header.XRequestID). // 包含 x-request-id 值
 									Equal(w.Code, http.StatusBadRequest)
-
-		// fs.ErrPermission
-
-		srv.logBuf.Reset()
-		w = httptest.NewRecorder()
-		r = httptest.NewRequest(http.MethodGet, "/path", nil)
-		ctx = srv.NewContext(w, r, types.NewRoute())
-		ctx.Error(fs.ErrPermission, "").Apply(ctx)
-		a.Equal(w.Code, http.StatusForbidden)
-
-		// fs.ErrNotExist
-
-		srv.logBuf.Reset()
-		w = httptest.NewRecorder()
-		r = httptest.NewRequest(http.MethodGet, "/path", nil)
-		ctx = srv.NewContext(w, r, types.NewRoute())
-		ctx.Error(fs.ErrNotExist, "").Apply(ctx)
-		a.Equal(w.Code, http.StatusNotFound)
 	})
 
-	t.Run("id=41110", func(t *testing.T) {
+	t.Run("problemID=41110", func(t *testing.T) {
 		a := assert.New(t, false)
 		srv.logBuf.Reset()
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx := srv.NewContext(w, r, types.NewRoute())
-		ctx.Error(errors.New("log1 log2"), "41110").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:81"). // NOTE: 此测试依赖上一行的行号
+		ctx.Log(errors.New("log1 log2"), "41110").Apply(ctx)
+		a.Contains(srv.logBuf.String(), "problem_test.go:59"). // NOTE: 此测试依赖上一行的行号
 									Contains(srv.logBuf.String(), "log1 log2").
 									Contains(srv.logBuf.String(), header.XRequestID). // 包含 x-request-id 值
 									Equal(w.Code, 411)
 
-		// errs.HTTP
+		// ProblemError
 
 		srv.logBuf.Reset()
 		w = httptest.NewRecorder()
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx = srv.NewContext(w, r, types.NewRoute())
-		ctx.Error(NewError(http.StatusBadRequest, errors.New("log1 log2")), "41110").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:93"). // NOTE: 此测试依赖上一行的行号
-									Contains(srv.logBuf.String(), "log1 log2").
-									Contains(srv.logBuf.String(), header.XRequestID). // 包含 x-request-id 值
-									Equal(w.Code, 411)
+		ctx.Log(NewProblemError(ProblemBadRequest, errors.New("log1 log2")), "41110").Apply(ctx)
+		a.Contains(srv.logBuf.String(), "problem_test.go:71") // NOTE: 此测试依赖上一行的行号
 	})
 }
 

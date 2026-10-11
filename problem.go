@@ -7,7 +7,6 @@ package web
 import (
 	"errors"
 	"fmt"
-	"io/fs"
 	"iter"
 	"slices"
 	"sync"
@@ -15,7 +14,6 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v10/header"
 
-	"github.com/issue9/web/internal/errs"
 	"github.com/issue9/web/internal/qheader"
 	"github.com/issue9/web/internal/status"
 )
@@ -71,6 +69,11 @@ type (
 		status int
 		typ    string // 带前缀的 ID 值
 	}
+
+	problemError struct {
+		err error
+		id  string
+	}
 )
 
 // Type 相当于 RFC7807 的 type 属性
@@ -89,8 +92,6 @@ func newProblem() *Problem {
 
 // MarshalHTML 实现 [mimetype/html.Marshaler] 接口
 func (p *Problem) MarshalHTML() (string, any) { return "problem", p }
-
-func (p *Problem) Error() string { return p.Title }
 
 func (p *Problem) Apply(ctx *Context) {
 	// NOTE: Problem.Apply 作为一个特殊的 Responser 实现，
@@ -152,31 +153,31 @@ func (ctx *Context) initProblem(pp *Problem, id string) *Problem {
 	return pp.WithInstance(ctx.ID())
 }
 
-// Error 将 err 输出到 ERROR 通道并尝试以指定 id 的 [Problem] 返回
+// Log 记录日志并根据情况生成对应的 [Problem] 对象
 //
-// 如果 id 为空，尝试以下顺序获得值：
-//   - err 是否是由 [NewError] 创建，如果是则采用 err.Status 取得 ID 值；
-//   - err 是否为 [fs.ErrPermission]，如果是采用 [ProblemForbidden] 作为 ID；
-//   - err 是否为 [fs.ErrNotExist]，如果是采用 [ProblemNotFound] 作为 ID；
-//   - 采用 [ProblemInternalServerError]；
-func (ctx *Context) Error(err error, problemID string) *Problem {
-	if problemID == "" {
-		var herr *errs.HTTP
-		switch {
-		case errors.As(err, &herr):
-			problemID = problemsID[herr.Status]
-			err = herr.Message
-		case errors.Is(err, fs.ErrPermission):
-			problemID = ProblemForbidden
-		case errors.Is(err, fs.ErrNotExist):
-			problemID = ProblemNotFound
-		default:
+// problemID 表示生成的 [Problem] 对象的 Type 值，如果 err 本身就是 [Problem] 类型，
+// 那么将忽略 problemID 值，若是两者都不满足，则将 problemID 设置为 [ProblemInternalServerError]。
+//
+// problemID 同时也是日志分类的依据，比如所有 4xx 的日志会写入 WARN，其它的才会写入 ERROR。
+func (ctx *Context) Log(err error, problemID string) *Problem {
+	pe, ok := errors.AsType[*problemError](err)
+	if ok {
+		problemID = pe.id
+	} else {
+		if problemID == "" {
 			problemID = ProblemInternalServerError
 		}
 	}
 
-	ctx.Logs().ERROR().Handler().Handle(ctx.Logs().NewRecord().DepthError(3, err))
-	return ctx.Problem(problemID)
+	perr := ctx.Problem(problemID)
+
+	if perr.Status < 500 {
+		ctx.Logs().WARN().Handler().Handle(ctx.Logs().NewRecord().DepthError(3, err))
+	} else {
+		ctx.Logs().ERROR().Handler().Handle(ctx.Logs().NewRecord().DepthError(3, err))
+	}
+
+	return perr
 }
 
 func (ctx *Context) NotFound() *Problem { return ctx.Problem(ProblemNotFound) }
@@ -273,3 +274,18 @@ func IsProblem(status int) bool {
 	_, f := problemsID[status]
 	return f
 }
+
+// NewProblemError 将 err 以指定的 problemID 进行包装
+//
+// 当前框架在处理此类错误时，在记录错误的同时，会将 problemID 值反馈给客户端。
+func NewProblemError(problemID string, err error) error {
+	if err == nil {
+		panic("参数 err 不能为空")
+	}
+
+	return &problemError{id: problemID, err: err}
+}
+
+func (err *problemError) Unwrap() error { return err.err }
+
+func (err *problemError) Error() string { return err.err.Error() }

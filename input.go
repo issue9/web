@@ -302,7 +302,7 @@ func (q *Queries) Object(v any) {
 func (ctx *Context) QueryObject(exitAtError bool, v any, id string) Responser {
 	q, err := ctx.Queries(exitAtError)
 	if err != nil {
-		return ctx.Error(err, id)
+		return ctx.Log(err, id)
 	}
 	q.Object(v)
 	return q.Problem(id)
@@ -329,7 +329,7 @@ func (ctx *Context) Unmarshal(v any) error {
 // 如果验证失败，会返回以 id 作为错误代码的 [Problem] 对象。
 func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
-		return ctx.Error(err, ProblemUnprocessableEntity)
+		return ctx.Log(err, ProblemUnprocessableEntity)
 	}
 
 	if vv, ok := v.(Filter); ok {

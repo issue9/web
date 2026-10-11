@@ -70,7 +70,7 @@ func Marshal(ctx *web.Context, v any) ([]byte, error) {
 
 	callback := q.String(o.key, "")
 	if callback == "" {
-		return nil, ctx.Problem(o.unsetProblem)
+		return nil, web.NewProblemError(o.unsetProblem, web.NewFieldError(o.key, web.StringPhrase("can not be empty")))
 	}
 
 	b := errwrap.StringBuilder{}

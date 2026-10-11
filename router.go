@@ -5,7 +5,6 @@
 package web
 
 import (
-	"errors"
 	"iter"
 	"net/http"
 	"strconv"
@@ -14,8 +13,6 @@ import (
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/mux/v10/types"
 	"github.com/issue9/source"
-
-	"github.com/issue9/web/internal/errs"
 )
 
 type (
@@ -46,7 +43,9 @@ type (
 func notFound(ctx *Context) Responser { return ctx.NotFound() }
 
 func trace(ctx *Context) Responser {
-	mux.Trace(ctx, ctx.Request(), false)
+	if err := mux.Trace(ctx, ctx.Request(), false); err != nil {
+		ctx.Logs().ERROR().Error(err)
+	}
 	return nil
 }
 
@@ -100,9 +99,9 @@ func (r *Routers) Routers() iter.Seq[*Router] { return r.g.Routers() }
 // Use 对所有的路由使用中间件
 func (r *Routers) Use(m ...Middleware) { r.g.Use(m...) }
 
-// WithRecovery 在路由奔溃之后的处理方式
+// WithRecovery 在路由崩溃之后的处理方式
 //
-// 相对于 [mux.WithRecovery]，提供了对 [NewError] 错误的处理。
+// 相对于 [mux.WithRecovery]，提供了对 [NewProblemError] 错误的处理。
 func WithRecovery(status int, l *Logger) RouterOption {
 	return mux.WithRecovery(func(w http.ResponseWriter, msg any) {
 		err, ok := msg.(error)

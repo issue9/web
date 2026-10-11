@@ -6,7 +6,6 @@ package web
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -80,11 +79,7 @@ func (ctx *Context) Render(status int, body any) {
 
 	data, err := ctx.Marshal(body)
 	if err != nil { // Problem.Apply 并未调用 Context.Render，应该不会死循环。
-		p, ok := errors.AsType[*Problem](err)
-		if !ok {
-			p = ctx.Error(err, ProblemInternalServerError) // 编码出的问题属于服务端出错
-		}
-		p.Apply(ctx)
+		ctx.Log(err, ProblemInternalServerError).Apply(ctx) // 编码出的问题属于服务端出错
 		return
 	}
 
@@ -202,7 +197,7 @@ func NotModified(etag func() (string, bool), body func() (any, error)) Responser
 
 		b, err := body()
 		if err != nil {
-			ctx.Error(err, ProblemInternalServerError).Apply(ctx)
+			ctx.Log(err, ProblemInternalServerError).Apply(ctx)
 			return
 		}
 

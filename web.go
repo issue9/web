@@ -95,14 +95,6 @@ func NewFieldError(field string, msg any) *FieldError { return config.NewFieldEr
 // NewLocaleError 本地化的错误信息
 func NewLocaleError(format string, v ...any) error { return localeutil.Error(format, v...) }
 
-// NewError 用 HTTP 状态码包装一个错误信息
-//
-// status 表示 HTTP 状态码；
-// err 被包装的错误信息，如果是空值，将会 panic；
-//
-// 此方法返回的错误，在 [Context.Error] 和 [WithRecovery] 中会被识别且按指定的状态码输出。
-func NewError(status int, err error) error { return errs.NewError(status, err) }
-
 // SprintError 将 err 转换为字符串
 //
 // p 如果 err 实现了 [LocaleStringer]，将采用 p 进行转换；
