@@ -44,7 +44,7 @@ func ErrExitContext() error { return errExitContext }
 // 但是不推荐非必要情况下直接使用 [http.ResponseWriter] 的接口方法，
 // 而是采用返回 [Responser] 的方式向客户端输出内容。
 type Context struct {
-	s       *internalServer
+	s       *serverImplement
 	route   *types.Route
 	request *http.Request
 	exits   []OnExitContextFunc
@@ -82,7 +82,7 @@ type Context struct {
 // NewContext 将 w 和 r 包装为 [Context] 对象
 //
 // 如果出错，则会向 w 输出状态码并返回 nil。
-func (s *internalServer) NewContext(w http.ResponseWriter, r *http.Request, route *types.Route) *Context {
+func (s *serverImplement) NewContext(w http.ResponseWriter, r *http.Request, route *types.Route) *Context {
 	id := r.Header.Get(s.requestIDKey)
 
 	debug := func() logs.Recorder { // 根据 id 是否为空返回不同的日志对象

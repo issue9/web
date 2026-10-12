@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/issue9/config"
-	"github.com/issue9/web/internal/locale"
 	"github.com/jellydator/ttlcache/v3"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/message/catalog"
+
+	"github.com/issue9/web/internal/locale"
 )
 
 // maxPrinters 缓存的 [message.Printer] 数量上限
@@ -27,14 +28,14 @@ const maxPrinterIdle = 10 * time.Minute
 type Locale struct {
 	*catalog.Builder
 	id       language.Tag
-	config   *config.Config
+	s        config.Serializer
 	printer  *message.Printer
 	printers *ttlcache.Cache[language.Tag, *message.Printer]
 
 	acceptLanguage string // 根据内容生成 Accept-Language 报头
 }
 
-func NewLocale(id language.Tag, conf *config.Config) *Locale {
+func newLocale(id language.Tag, s config.Serializer) *Locale {
 	b := catalog.NewBuilder(catalog.Fallback(id))
 
 	// 保证 b 中包含一条 id 语言的翻译项，
@@ -47,7 +48,7 @@ func NewLocale(id language.Tag, conf *config.Config) *Locale {
 	return &Locale{
 		Builder: b,
 		id:      id,
-		config:  conf,
+		s:       s,
 		printer: message.NewPrinter(id, message.Catalog(b)),
 		printers: ttlcache.New(
 			ttlcache.WithCapacity[language.Tag, *message.Printer](maxPrinters),
@@ -77,7 +78,7 @@ func (l *Locale) ID() language.Tag { return l.id }
 //
 // 根据 [Server.Config] 处理文件格式，如果文件格式不被 [Server.Config] 支持，将无法加载。
 func (l *Locale) LoadMessages(glob string, fsys ...fs.FS) error {
-	if err := locale.Load(l.Config().Serializer(), l.Builder, glob, fsys...); err != nil {
+	if err := locale.Load(l.s, l.Builder, glob, fsys...); err != nil {
 		return err
 	}
 
@@ -89,8 +90,6 @@ func (l *Locale) LoadMessages(glob string, fsys ...fs.FS) error {
 
 // Printer 最符合 [Locale.ID] 的 [message.Printer] 对象
 func (l *Locale) Printer() *message.Printer { return l.printer }
-
-func (l *Locale) Config() *config.Config { return l.config }
 
 // Sprintf 等同于 [Locale.Printer.Sprintf]
 func (l *Locale) Sprintf(key string, v ...any) string { return l.Printer().Sprintf(key, v...) }

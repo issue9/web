@@ -68,7 +68,7 @@ func buildNodeHandle(status int) types.BuildNodeHandler[HandlerFunc] {
 	}
 }
 
-func (s *internalServer) call(w http.ResponseWriter, r *http.Request, route *types.Route, f HandlerFunc) {
+func (s *serverImplement) call(w http.ResponseWriter, r *http.Request, route *types.Route, f HandlerFunc) {
 	if ctx := s.NewContext(w, r, route); ctx != nil {
 		if resp := f(ctx); resp != nil {
 			resp.Apply(ctx)
@@ -77,7 +77,7 @@ func (s *internalServer) call(w http.ResponseWriter, r *http.Request, route *typ
 	}
 }
 
-func (s *internalServer) Routers() *Routers { return s.routers }
+func (s *serverImplement) Routers() *Routers { return s.routers }
 
 // Get 获取指定名称的路由
 //

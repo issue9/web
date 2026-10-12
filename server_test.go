@@ -15,6 +15,7 @@ import (
 
 	"github.com/issue9/assert/v5"
 	"github.com/issue9/cache/drivers/memory"
+	"github.com/issue9/config"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/unique/v2"
@@ -22,31 +23,31 @@ import (
 )
 
 type testServer struct {
-	*internalServer
+	*serverImplement
 	logBuf *bytes.Buffer
 }
 
 func newTestServer(a *assert.Assertion) *testServer {
-	l := NewLocale(language.SimplifiedChinese, nil)
-	a.NotError(l.SetString(language.SimplifiedChinese, "lang", "cn")).
-		NotError(l.SetString(language.TraditionalChinese, "lang", "tw"))
-
 	logBuf := new(bytes.Buffer)
 	log := logs.New(
 		logs.NewTextHandler(logBuf, os.Stderr),
 		logs.WithCreated(logs.NanoLayout),
 		logs.WithLocation(true),
 		logs.WithLevels(logs.AllLevels()...),
-		logs.WithLocale(l.Printer()),
 	)
 	a.NotNil(log)
+
+	conf := config.Dir(nil, "./")
 
 	srv := &testServer{logBuf: logBuf}
 
 	cc := memory.New()
 	u := unique.NewNumber(100)
-	srv.internalServer = InternalNewServer(&http.Server{Addr: ":8080"}, "test", "1.0.0", time.Local, log, u.String, l, cc, newCodec(a), header.XRequestID, NewProblems(""), nil).(*internalServer)
+	srv.serverImplement = NewServer("test", "1.0.0", conf, &http.Server{Addr: ":8080"}, time.Local, language.SimplifiedChinese, log, u.String, cc, newCodec(a), header.XRequestID, NewProblems(""), nil).(*serverImplement)
 	srv.Services().Add(Phrase("unique"), u)
+
+	a.NotError(srv.Locale().SetString(language.SimplifiedChinese, "lang", "cn")).
+		NotError(srv.Locale().SetString(language.TraditionalChinese, "lang", "tw"))
 
 	srv.Problems().Add(411, &LocaleProblem{ID: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
 

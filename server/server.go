@@ -29,15 +29,6 @@ type (
 	}
 )
 
-func newHTTPServer(id, version string, o *Options) web.Server {
-	srv := o.internalServer(id, version)
-
-	for _, plugin := range o.Plugins { // NOTE: 需要保证在最后
-		plugin.Plugin(srv)
-	}
-	return srv
-}
-
 // NewHTTP 新建 HTTP 服务
 //
 // id 应用的 ID；
@@ -49,7 +40,7 @@ func NewHTTP(id, version string, o *Options) (web.Server, error) {
 		return nil, err.AddFieldParent("o")
 	}
 
-	return newHTTPServer(id, version, o), nil
+	return o.newServer(id, version), nil
 }
 
 // NewService 声明微服务节点
@@ -64,7 +55,7 @@ func NewService(id, version string, o *Options) (web.Server, error) {
 	return &serviceServer{
 		registry: o.Registry,
 		peer:     o.Peer,
-		Server:   newHTTPServer(id, version, o),
+		Server:   o.newServer(id, version),
 	}, nil
 }
 
@@ -87,18 +78,18 @@ func NewGateway(id, version string, o *Options) (web.Server, error) {
 		return nil, err.AddFieldParent("o")
 	}
 
-	g := &gatewayServer{
+	gs := &gatewayServer{
 		registry: o.Registry,
-		Server:   newHTTPServer(id, version, o),
+		Server:   o.newServer(id, version),
 	}
 
 	for name, match := range o.Mapper {
-		proxy := g.registry.ReverseProxy(name, g)
-		g.Routers().New(name, match).Any("{path}", func(ctx *web.Context) web.Responser {
+		proxy := gs.registry.ReverseProxy(name, gs)
+		gs.Routers().New(name, match).Any("{path}", func(ctx *web.Context) web.Responser {
 			proxy.ServeHTTP(ctx, ctx.Request())
 			return nil
 		})
 	}
 
-	return g, nil
+	return gs, nil
 }

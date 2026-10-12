@@ -17,6 +17,7 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v10"
 	"github.com/issue9/mux/v10/types"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web/selector"
 )
@@ -93,7 +94,7 @@ type (
 		// NewContext 从标准库的参数初始化 [Context] 对象
 		//
 		// 这适合从标准库的请求中创建 [Context] 对象。
-		// [types.Route] 类型的参数需要用户通过 [types.NewContext] 自行创建。
+		// [types.Route] 类型的参数需要用户通过 [types.NewRoute] 自行创建。
 		//
 		// NOTE: 由此方法创建的对象在整个会话结束后会被回收。
 		NewContext(http.ResponseWriter, *http.Request, *types.Route) *Context
@@ -148,7 +149,7 @@ type (
 
 	OnRender func(status int, body any) (int, any)
 
-	internalServer struct {
+	serverImplement struct {
 		hs    *http.Server
 		state State
 
@@ -162,6 +163,7 @@ type (
 		done    chan struct{}
 		doneErr error
 
+		config          *config.Config
 		requestIDKey    string
 		codec           *Codec
 		services        *Services
@@ -178,39 +180,38 @@ type (
 	}
 )
 
-// InternalNewServer 创建 [Server]
+// NewServer 创建 [Server]
 //
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名；
-// problemPrefix 可以为空；
 // onRender 在每个对象的渲染之前可以对内容进行的修改；
-//
-// NOTE: 此函数仅供内部使用，由调用者保证参数的正确性。
-func InternalNewServer(
-	hs *http.Server,
+func NewServer(
 	id, ver string,
+	conf *config.Config,
+	hs *http.Server,
 	loc *time.Location,
+	lang language.Tag,
 	logs *Logs,
 	idgen func() string,
-	l *Locale,
-	c cache.Driver,
+	cache cache.Driver,
 	codec *Codec,
 	requestIDKey string,
 	problems *Problems,
 	onRender OnRender,
 	o ...RouterOption,
 ) Server {
-	is := &internalServer{
+	impl := &serverImplement{
 		hs:    hs,
 		state: Stopped,
 
 		id:      id,
 		version: ver,
 
-		locale:   l,
+		locale:   newLocale(lang, conf.Serializer()),
 		location: loc,
 		uptime:   time.Now().In(loc),
 		done:     make(chan struct{}),
 
+		config:       conf,
 		requestIDKey: requestIDKey,
 		codec:        codec,
 		problems:     problems,
@@ -218,67 +219,68 @@ func InternalNewServer(
 		idgen:        idgen,
 		logs:         logs,
 		closes:       make([]func() error, 0, 10),
-		cache:        c,
+		cache:        cache,
 		onRender:     onRender,
 		exitContexts: make([]OnExitContextFunc, 0, 10),
 	}
-	is.initServices()
+	impl.initServices()
+	impl.Logs().SetLocale(impl.Locale().Printer())
 
-	o = append(o, withRecovery(is))
-	is.routers = &Routers{
-		g: mux.NewGroup(is.call,
+	o = append(o, withRecovery(impl))
+	impl.routers = &Routers{
+		g: mux.NewGroup(impl.call,
 			notFound,
 			trace,
 			buildNodeHandle(http.StatusMethodNotAllowed),
 			buildNodeHandle(http.StatusOK),
 			o...),
 	}
-	is.hs.Handler = is.routers.g
+	impl.hs.Handler = impl.routers.g
 
-	return is
+	return impl
 }
 
-func (s *internalServer) NewClient(c *http.Client, sel selector.Selector, m string, marshal func(any) ([]byte, error)) *Client {
+func (s *serverImplement) NewClient(c *http.Client, sel selector.Selector, m string, marshal func(any) ([]byte, error)) *Client {
 	return NewClient(c, s.codec, sel, m, marshal, s.requestIDKey, s.UniqueID)
 }
 
-func (s *internalServer) Config() *config.Config { return s.locale.Config() }
+func (s *serverImplement) Config() *config.Config { return s.config }
 
-func (s *internalServer) Locale() *Locale { return s.locale }
+func (s *serverImplement) Locale() *Locale { return s.locale }
 
-func (s *internalServer) ID() string { return s.id }
+func (s *serverImplement) ID() string { return s.id }
 
-func (s *internalServer) Version() string { return s.version }
+func (s *serverImplement) Version() string { return s.version }
 
-func (s *internalServer) Vars() *sync.Map { return s.vars }
+func (s *serverImplement) Vars() *sync.Map { return s.vars }
 
-func (s *internalServer) CanCompress() bool { return !s.disableCompress }
+func (s *serverImplement) CanCompress() bool { return !s.disableCompress }
 
-func (s *internalServer) SetCompress(enable bool) { s.disableCompress = !enable }
+func (s *serverImplement) SetCompress(enable bool) { s.disableCompress = !enable }
 
-func (s *internalServer) Location() *time.Location { return s.location }
+func (s *serverImplement) Location() *time.Location { return s.location }
 
-func (s *internalServer) Now() time.Time { return time.Now().In(s.Location()) }
+func (s *serverImplement) Now() time.Time { return time.Now().In(s.Location()) }
 
-func (s *internalServer) Uptime() time.Time { return s.uptime }
+func (s *serverImplement) Uptime() time.Time { return s.uptime }
 
-func (s *internalServer) Cache() cache.Cleanable { return s.cache }
+func (s *serverImplement) Cache() cache.Cleanable { return s.cache }
 
-func (s *internalServer) ParseTime(layout, value string) (time.Time, error) {
+func (s *serverImplement) ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, s.Location())
 }
 
-func (s *internalServer) UniqueID() string { return s.idgen() }
+func (s *serverImplement) UniqueID() string { return s.idgen() }
 
-func (s *internalServer) OnClose(f ...func() error) { s.closes = append(s.closes, f...) }
+func (s *serverImplement) OnClose(f ...func() error) { s.closes = append(s.closes, f...) }
 
-func (s *internalServer) OnExitContext(f ...OnExitContextFunc) {
+func (s *serverImplement) OnExitContext(f ...OnExitContextFunc) {
 	s.exitContexts = append(s.exitContexts, f...)
 }
 
-func (s *internalServer) Logs() *Logs { return s.logs }
+func (s *serverImplement) Logs() *Logs { return s.logs }
 
-func (s *internalServer) close() {
+func (s *serverImplement) close() {
 	for _, f := range slices.Backward(s.closes) {
 		if err := f(); err != nil { // 出错不退出，继续其它操作。
 			s.Logs().ERROR().Error(err)
@@ -289,28 +291,28 @@ func (s *internalServer) close() {
 	close(s.done)
 }
 
-func (s *internalServer) Deadline() (time.Time, bool) { return time.Time{}, false }
+func (s *serverImplement) Deadline() (time.Time, bool) { return time.Time{}, false }
 
-func (s *internalServer) Value(key any) any {
+func (s *serverImplement) Value(key any) any {
 	if val, found := s.Vars().Load(key); found {
 		return val
 	}
 	return nil
 }
 
-func (s *internalServer) Done() <-chan struct{} { return s.done }
+func (s *serverImplement) Done() <-chan struct{} { return s.done }
 
-func (s *internalServer) Err() error { return s.doneErr }
+func (s *serverImplement) Err() error { return s.doneErr }
 
 func (f PluginFunc) Plugin(s Server) { f(s) }
 
-func (s *internalServer) Use(p ...Plugin) {
+func (s *serverImplement) Use(p ...Plugin) {
 	for _, pp := range p {
 		pp.Plugin(s)
 	}
 }
 
-func (s *internalServer) Mimetypes() iter.Seq2[string, string] {
+func (s *serverImplement) Mimetypes() iter.Seq2[string, string] {
 	return func(yield func(string, string) bool) {
 		for _, v := range s.codec.mediaTypes {
 			if !yield(v.Name, v.Problem) {
@@ -320,9 +322,9 @@ func (s *internalServer) Mimetypes() iter.Seq2[string, string] {
 	}
 }
 
-func (s *internalServer) State() State { return s.state }
+func (s *serverImplement) State() State { return s.state }
 
-func (s *internalServer) Serve() (err error) {
+func (s *serverImplement) Serve() (err error) {
 	if s.State() == Running {
 		panic("当前已经处于运行状态")
 	}
@@ -338,7 +340,7 @@ func (s *internalServer) Serve() (err error) {
 	return err
 }
 
-func (s *internalServer) Close(shutdownTimeout time.Duration) {
+func (s *serverImplement) Close(shutdownTimeout time.Duration) {
 	if s.State() != Running {
 		return
 	}

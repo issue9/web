@@ -490,7 +490,7 @@ func BenchmarkCodec_getMatchCompresses(b *testing.B) {
 }
 
 func BenchmarkLocale_NewPrinter(b *testing.B) {
-	l := NewLocale(language.SimplifiedChinese, nil)
+	l := newLocale(language.SimplifiedChinese, nil)
 
 	b.Run("equal Locale.id", func(b *testing.B) {
 		for b.Loop() {

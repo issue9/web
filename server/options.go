@@ -103,8 +103,6 @@ type (
 		// 如果为空，即 [language.Und]，则会尝试读取当前系统的本地化信息。
 		Language language.Tag
 
-		locale *web.Locale
-
 		// 所有 [web.Problem.Type] 字段的前缀
 		//
 		// 如果该值为 [web.ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
@@ -200,12 +198,10 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 		}
 		o.Language = tag
 	}
-	o.locale = web.NewLocale(o.Language, o.Config)
 
 	if o.Logs == nil {
 		o.Logs = logs.New(logs.NewNopHandler())
 	}
-	o.Logs.SetLocale(o.locale.Printer())
 
 	if o.RequestIDKey == "" {
 		o.RequestIDKey = header.XRequestID
@@ -241,11 +237,16 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 	return o, nil
 }
 
-func (o *Options) internalServer(id, version string) web.Server {
-	return web.InternalNewServer(o.HTTPServer, id, version,
-		o.Location, o.Logs, o.IDGenerator, o.locale,
+func (o *Options) newServer(id, version string) web.Server {
+	srv := web.NewServer(id, version, o.Config, o.HTTPServer,
+		o.Location, o.Language, o.Logs, o.IDGenerator,
 		o.Cache, o.Codec, o.RequestIDKey, web.NewProblems(o.ProblemTypePrefix),
 		o.OnRender, o.RoutersOptions...)
+
+	for _, plugin := range o.Plugins { // NOTE: 需要保证在最后
+		plugin.Plugin(srv)
+	}
+	return srv
 }
 
 // Render200 统一 API 的返回格式

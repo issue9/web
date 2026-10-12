@@ -205,7 +205,7 @@ func NewProblems(prefix string) *Problems {
 	return ps
 }
 
-func (s *internalServer) Problems() *Problems { return s.problems }
+func (s *serverImplement) Problems() *Problems { return s.problems }
 
 // Prefix 所有 ID 的统一前缀
 func (ps *Problems) Prefix() string { return ps.prefix }

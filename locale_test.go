@@ -18,7 +18,7 @@ import (
 func TestLocale_Printer(t *testing.T) {
 	a := assert.New(t, false)
 
-	l := NewLocale(language.SimplifiedChinese, nil)
+	l := newLocale(language.SimplifiedChinese, nil)
 	a.NotError(l.SetString(language.SimplifiedChinese, "lang", "hans")).
 		NotNil(l).Equal(l.Sprintf("lang"), "hans").
 		NotError(l.SetString(language.SimplifiedChinese, "lang", "hans-2")).
@@ -26,7 +26,7 @@ func TestLocale_Printer(t *testing.T) {
 
 	// ID 不存在于 catalog
 
-	l = NewLocale(language.Afrikaans, nil)
+	l = newLocale(language.Afrikaans, nil)
 	a.NotNil(l).
 		NotError(l.SetString(language.SimplifiedChinese, "lang", "hans")).
 		Equal(l.Sprintf("lang"), "lang"). // 找不到对应的翻译项，返回原值
@@ -39,10 +39,8 @@ func TestLocale_AcceptLanguage(t *testing.T) {
 	s := make(config.Serializer, 2)
 	s.Add(xml.Marshal, xml.Unmarshal, ".xml")
 	s.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
-	conf, err := config.New(s, "./internal/locale/testdata", nil)
-	a.NotError(err).NotNil(conf)
 
-	l := NewLocale(language.SimplifiedChinese, conf)
+	l := newLocale(language.SimplifiedChinese, s)
 	a.Equal(l.acceptLanguage, "zh-Hans")
 
 	a.NotError(l.LoadMessages("*.yaml", os.DirFS("./internal/locale/testdata"))).
@@ -57,9 +55,8 @@ func TestLocale_NewPrinter(t *testing.T) {
 	s := make(config.Serializer, 2)
 	s.Add(xml.Marshal, xml.Unmarshal, ".xml").
 		Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
-	conf, err := config.New(s, "./internal/locale/testdata", nil)
-	a.NotError(err).NotNil(conf)
-	l := NewLocale(language.MustParse("cmn-Hans"), conf)
+
+	l := newLocale(language.MustParse("cmn-Hans"), s)
 	a.NotNil(l).Equal(l.ID(), language.MustParse("cmn-Hans"))
 
 	// language.MustParse("cmn-Hans") 是默认的 ID，初始化 l 时即已存在。
