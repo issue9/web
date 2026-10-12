@@ -191,6 +191,8 @@ type (
 
 	PluginFunc func(Server)
 
+	OnRender func(status int, body any) (int, any)
+
 	internalServer struct {
 		server Server
 		hs     *http.Server
@@ -217,7 +219,7 @@ type (
 		logs            *Logs
 		closes          []func() error
 		cache           cache.Driver
-		onRender        func(int, any) (int, any)
+		onRender        OnRender
 		exitContexts    []OnExitContextFunc
 	}
 )
@@ -247,7 +249,7 @@ func InternalNewServer(
 	codec *Codec,
 	requestIDKey string,
 	problems *Problems,
-	onRender func(int, any) (int, any),
+	onRender OnRender,
 	o ...RouterOption,
 ) Server {
 	is := &internalServer{
