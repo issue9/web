@@ -140,6 +140,7 @@ func (l *Locale) Set(tag language.Tag, key string, msg ...catalog.Message) error
 	return nil
 }
 
+// 加载本地化内容到 b
 func Load(s config.Serializer, b *catalog.Builder, glob string, fsys ...fs.FS) error {
 	search := func(p string) serialize.UnmarshalFunc {
 		_, u := s.GetByFilename(p)

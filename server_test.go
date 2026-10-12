@@ -49,7 +49,7 @@ func newTestServer(a *assert.Assertion) *testServer {
 
 	cc := memory.New()
 	u := unique.NewNumber(100)
-	srv.internalServer = InternalNewServer(srv, &http.Server{Addr: ":8080"}, "test", "1.0.0", time.Local, log, u.String, l, cc, newCodec(a), header.XRequestID, NewProblems(""), nil).(*internalServer)
+	srv.internalServer = InternalNewServer(&http.Server{Addr: ":8080"}, "test", "1.0.0", time.Local, log, u.String, l, cc, newCodec(a), header.XRequestID, NewProblems(""), nil).(*internalServer)
 	srv.Services().Add(Phrase("unique"), u)
 
 	srv.Problems().Add(411, &LocaleProblem{ID: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})

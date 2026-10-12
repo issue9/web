@@ -17,29 +17,20 @@ import (
 )
 
 type (
-	httpServer struct {
-		web.Server
-	}
-
 	serviceServer struct {
-		*httpServer
+		web.Server
 		registry registry.Registry
 		peer     selector.Peer
 	}
 
 	gatewayServer struct {
-		*httpServer
+		web.Server
 		registry registry.Registry
 	}
 )
 
-func newHTTPServer(id, version string, o *Options, s web.Server) *httpServer {
-	srv := &httpServer{}
-	if s == nil {
-		s = srv
-	}
-
-	srv.Server = o.internalServer(id, version, s)
+func newHTTPServer(id, version string, o *Options) web.Server {
+	srv := o.internalServer(id, version)
 
 	for _, plugin := range o.Plugins { // NOTE: 需要保证在最后
 		plugin.Plugin(srv)
@@ -58,7 +49,7 @@ func NewHTTP(id, version string, o *Options) (web.Server, error) {
 		return nil, err.AddFieldParent("o")
 	}
 
-	return newHTTPServer(id, version, o, nil), nil
+	return newHTTPServer(id, version, o), nil
 }
 
 // NewService 声明微服务节点
@@ -70,12 +61,11 @@ func NewService(id, version string, o *Options) (web.Server, error) {
 		return nil, err.AddFieldParent("o")
 	}
 
-	s := &serviceServer{
+	return &serviceServer{
 		registry: o.Registry,
 		peer:     o.Peer,
-	}
-	s.httpServer = newHTTPServer(id, version, o, s)
-	return s, nil
+		Server:   newHTTPServer(id, version, o),
+	}, nil
 }
 
 func (s *serviceServer) Serve() error {
@@ -85,7 +75,7 @@ func (s *serviceServer) Serve() error {
 	}
 	s.OnClose(func() error { return dreg() })
 
-	return s.httpServer.Serve()
+	return s.Server.Serve()
 }
 
 // NewGateway 声明微服务的网关
@@ -97,8 +87,10 @@ func NewGateway(id, version string, o *Options) (web.Server, error) {
 		return nil, err.AddFieldParent("o")
 	}
 
-	g := &gatewayServer{registry: o.Registry}
-	g.httpServer = newHTTPServer(id, version, o, g)
+	g := &gatewayServer{
+		registry: o.Registry,
+		Server:   newHTTPServer(id, version, o),
+	}
 
 	for name, match := range o.Mapper {
 		proxy := g.registry.ReverseProxy(name, g)

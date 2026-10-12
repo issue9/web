@@ -194,9 +194,8 @@ type (
 	OnRender func(status int, body any) (int, any)
 
 	internalServer struct {
-		server Server
-		hs     *http.Server
-		state  State
+		hs    *http.Server
+		state State
 
 		id      string
 		version string
@@ -226,7 +225,6 @@ type (
 
 // InternalNewServer 创建 [Server]
 //
-// s 为实际的 [Server] 接口对象；
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名；
 // problemPrefix 可以为空；
 // onRender 在每个对象的渲染之前可以对内容进行的修改；
@@ -238,7 +236,6 @@ type (
 // 比如重新实现了 [Server.Location]，那么将出现 [internalServer] 内部的 Location
 // 与新实现的 Location 返回不同值的情况。
 func InternalNewServer(
-	s Server,
 	hs *http.Server,
 	id, ver string,
 	loc *time.Location,
@@ -253,9 +250,8 @@ func InternalNewServer(
 	o ...RouterOption,
 ) Server {
 	is := &internalServer{
-		server: s,
-		hs:     hs,
-		state:  Stopped,
+		hs:    hs,
+		state: Stopped,
 
 		id:      id,
 		version: ver,
@@ -278,7 +274,7 @@ func InternalNewServer(
 	}
 	is.initServices()
 
-	o = append(o, withRecovery(s))
+	o = append(o, withRecovery(is))
 	is.routers = &Routers{
 		g: mux.NewGroup(is.call,
 			notFound,
@@ -293,7 +289,7 @@ func InternalNewServer(
 }
 
 func (s *internalServer) NewClient(c *http.Client, sel selector.Selector, m string, marshal func(any) ([]byte, error)) *Client {
-	return NewClient(c, s.codec, sel, m, marshal, s.requestIDKey, s.server.UniqueID)
+	return NewClient(c, s.codec, sel, m, marshal, s.requestIDKey, s.UniqueID)
 }
 
 func (s *internalServer) Config() *config.Config { return s.locale.Config() }
@@ -360,7 +356,7 @@ func (f PluginFunc) Plugin(s Server) { f(s) }
 
 func (s *internalServer) Use(p ...Plugin) {
 	for _, pp := range p {
-		pp.Plugin(s.server)
+		pp.Plugin(s)
 	}
 }
 

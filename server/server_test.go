@@ -29,7 +29,6 @@ import (
 )
 
 var (
-	_ web.Server = &httpServer{}
 	_ web.Server = &gatewayServer{}
 	_ web.Server = &serviceServer{}
 )

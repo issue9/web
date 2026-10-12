@@ -87,9 +87,9 @@ func (s *internalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 
 	debug := func() logs.Recorder { // 根据 id 是否为空返回不同的日志对象
 		if id != "" {
-			return s.server.Logs().DEBUG().With(s.requestIDKey, id)
+			return s.Logs().DEBUG().With(s.requestIDKey, id)
 		}
-		return s.server.Logs().DEBUG()
+		return s.Logs().DEBUG()
 	}
 
 	h := r.Header.Get(header.Accept)
@@ -109,7 +109,7 @@ func (s *internalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	}
 
 	var outputCompressor Compressor
-	if s.server.CanCompress() {
+	if s.CanCompress() {
 		var na bool
 		if outputCompressor, na = s.codec.acceptEncoding(mt.name(false), r.Header.Get(header.AcceptEncoding)); na {
 			w.WriteHeader(http.StatusNotAcceptable)
@@ -132,13 +132,13 @@ func (s *internalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 		}
 	}
 
-	tag := acceptLanguage(s.server, r.Header.Get(header.AcceptLanguage))
+	tag := acceptLanguage(s, r.Header.Get(header.AcceptLanguage))
 
 	// 以上是获取构建 Context 的必要参数，并未真正构建 Context，
 	// 保证 ID 不为空无任何意义，因为没有后续的执行链可追踪的。
 	// 此处开始才会构建 Context 对象，须确保 ID 不为空。
 	if id == "" {
-		id = s.server.UniqueID()
+		id = s.UniqueID()
 		r.Header.Set(s.requestIDKey, id) // id 本身从 r.Header 获取，所以在 id 不为空的情况下，无须再设置。
 	}
 	w.Header().Set(s.requestIDKey, id)
@@ -151,7 +151,7 @@ func (s *internalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.request = r
 	ctx.exits = ctx.exits[:0]
 	ctx.id = id
-	ctx.begin = s.server.Now()
+	ctx.begin = s.Now()
 	ctx.queries = nil
 
 	ctx.done = make(chan struct{})
@@ -172,9 +172,9 @@ func (s *internalServer) NewContext(w http.ResponseWriter, r *http.Request, rout
 	ctx.inputMimetype = inputMimetype
 	ctx.requestBody = inputReader
 	ctx.languageTag = tag
-	ctx.localePrinter = s.server.Locale().NewPrinter(tag)
+	ctx.localePrinter = s.Locale().NewPrinter(tag)
 	clear(ctx.vars)
-	ctx.logs = s.server.Logs().New(map[string]any{s.requestIDKey: id})
+	ctx.logs = s.Logs().New(map[string]any{s.requestIDKey: id})
 
 	return ctx
 }
@@ -375,7 +375,7 @@ func (ctx *Context) IsIdempotent() bool {
 func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }
 
 // Server 获取关联的 [Server] 实例
-func (ctx *Context) Server() Server { return ctx.s.server }
+func (ctx *Context) Server() Server { return ctx.s }
 
 // Deadline 接口 [context.Context] 的方法。
 //
