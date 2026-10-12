@@ -192,7 +192,11 @@ func (v *FilterContext) Problem(id string) Responser {
 	return v.Context().initProblem(v.problem, id)
 }
 
-func newProblems(prefix string) *Problems {
+// NewProblems 创建用于管理 [Problem] 的对象
+//
+// 可通过 prefix 参数为所有 [Problem.Type] 提供统一的前缀。
+// 如果该值为 [ProblemAboutBlank] 表示输出到客户端的 [Problem.Type] 值固定为 "about:blank"。
+func NewProblems(prefix string) *Problems {
 	ps := &Problems{
 		prefix:   prefix,
 		problems: make([]*LocaleProblem, 0, 100),

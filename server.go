@@ -246,7 +246,7 @@ func InternalNewServer(
 	c cache.Driver,
 	codec *Codec,
 	requestIDKey string,
-	problemPrefix string,
+	problems *Problems,
 	onRender func(int, any) (int, any),
 	o ...RouterOption,
 ) Server {
@@ -265,7 +265,7 @@ func InternalNewServer(
 
 		requestIDKey: requestIDKey,
 		codec:        codec,
-		problems:     newProblems(problemPrefix),
+		problems:     problems,
 		vars:         &sync.Map{},
 		idgen:        idgen,
 		logs:         logs,

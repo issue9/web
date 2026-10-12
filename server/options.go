@@ -245,7 +245,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 func (o *Options) internalServer(id, version string, s web.Server) web.Server {
 	return web.InternalNewServer(s, o.HTTPServer, id, version,
 		o.Location, o.Logs, o.IDGenerator, o.locale,
-		o.Cache, o.Codec, o.RequestIDKey, o.ProblemTypePrefix,
+		o.Cache, o.Codec, o.RequestIDKey, web.NewProblems(o.ProblemTypePrefix),
 		o.OnRender, o.RoutersOptions...)
 }
 
