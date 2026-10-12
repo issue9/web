@@ -19,11 +19,7 @@ import (
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
-
-	"github.com/issue9/web/internal/locale"
 )
-
-var _ Locale = &locale.Locale{}
 
 type testServer struct {
 	*internalServer
@@ -31,7 +27,7 @@ type testServer struct {
 }
 
 func newTestServer(a *assert.Assertion) *testServer {
-	l := locale.New(language.SimplifiedChinese, nil)
+	l := NewLocale(language.SimplifiedChinese, nil)
 	a.NotError(l.SetString(language.SimplifiedChinese, "lang", "cn")).
 		NotError(l.SetString(language.TraditionalChinese, "lang", "tw"))
 

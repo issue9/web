@@ -59,7 +59,7 @@ func buildNodeHandle(status int) types.BuildNodeHandler[HandlerFunc] {
 				return ResponserFunc(func(ctx *Context) {
 					ctx.Header().Set(header.AcceptEncoding, ctx.s.codec.acceptEncodingHeader)
 					ctx.Header().Set(header.Accept, ctx.s.codec.serverAcceptHeader)
-					ctx.Header().Set(header.AcceptLanguage, ctx.s.locale.AcceptLanguage())
+					ctx.Header().Set(header.AcceptLanguage, ctx.s.locale.acceptLanguage)
 					ctx.WriteHeader(http.StatusOK)
 				})
 			}

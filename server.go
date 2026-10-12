@@ -7,7 +7,6 @@ package web
 import (
 	"context"
 	"errors"
-	"io/fs"
 	"iter"
 	"net/http"
 	"slices"
@@ -18,11 +17,7 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v10"
 	"github.com/issue9/mux/v10/types"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/message/catalog"
 
-	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/selector"
 )
 
@@ -128,7 +123,7 @@ type (
 		Services() *Services
 
 		// Locale 提供本地化相关功能
-		Locale() Locale
+		Locale() *Locale
 
 		// Use 添加插件
 		Use(...Plugin)
@@ -143,46 +138,6 @@ type (
 	//
 	// 其中 ctx 即为当前实例，status 则表示实际输出的状态码。
 	OnExitContextFunc = func(ctx *Context, status int)
-
-	// Locale 提供与本地化相关的功能
-	Locale interface {
-		catalog.Catalog
-
-		// ID 返回默认的语言标签
-		ID() language.Tag
-
-		// LoadMessages 从 fsys 中加载符合 glob 的本地化文件
-		//
-		// 根据 [Server.Config] 处理文件格式，如果文件格式不被 [Server.Config] 支持，将无法加载。
-		LoadMessages(glob string, fsys ...fs.FS) error
-
-		// Printer 最符合 [Locale.ID] 的 [message.Printer] 对象
-		Printer() *message.Printer
-
-		// Sprintf 等同于 [Locale.Printer.Sprintf]
-		Sprintf(string, ...any) string
-
-		// NewPrinter 声明最符合 tag 的 [message.Printer] 对象
-		//
-		// NOTE: 每当给 [Locale.SetString]、[Locale.SetMacro] 和 [Locale.Set] 传递新的 [language.Tag]
-		// 值时，可能造成 NewPrinter 相同的入参而返回不同的返回对象的情况。
-		NewPrinter(tag language.Tag) *message.Printer
-
-		// SetString 添加新的翻译项
-		//
-		// 功能同 [catalog.Builder.SetString]
-		SetString(tag language.Tag, key, msg string) error
-
-		// SetMacro 添加新的翻译项
-		//
-		// 功能同 [catalog.Builder.SetMacro]
-		SetMacro(tag language.Tag, name string, msg ...catalog.Message) error
-
-		// Set 添加新的翻译项
-		//
-		// 功能同 [catalog.Builder.Set]
-		Set(tag language.Tag, key string, msg ...catalog.Message) error
-	}
 
 	// Plugin 附加于 [Server] 的插件
 	Plugin interface {
@@ -200,7 +155,7 @@ type (
 		id      string
 		version string
 
-		locale   *locale.Locale
+		locale   *Locale
 		location *time.Location
 		uptime   time.Time
 
@@ -230,18 +185,13 @@ type (
 // onRender 在每个对象的渲染之前可以对内容进行的修改；
 //
 // NOTE: 此函数仅供内部使用，由调用者保证参数的正确性。
-//
-// NOTE: [Server] 的实现者，不应该重新实现 [internalServer] 已经实现的接口，
-// 否则可能出现 [internalServer] 中的调用与 [Server] 的实现调用不同的问题。
-// 比如重新实现了 [Server.Location]，那么将出现 [internalServer] 内部的 Location
-// 与新实现的 Location 返回不同值的情况。
 func InternalNewServer(
 	hs *http.Server,
 	id, ver string,
 	loc *time.Location,
 	logs *Logs,
 	idgen func() string,
-	l *locale.Locale,
+	l *Locale,
 	c cache.Driver,
 	codec *Codec,
 	requestIDKey string,
@@ -294,7 +244,7 @@ func (s *internalServer) NewClient(c *http.Client, sel selector.Selector, m stri
 
 func (s *internalServer) Config() *config.Config { return s.locale.Config() }
 
-func (s *internalServer) Locale() Locale { return s.locale }
+func (s *internalServer) Locale() *Locale { return s.locale }
 
 func (s *internalServer) ID() string { return s.id }
 

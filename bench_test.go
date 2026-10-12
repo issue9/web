@@ -20,6 +20,7 @@ import (
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/mux/v10/routertest"
 	"github.com/issue9/mux/v10/types"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/qheader"
 )
@@ -486,4 +487,34 @@ func BenchmarkCodec_getMatchCompresses(b *testing.B) {
 	for b.Loop() {
 		c.getMatchCompresses(header.Plain)
 	}
+}
+
+func BenchmarkLocale_NewPrinter(b *testing.B) {
+	l := NewLocale(language.SimplifiedChinese, nil)
+
+	b.Run("equal Locale.id", func(b *testing.B) {
+		for b.Loop() {
+			l.NewPrinter(language.SimplifiedChinese)
+		}
+	})
+
+	b.Run("not equal Locale.id", func(b *testing.B) {
+		for b.Loop() {
+			l.NewPrinter(language.TraditionalChinese)
+		}
+	})
+
+	langs := []language.Tag{
+		language.Chinese,
+		language.SimplifiedChinese,
+		language.TraditionalChinese,
+		language.MustParse("zh-CN"),
+		language.MustParse("cmn-Hans"),
+	}
+	b.Run("rand id", func(b *testing.B) {
+		size := len(langs)
+		for i := range b.N {
+			l.NewPrinter(langs[i%size])
+		}
+	})
 }

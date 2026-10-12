@@ -23,7 +23,6 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
 	xj "github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/selector"
@@ -104,7 +103,7 @@ type (
 		// 如果为空，即 [language.Und]，则会尝试读取当前系统的本地化信息。
 		Language language.Tag
 
-		locale *locale.Locale
+		locale *web.Locale
 
 		// 所有 [web.Problem.Type] 字段的前缀
 		//
@@ -201,7 +200,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 		}
 		o.Language = tag
 	}
-	o.locale = locale.New(o.Language, o.Config)
+	o.locale = web.NewLocale(o.Language, o.Config)
 
 	if o.Logs == nil {
 		o.Logs = logs.New(logs.NewNopHandler())
