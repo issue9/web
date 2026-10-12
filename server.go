@@ -7,7 +7,6 @@ package web
 import (
 	"context"
 	"errors"
-	"iter"
 	"net/http"
 	"slices"
 	"sync"
@@ -49,6 +48,8 @@ type (
 		// 如果要获得缓存的底层驱动接口，可以将类型转换为 [cache.Driver]，
 		// 该类型提供了 [cache.Driver.Driver] 方法可以获得相应的对象。
 		Cache() cache.Cleanable
+
+		Codec() *Codec
 
 		// Uptime 当前服务的运行时间
 		Uptime() time.Time
@@ -107,16 +108,6 @@ type (
 		// Routers 路由管理
 		Routers() *Routers
 
-		// SetCompress 设置压缩功能
-		//
-		// 在服务器性能吃紧的情况下可以采用此方法禁用压缩。
-		//
-		// NOTE: 仅对输出内容启作用，读取内容始终是按照提交的 Content-Encoding 指定算法进行解析。
-		SetCompress(enable bool)
-
-		// CanCompress 当前是否拥有压缩功能
-		CanCompress() bool
-
 		// Problems 提供 [Problem] 管理
 		Problems() *Problems
 
@@ -128,11 +119,6 @@ type (
 
 		// Use 添加插件
 		Use(...Plugin)
-
-		// Mimetypes 返回支持的所有媒体类型
-		//
-		// 键名为 mimetype，键值为 problem 状态下的 mimetype。
-		Mimetypes() iter.Seq2[string, string]
 	}
 
 	// OnExitContextFunc 表示在即将退出 [Context] 时执行的函数类型
@@ -163,20 +149,19 @@ type (
 		done    chan struct{}
 		doneErr error
 
-		config          *config.Config
-		requestIDKey    string
-		codec           *Codec
-		services        *Services
-		problems        *Problems
-		routers         *Routers
-		vars            *sync.Map
-		disableCompress bool
-		idgen           func() string
-		logs            *Logs
-		closes          []func() error
-		cache           cache.Driver
-		onRender        OnRender
-		exitContexts    []OnExitContextFunc
+		config       *config.Config
+		requestIDKey string
+		codec        *Codec
+		services     *Services
+		problems     *Problems
+		routers      *Routers
+		vars         *sync.Map
+		idgen        func() string
+		logs         *Logs
+		closes       []func() error
+		cache        cache.Driver
+		onRender     OnRender
+		exitContexts []OnExitContextFunc
 	}
 )
 
@@ -209,7 +194,8 @@ func NewServer(
 		locale:   newLocale(lang, conf.Serializer()),
 		location: loc,
 		uptime:   time.Now().In(loc),
-		done:     make(chan struct{}),
+
+		done: make(chan struct{}),
 
 		config:       conf,
 		requestIDKey: requestIDKey,
@@ -254,10 +240,6 @@ func (s *serverImplement) Version() string { return s.version }
 
 func (s *serverImplement) Vars() *sync.Map { return s.vars }
 
-func (s *serverImplement) CanCompress() bool { return !s.disableCompress }
-
-func (s *serverImplement) SetCompress(enable bool) { s.disableCompress = !enable }
-
 func (s *serverImplement) Location() *time.Location { return s.location }
 
 func (s *serverImplement) Now() time.Time { return time.Now().In(s.Location()) }
@@ -265,6 +247,8 @@ func (s *serverImplement) Now() time.Time { return time.Now().In(s.Location()) }
 func (s *serverImplement) Uptime() time.Time { return s.uptime }
 
 func (s *serverImplement) Cache() cache.Cleanable { return s.cache }
+
+func (s *serverImplement) Codec() *Codec { return s.codec }
 
 func (s *serverImplement) ParseTime(layout, value string) (time.Time, error) {
 	return time.ParseInLocation(layout, value, s.Location())
@@ -309,16 +293,6 @@ func (f PluginFunc) Plugin(s Server) { f(s) }
 func (s *serverImplement) Use(p ...Plugin) {
 	for _, pp := range p {
 		pp.Plugin(s)
-	}
-}
-
-func (s *serverImplement) Mimetypes() iter.Seq2[string, string] {
-	return func(yield func(string, string) bool) {
-		for _, v := range s.codec.mediaTypes {
-			if !yield(v.Name, v.Problem) {
-				break
-			}
-		}
 	}
 }
 

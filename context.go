@@ -109,7 +109,7 @@ func (s *serverImplement) NewContext(w http.ResponseWriter, r *http.Request, rou
 	}
 
 	var outputCompressor Compressor
-	if s.CanCompress() {
+	if s.codec.CanCompress() {
 		var na bool
 		if outputCompressor, na = s.codec.acceptEncoding(mt.name(false), r.Header.Get(header.AcceptEncoding)); na {
 			w.WriteHeader(http.StatusNotAcceptable)

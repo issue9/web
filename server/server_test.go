@@ -51,9 +51,9 @@ func TestNew(t *testing.T) {
 	d, ok := srv.Cache().(cache.Driver)
 	a.True(ok).
 		NotNil(d).
-		True(srv.CanCompress())
-	srv.SetCompress(false)
-	a.False(srv.CanCompress())
+		True(srv.Codec().CanCompress())
+	srv.Codec().SetCompress(false)
+	a.False(srv.Codec().CanCompress())
 }
 
 func newOptions(o *Options) *Options {

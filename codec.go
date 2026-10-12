@@ -7,6 +7,7 @@ package web
 import (
 	"fmt"
 	"io"
+	"iter"
 	"slices"
 	"strings"
 
@@ -22,6 +23,7 @@ import (
 //
 // 包含了压缩方法和媒体类型的处理
 type Codec struct {
+	disableCompress      bool
 	compressions         []*compression
 	acceptEncodingHeader string // 生成 AcceptEncoding 报头内容
 
@@ -131,7 +133,7 @@ func (e *Codec) AddCompressor(c Compressor, t ...string) *Codec {
 // problem 媒体类型非正常状态下的子类型，比如 application/problem+json；
 // requestAccept 是否出现在客户端请求的 accept 报头中；
 // responseAccept 是否出现在服务端返回的 accept 报头中；
-func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem string, requestAccept, responseAccept bool) *Codec {
+func (c *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem string, requestAccept, responseAccept bool) *Codec {
 	if problem == "" {
 		problem = name
 	}
@@ -149,11 +151,11 @@ func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem
 	}
 
 	// 检测复复值
-	if slices.IndexFunc(e.mediaTypes, func(v *mediaType) bool { return v.Name == name }) >= 0 {
+	if slices.IndexFunc(c.mediaTypes, func(v *mediaType) bool { return v.Name == name }) >= 0 {
 		panic(fmt.Sprintf("存在重复的项 %s", name))
 	}
 
-	e.mediaTypes = append(e.mediaTypes, &mediaType{
+	c.mediaTypes = append(c.mediaTypes, &mediaType{
 		Name:           name,
 		Marshal:        m,
 		Unmarshal:      u,
@@ -163,32 +165,32 @@ func (e *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem
 	})
 
 	if requestAccept {
-		if e.clientAcceptHeader != "" {
-			e.clientAcceptHeader += ", "
+		if c.clientAcceptHeader != "" {
+			c.clientAcceptHeader += ", "
 		}
-		e.clientAcceptHeader += name
+		c.clientAcceptHeader += name
 	}
 
 	if responseAccept {
-		if e.serverAcceptHeader != "" {
-			e.serverAcceptHeader += ", "
+		if c.serverAcceptHeader != "" {
+			c.serverAcceptHeader += ", "
 		}
-		e.serverAcceptHeader += name
+		c.serverAcceptHeader += name
 	}
 
-	return e
+	return c
 }
 
 // 根据客户端的 Content-Encoding 报头对 r 进行包装
 //
 // name 编码名称，即 Content-Encoding 报头内容；
 // r 为未解码的内容；
-func (e *Codec) contentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
+func (c *Codec) contentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
 	if name == "" {
 		return io.NopCloser(r), nil
 	}
 
-	if c, f := sliceutil.At(e.compressions, func(item *compression, _ int) bool { return item.compressor.Name() == name }); f {
+	if c, f := sliceutil.At(c.compressions, func(item *compression, _ int) bool { return item.compressor.Name() == name }); f {
 		return c.compressor.NewDecoder(r)
 	}
 	return nil, NewLocaleError("not found compress for %s", name)
@@ -253,11 +255,11 @@ func (e *Codec) acceptEncoding(contentType, h string) (c Compressor, notAcceptab
 	return // 没有匹配，表示不需要进行压缩
 }
 
-func (e *Codec) getMatchCompresses(contentType string) []int {
-	indexes := make([]int, 0, len(e.compressions))
+func (c *Codec) getMatchCompresses(contentType string) []int {
+	indexes := make([]int, 0, len(c.compressions))
 
 LOOP:
-	for index, c := range e.compressions {
+	for index, c := range c.compressions {
 		if c.wildcard {
 			indexes = append(indexes, index)
 			continue
@@ -320,9 +322,9 @@ func (e *Codec) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) 
 //	application/json;q=0.9,*/*;q=1
 //
 // 则因为 */* 的 q 值比较高，而返回 */* 匹配的内容
-func (e *Codec) accept(h string) *mediaType {
+func (c *Codec) accept(h string) *mediaType {
 	if h == "" {
-		if item := e.findMarshal("*/*"); item != nil {
+		if item := c.findMarshal("*/*"); item != nil {
 			return item
 		}
 		return nil
@@ -331,7 +333,7 @@ func (e *Codec) accept(h string) *mediaType {
 	items := qheader.ParseQHeader(h, "*/*")
 	defer qheader.PutQHeader(items)
 	for _, item := range items {
-		if i := e.findMarshal(item.Value); i != nil {
+		if i := c.findMarshal(item.Value); i != nil {
 			return i
 		}
 	}
@@ -339,21 +341,44 @@ func (e *Codec) accept(h string) *mediaType {
 	return nil
 }
 
-func (e *Codec) findMarshal(name string) *mediaType {
+func (c *Codec) findMarshal(name string) *mediaType {
 	switch {
-	case len(e.mediaTypes) == 0:
+	case len(c.mediaTypes) == 0:
 		return nil
 	case name == "" || name == "*/*":
-		return e.searchFunc(func(s string) bool { return true }) // 第一个元素
+		return c.searchFunc(func(s string) bool { return true }) // 第一个元素
 	case strings.HasSuffix(name, "/*"):
 		prefix := name[:len(name)-3]
-		return e.searchFunc(func(s string) bool { return strings.HasPrefix(s, prefix) })
+		return c.searchFunc(func(s string) bool { return strings.HasPrefix(s, prefix) })
 	default:
-		return e.searchFunc(func(s string) bool { return s == name })
+		return c.searchFunc(func(s string) bool { return s == name })
 	}
 }
 
-func (e *Codec) searchFunc(match func(string) bool) *mediaType {
-	item, _ := sliceutil.At(e.mediaTypes, func(i *mediaType, _ int) bool { return match(i.Name) || match(i.Problem) })
+func (c *Codec) searchFunc(match func(string) bool) *mediaType {
+	item, _ := sliceutil.At(c.mediaTypes, func(i *mediaType, _ int) bool { return match(i.Name) || match(i.Problem) })
 	return item
+}
+
+// CanCompress 当前是否拥有压缩功能
+func (c *Codec) CanCompress() bool { return !c.disableCompress }
+
+// SetCompress 设置压缩功能
+//
+// 在服务器性能吃紧的情况下可以采用此方法禁用压缩。
+//
+// NOTE: 仅对输出内容启作用，读取内容始终是按照提交的 Content-Encoding 指定算法进行解析。
+func (c *Codec) SetCompress(enable bool) { c.disableCompress = !enable }
+
+// Mimetypes 返回支持的所有媒体类型
+//
+// 键名为 mimetype，键值为 problem 状态下的 mimetype。
+func (c *Codec) Mimetypes() iter.Seq2[string, string] {
+	return func(yield func(string, string) bool) {
+		for _, v := range c.mediaTypes {
+			if !yield(v.Name, v.Problem) {
+				break
+			}
+		}
+	}
 }
