@@ -5,7 +5,6 @@
 package errs
 
 import (
-	"errors"
 	"fmt"
 
 	"golang.org/x/xerrors"
@@ -26,7 +25,9 @@ func NewDepthStackError(depth int, err error) error {
 		return nil
 	}
 
-	if se, ok := errors.AsType[*stackError](err); ok {
+	// 只有 err 本身是 stackError 才直接返回，
+	// 如果是链上的其它节点为 stackError，依然还是要对其进行包装。
+	if se, ok := err.(*stackError); ok {
 		return se
 	}
 
