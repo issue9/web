@@ -54,34 +54,45 @@ func (ctx *Context) Wrap(f func(http.ResponseWriter) http.ResponseWriter) {
 // Render 向客户端输出对象
 //
 // status 想输出给用户状态码，如果出错，那么最终展示给用户的状态码可能不是此值；
-// body 表示输出的对象，该对象最终调用 [Context.Marshal] 编码，不会考虑 body 是否实现了 [Responser]；
+// body 表示输出的对象，该对象最终调用 [Context.Marshal] 编码；
 func (ctx *Context) Render(status int, body any) {
 	// NOTE: 此方法不返回错误代码，所有错误在方法内直接处理。输出对象时若出错，
 	// 状态码也已经输出，此时向调用方报告错误，除了输出错误日志，也没有其它面向客户的补救措施。
-
-	// NOTE: 不考虑 body 为 [Responser] 的情况，
-	// 因为 [Responser] 可能改状态码，而 Render 本身已经指定了状态码。
 
 	if body == nil {
 		ctx.WriteHeader(status)
 		return
 	}
 
-	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(false), ctx.Charset()))
 	if id := ctx.LanguageTag().String(); id != "" {
 		ctx.Header().Set(header.ContentLanguage, id)
 		ctx.Header().Add(header.Vary, header.AcceptLanguage)
 	}
 
+	isProblem := IsProblem(status)
 	data, err := ctx.Marshal(body)
-	if err != nil { // Problem.Apply 并未调用 Context.Render，应该不会死循环。
-		ctx.Log(err, ProblemInternalServerError).Apply(ctx) // 编码出的问题属于服务端出错
-		return
+	if err != nil {
+		ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(true), ctx.Charset()))
+
+		if isProblem {
+			ctx.Logs().ERROR().Error(err)
+			ctx.WriteHeader(status) // 不考虑 err 为 problemError 的情况
+			return
+		}
+
+		problem := ctx.Log(err, ProblemInternalServerError) // 根据 err 创建 Problem
+		status = problem.Status
+		if data, err = ctx.Marshal(problem); err != nil {
+			ctx.Logs().ERROR().Error(err)
+			ctx.WriteHeader(status) // 此处也不考虑 ctx.Marshal 返回的 err 可能为 problemError 的情况。
+			return
+		}
 	}
 
+	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(isProblem), ctx.Charset()))
 	ctx.WriteHeader(status)
 	if _, err = ctx.Write(data); err != nil {
-		ctx.Logs().ERROR().Error(err)
+		ctx.Logs().ERROR().Error(err) // 此时已经有内容输出，再使用 Problem 已经没有意义。
 	}
 }
 

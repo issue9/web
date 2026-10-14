@@ -12,9 +12,7 @@ import (
 	"sync"
 
 	"github.com/issue9/localeutil"
-	"github.com/issue9/mux/v10/header"
 
-	"github.com/issue9/web/internal/qheader"
 	"github.com/issue9/web/internal/status"
 )
 
@@ -94,25 +92,7 @@ func newProblem() *Problem {
 func (p *Problem) MarshalHTML() (string, any) { return "problem", p }
 
 func (p *Problem) Apply(ctx *Context) {
-	// NOTE: Problem.Apply 作为一个特殊的 Responser 实现，
-	// 会在 Context.Render 中被调用，所以当前函数中不能调用 Context.Render 方法。
-
-	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(true), ctx.Charset()))
-	if id := ctx.LanguageTag().String(); id != "" {
-		ctx.Header().Set(header.ContentLanguage, id)
-	}
-
-	ctx.WriteHeader(p.Status) // Problem 先输出状态码
-
-	data, err := ctx.Marshal(p)
-	if err != nil {
-		ctx.Logs().ERROR().Error(err)
-		return
-	}
-	if _, err = ctx.Write(data); err != nil {
-		ctx.Logs().ERROR().Error(err)
-	}
-
+	ctx.Render(p.Status, p)
 	if len(p.Params) < 30 {
 		problemPool.Put(p)
 	}
