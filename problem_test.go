@@ -76,7 +76,7 @@ func TestContext_Log(t *testing.T) {
 func TestProblems_Add(t *testing.T) {
 	a := assert.New(t, false)
 
-	ps := NewProblems("")
+	ps := newProblems("")
 	a.NotNil(ps)
 	l := len(ps.problems)
 
@@ -115,14 +115,14 @@ func TestProblems_initProblem(t *testing.T) {
 	a := assert.New(t, false)
 	p := message.NewPrinter(language.SimplifiedChinese)
 
-	ps := NewProblems("")
+	ps := newProblems("")
 	a.NotNil(ps)
 	ps.Add(400, &LocaleProblem{ID: "40010", Title: Phrase("title"), Detail: Phrase("detail")})
 	pp := &Problem{}
 	ps.initProblem(pp, "40010", p)
 	a.Equal(pp.Type, "40010")
 
-	ps = NewProblems("https://example.com/qa#")
+	ps = newProblems("https://example.com/qa#")
 	a.NotNil(ps)
 	ps.Add(400, &LocaleProblem{ID: "40011", Title: Phrase("title"), Detail: Phrase("detail")})
 	pp = &Problem{}
@@ -130,7 +130,7 @@ func TestProblems_initProblem(t *testing.T) {
 	a.Equal(pp.Type, "https://example.com/qa#40011").
 		Equal(ps.Prefix(), "https://example.com/qa#")
 
-	ps = NewProblems(ProblemAboutBlank)
+	ps = newProblems(ProblemAboutBlank)
 	a.NotNil(ps)
 	ps.Add(400, &LocaleProblem{ID: "40012", Title: Phrase("title"), Detail: Phrase("detail")})
 	pp = &Problem{}

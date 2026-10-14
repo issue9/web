@@ -232,7 +232,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 func (o *Options) newServer(id, version string) web.Server {
 	srv := web.NewServer(id, version, o.Config, o.HTTPServer,
 		o.Location, o.Language, o.Logs, o.IDGenerator,
-		o.Cache, o.Codec, o.RequestIDKey, web.NewProblems(o.ProblemTypePrefix),
+		o.Cache, o.Codec, o.RequestIDKey, o.ProblemTypePrefix,
 		o.RoutersOptions...)
 
 	for _, plugin := range o.Plugins { // NOTE: 需要保证在最后

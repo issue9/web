@@ -176,7 +176,7 @@ func NewServer(
 	cache cache.Driver,
 	codec *Codec,
 	requestIDKey string,
-	problems *Problems,
+	problemTypePrefix string,
 	o ...RouterOption,
 ) Server {
 	impl := &serverImplement{
@@ -195,7 +195,7 @@ func NewServer(
 		config:       conf,
 		requestIDKey: requestIDKey,
 		codec:        codec,
-		problems:     problems,
+		problems:     newProblems(problemTypePrefix),
 		vars:         &sync.Map{},
 		idgen:        idgen,
 		logs:         logs,
