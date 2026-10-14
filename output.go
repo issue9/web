@@ -62,10 +62,6 @@ func (ctx *Context) Render(status int, body any) {
 	// NOTE: 不考虑 body 为 [Responser] 的情况，
 	// 因为 [Responser] 可能改状态码，而 Render 本身已经指定了状态码。
 
-	if ctx.s.onRender != nil {
-		status, body = ctx.s.onRender(status, body)
-	}
-
 	if body == nil {
 		ctx.WriteHeader(status)
 		return

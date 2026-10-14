@@ -109,19 +109,13 @@ type configOf[T comparable] struct {
 	//  - date 日期格式，默认值；
 	//  - string 普通的字符串；
 	//  - number 数值格式；
+	//
 	// NOTE: 一旦运行在生产环境，就不应该修改此属性，除非能确保新的函数生成的 ID 不与之前生成的 ID 重复。
 	IDGenerator string `yaml:"idGenerator,omitempty" json:"idGenerator,omitempty" xml:"idGenerator,omitempty" toml:"idGenerator,omitempty"`
 	idGenerator func() string
 
 	// Problem 中 type 字段的前缀
 	ProblemTypePrefix string `yaml:"problemTypePrefix,omitempty" json:"problemTypePrefix,omitempty" xml:"problemTypePrefix,omitempty" toml:"problemTypePrefix,omitempty"`
-
-	// OnRender 修改渲染结构
-	//
-	// 可通过 [RegisterOnRender] 进行添加额外的序列化方法。默认为空，可以有以下可选值：
-	//  - render200 所有输出都是以 [server.RenderResponse] 作为返回对象；
-	OnRender string `yaml:"onRender,omitempty" json:"onRender,omitempty" xml:"onRender,omitempty" toml:"onRender,omitempty"`
-	onRender func(int, any) (int, any)
 
 	// 指定服务发现和注册中心
 	//
@@ -200,7 +194,6 @@ func Load[T comparable](configDir, filename string) (*server.Options, T, error) 
 		RequestIDKey:      conf.HTTP.RequestID,
 		Codec:             conf.codec,
 		ProblemTypePrefix: conf.ProblemTypePrefix,
-		OnRender:          conf.onRender,
 		Plugins:           make([]web.Plugin, 0, 5),
 	}
 
@@ -249,14 +242,6 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 	}
 
 	conf.buildIDGen()
-
-	if conf.OnRender != "" {
-		if or, found := onRenderFactory.get(conf.OnRender); found {
-			conf.onRender = or
-		} else {
-			return web.NewFieldError("onRender", locales.ErrNotFound())
-		}
-	}
 
 	if err := conf.buildMicro(conf.cache); err != nil {
 		return err

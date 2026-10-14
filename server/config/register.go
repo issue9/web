@@ -74,7 +74,6 @@ var (
 	mimetypesFactory      = newRegister[mimetype]()
 	fileSerializerFactory = newRegister[fileSerializer]()
 	routerMatcherFactory  = newRegister[RouterMatcherBuilder]()
-	onRenderFactory       = newRegister[func(int, any) (int, any)]()
 
 	strategyFactory     = newRegister[StrategyBuilder]()
 	registryTypeFactory = newRegister[RegistryTypeBuilder]()
@@ -136,8 +135,6 @@ func RegisterRegistryType(f RegistryTypeBuilder, name string) { registryTypeFact
 func RegisterRouterMatcher(f RouterMatcherBuilder, name string) {
 	routerMatcherFactory.register(f, name)
 }
-
-func RegisterOnRender(f func(int, any) (int, any), name string) { onRenderFactory.register(f, name) }
 
 func init() {
 	// RegisterLogsHandler
@@ -240,8 +237,4 @@ func init() {
 	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return mux.NewPathVersion(arg[0], arg[1:]...) }, "prefix")
 	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return mux.NewHeaderVersion(arg[0], arg[0], nil, arg[2:]...) }, "version")
 	RegisterRouterMatcher(func(arg ...string) web.RouterMatcher { return nil }, "any")
-
-	// OnRender
-
-	RegisterOnRender(server.Render200, "render200")
 }

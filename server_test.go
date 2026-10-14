@@ -43,7 +43,7 @@ func newTestServer(a *assert.Assertion) *testServer {
 
 	cc := memory.New()
 	u := unique.NewNumber(100)
-	srv.serverImplement = NewServer("test", "1.0.0", conf, &http.Server{Addr: ":8080"}, time.Local, language.SimplifiedChinese, log, u.String, cc, newCodec(a), header.XRequestID, NewProblems(""), nil).(*serverImplement)
+	srv.serverImplement = NewServer("test", "1.0.0", conf, &http.Server{Addr: ":8080"}, time.Local, language.SimplifiedChinese, log, u.String, cc, newCodec(a), header.XRequestID, NewProblems("")).(*serverImplement)
 	srv.Services().Add(Phrase("unique"), u)
 
 	a.NotError(srv.Locale().SetString(language.SimplifiedChinese, "lang", "cn")).

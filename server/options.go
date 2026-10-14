@@ -109,14 +109,6 @@ type (
 		// 空值是合法的值，表示不需要添加前缀。
 		ProblemTypePrefix string
 
-		// OnRender 可实现对渲染结果的调整
-		//
-		// 默认为空。
-		//
-		// NOTE: 该值的修改，可能造成所有接口返回数据结构的变化。
-		// NOTE: 该值仅对通过 [web.Context.Render] 渲染的对象作修改。
-		OnRender web.OnRender
-
 		// 指定对 [web.Server] 进行初始化的插件
 		//
 		// 这些插件会在 [web.Server.Serve] 运行之前被调用。
@@ -241,29 +233,10 @@ func (o *Options) newServer(id, version string) web.Server {
 	srv := web.NewServer(id, version, o.Config, o.HTTPServer,
 		o.Location, o.Language, o.Logs, o.IDGenerator,
 		o.Cache, o.Codec, o.RequestIDKey, web.NewProblems(o.ProblemTypePrefix),
-		o.OnRender, o.RoutersOptions...)
+		o.RoutersOptions...)
 
 	for _, plugin := range o.Plugins { // NOTE: 需要保证在最后
 		plugin.Plugin(srv)
 	}
 	return srv
 }
-
-// Render200 统一 API 的返回格式
-//
-// 适用 [Options.OnRender]。
-//
-// 返回值中，状态码统一为 [http.StatusOK]。返回对象统一为 [RenderResponse]。
-func Render200(status int, body any) (int, any) {
-	return http.StatusOK, &RenderResponse{OK: !web.IsProblem(status), Status: status, Body: body}
-}
-
-// RenderResponse API 统一的返回格式
-type RenderResponse struct {
-	XMLName struct{} `json:"-" yaml:"-" xml:"body" cbor:"-" form:"-"`
-	OK      bool     `json:"ok" yaml:"ok" xml:"ok,attr" cbor:"ok" form:"ok"`                     // 是否是错误代码
-	Status  int      `json:"status" yaml:"status" xml:"status,attr" cbor:"status" form:"status"` // 原始的状态码
-	Body    any      `json:"body" yaml:"body" xml:"body" cbor:"body" form:"body"`
-}
-
-func (r *RenderResponse) MarshalHTML() (string, any) { return "render-response", r }

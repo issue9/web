@@ -38,13 +38,15 @@ func TestClient_NewRequest(t *testing.T) {
 		Equal(req.Header.Get(header.ContentType), qheader.BuildContentType(header.JSON, header.UTF8))
 }
 
+func jsonM(v any) ([]byte, error) { return json.Marshal(v) }
+
 func TestClient_ParseResponse(t *testing.T) {
 	a := assert.New(t, false)
 	codec := newCodec(a)
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("https://example.com"))
-	c := NewClient(nil, codec, sel, header.JSON, func(v any) ([]byte, error) { return json.Marshal(v) }, "", nil)
+	c := NewClient(nil, codec, sel, header.JSON, jsonM, "", nil)
 	a.NotNil(c).
 		NotNil(c.marshal)
 

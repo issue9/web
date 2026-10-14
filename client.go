@@ -141,7 +141,8 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 
 	if status.IsProblemStatus(rsp.StatusCode) {
 		var e E
-		p := &Problem{Extensions: e}
+		p := problemPool.Get().(*Problem)
+		p.Extensions = e
 		if err := inputMimetype(reader, p); err != nil {
 			return nil, nil, err
 		}

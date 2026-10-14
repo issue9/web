@@ -133,8 +133,6 @@ type (
 
 	PluginFunc func(Server)
 
-	OnRender func(status int, body any) (int, any)
-
 	serverImplement struct {
 		hs    *http.Server
 		state State
@@ -160,7 +158,6 @@ type (
 		logs         *Logs
 		closes       []func() error
 		cache        cache.Driver
-		onRender     OnRender
 		exitContexts []OnExitContextFunc
 	}
 )
@@ -168,7 +165,6 @@ type (
 // NewServer 创建 [Server]
 //
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名；
-// onRender 在每个对象的渲染之前可以对内容进行的修改；
 func NewServer(
 	id, ver string,
 	conf *config.Config,
@@ -181,7 +177,6 @@ func NewServer(
 	codec *Codec,
 	requestIDKey string,
 	problems *Problems,
-	onRender OnRender,
 	o ...RouterOption,
 ) Server {
 	impl := &serverImplement{
@@ -206,7 +201,6 @@ func NewServer(
 		logs:         logs,
 		closes:       make([]func() error, 0, 10),
 		cache:        cache,
-		onRender:     onRender,
 		exitContexts: make([]OnExitContextFunc, 0, 10),
 	}
 	impl.initServices()
@@ -227,7 +221,7 @@ func NewServer(
 }
 
 func (s *serverImplement) NewClient(c *http.Client, sel selector.Selector, m string, marshal func(any) ([]byte, error)) *Client {
-	return NewClient(c, s.codec, sel, m, marshal, s.requestIDKey, s.UniqueID)
+	return NewClient(c, s.Codec(), sel, m, marshal, s.requestIDKey, s.UniqueID)
 }
 
 func (s *serverImplement) Config() *config.Config { return s.config }
