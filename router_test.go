@@ -36,7 +36,7 @@ func TestRouters_Handle(t *testing.T) {
 	rs := s.Routers()
 	a.NotNil(rs)
 
-	router := rs.New("def", nil, withRecovery(s))
+	router := rs.New("def", nil, withRecovery(s.Server))
 	a.NotNil(router)
 	router.Get("/get1", func(ctx *Context) Responser {
 		return OK("ok")

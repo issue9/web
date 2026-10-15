@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -89,7 +89,7 @@ func (c *cacheRegistry) buildDeregisterFunc(name string, p selector.Peer) Deregi
 	}
 }
 
-func (c *cacheRegistry) Discover(name string, s web.Server) selector.Selector {
+func (c *cacheRegistry) Discover(name string, s *web.Server) selector.Selector {
 	ss := c.s.NewSelector()
 
 	job := func(time.Time) error {
@@ -113,7 +113,7 @@ func (c *cacheRegistry) Discover(name string, s web.Server) selector.Selector {
 	return ss
 }
 
-func (c *cacheRegistry) ReverseProxy(name string, s web.Server) *httputil.ReverseProxy {
+func (c *cacheRegistry) ReverseProxy(name string, s *web.Server) *httputil.ReverseProxy {
 	sel := c.s.NewSelector()
 
 	job := func(time.Time) error {

@@ -268,7 +268,7 @@ func (conf *configOf[T]) buildIDGen() {
 		conf.idGenerator = f
 		if srv != nil {
 			conf.init = append(conf.init, func(o *server.Options) {
-				o.Plugins = append(o.Plugins, web.PluginFunc(func(s web.Server) {
+				o.Plugins = append(o.Plugins, web.PluginFunc(func(s *web.Server) {
 					s.Services().Add(locales.UniqueIdentityGenerator, srv)
 				}))
 			})

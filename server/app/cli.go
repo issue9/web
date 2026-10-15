@@ -44,7 +44,7 @@ type CLIOptions[T comparable] struct {
 	//
 	// id, version 即为 [CLIOptions.ID] 和 [CLIOptions.Version]；
 	// o 和 user 为从配置文件加载的数据信息；
-	NewServer func(id, version string, o *server.Options, user T) (web.Server, error)
+	NewServer func(id, version string, o *server.Options, user T) (*web.Server, error)
 
 	// 其它子命令
 	//
@@ -133,7 +133,7 @@ func NewCLI[T comparable](o *CLIOptions[T]) App {
 		panic(localeError(err, o.Printer))
 	}
 
-	app := newApp(o.ShutdownTimeout, func() (web.Server, error) {
+	app := newApp(o.ShutdownTimeout, func() (*web.Server, error) {
 		opt, user, err := config.Load[T](o.ConfigDir, o.ConfigFilename)
 		if err != nil {
 			return nil, web.NewStackError(err)

@@ -129,7 +129,7 @@ type (
 		disable bool      // 是否禁用
 		last    time.Time // 最后向当前对象添加内容的时间，用于计算 ETag 值。
 
-		s web.Server
+		s *web.Server
 	}
 
 	// NOTE: orderedmap.OrderedMap 不支持 Unmarshal
@@ -423,7 +423,7 @@ type (
 // New 声明 [Document] 对象
 //
 // title 文档的标题；
-func New(s web.Server, title web.LocaleStringer, o ...Option) *Document {
+func New(s *web.Server, title web.LocaleStringer, o ...Option) *Document {
 	doc := &Document{
 		info: &info{
 			title:   title,

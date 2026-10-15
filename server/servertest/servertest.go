@@ -38,7 +38,7 @@ func Delete(a *assert.Assertion, path string) *rest.Request {
 }
 
 // Run 运行服务内容并返回等待退出的方法
-func Run(a *assert.Assertion, s web.Server) func() {
+func Run(a *assert.Assertion, s *web.Server) func() {
 	ok := make(chan struct{}, 1)
 	exit := make(chan struct{}, 1)
 

@@ -68,7 +68,7 @@ func buildNodeHandle(status int) types.BuildNodeHandler[HandlerFunc] {
 	}
 }
 
-func (s *serverImplement) call(w http.ResponseWriter, r *http.Request, route *types.Route, f HandlerFunc) {
+func (s *Server) call(w http.ResponseWriter, r *http.Request, route *types.Route, f HandlerFunc) {
 	if ctx := s.NewContext(w, r, route); ctx != nil {
 		if resp := f(ctx); resp != nil {
 			resp.Apply(ctx)
@@ -77,7 +77,8 @@ func (s *serverImplement) call(w http.ResponseWriter, r *http.Request, route *ty
 	}
 }
 
-func (s *serverImplement) Routers() *Routers { return s.routers }
+// Routers 路由管理
+func (s *Server) Routers() *Routers { return s.routers }
 
 // Get 获取指定名称的路由
 //
@@ -101,7 +102,7 @@ func (r *Routers) Routers() iter.Seq[*Router] { return r.g.Routers() }
 func (r *Routers) Use(m ...Middleware) { r.g.Use(m...) }
 
 // 相对于 [mux.withRecovery]，提供了对 [NewProblemError] 错误的处理。
-func withRecovery(s Server) RouterOption {
+func withRecovery(s *Server) RouterOption {
 	// 即使失败了，再次触发 panic，还有 http.Server 兜底。
 	// 所以此方法的对错误的处理，依然还是尽量输出符合要求的 Problem 对象。
 

@@ -29,7 +29,7 @@ type (
 	// 那么该类型可能是 int64 类型的用户 ID 值。
 	Server[T comparable] struct {
 		bufCap  int
-		s       web.Server
+		s       *web.Server
 		retry   string
 		sources *xsync.Map[T, *Source]
 	}
@@ -65,7 +65,7 @@ type (
 // keepAlive 表示心跳包的发送时间间隔，如果小于等于零，表示不会发送；
 // bufCap 每个 SSE 队列可缓存的数据，超过此数量，调用的 Sent 将被阻塞；
 // desc 对该 SSE 服务的描述；
-func NewServer[T comparable](s web.Server, retry, keepAlive time.Duration, bufCap int, desc web.LocaleStringer) *Server[T] {
+func NewServer[T comparable](s *web.Server, retry, keepAlive time.Duration, bufCap int, desc web.LocaleStringer) *Server[T] {
 	srv := &Server[T]{
 		bufCap:  bufCap,
 		s:       s,

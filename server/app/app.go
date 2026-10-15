@@ -34,11 +34,11 @@ type app struct {
 	//
 	// 每次重启服务时，都将由此方法生成一个新的服务。
 	// 只有在返回成功的新实例时，才会替换旧实例，否则旧实例将一直运行。
-	newServer func() (web.Server, error)
+	newServer func() (*web.Server, error)
 
 	shutdownTimeout time.Duration
 
-	srv     web.Server
+	srv     *web.Server
 	srvLock sync.RWMutex
 	exit    chan struct{} // 保证只有在前一个 srv 退出之后才会让 RestartServer 退出
 
@@ -50,11 +50,11 @@ type app struct {
 //
 // shutdown 每次关闭服务操作的等待时间；
 // newServer 构建新服务的方法；
-func New(shutdown time.Duration, newServer func() (web.Server, error)) App {
+func New(shutdown time.Duration, newServer func() (*web.Server, error)) App {
 	return newApp(shutdown, newServer)
 }
 
-func newApp(shutdown time.Duration, newServer func() (web.Server, error)) *app {
+func newApp(shutdown time.Duration, newServer func() (*web.Server, error)) *app {
 	if newServer == nil {
 		panic("newServer 不能为空")
 	}
@@ -66,14 +66,14 @@ func newApp(shutdown time.Duration, newServer func() (web.Server, error)) *app {
 	}
 }
 
-func (app *app) getServer() web.Server {
+func (app *app) getServer() *web.Server {
 	app.srvLock.RLock()
 	s := app.srv
 	app.srvLock.RUnlock()
 	return s
 }
 
-func (app *app) setServer(s web.Server) {
+func (app *app) setServer(s *web.Server) {
 	app.srvLock.Lock()
 	app.srv = s
 	app.srvLock.Unlock()

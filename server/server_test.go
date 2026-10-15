@@ -29,8 +29,8 @@ import (
 )
 
 var (
-	_ web.Server = &gatewayServer{}
-	_ web.Server = &serviceServer{}
+	_ web.Startup = &gatewayStartup{}
+	_ web.Startup = &serviceStartup{}
 )
 
 func buildHandler(code int) web.HandlerFunc {
@@ -72,7 +72,7 @@ func newOptions(o *Options) *Options {
 	return o
 }
 
-func newTestServer(a *assert.Assertion, o *Options) web.Server {
+func newTestServer(a *assert.Assertion, o *Options) *web.Server {
 	srv, err := NewHTTP("app", "0.1.0", newOptions(o))
 	a.NotError(err).NotNil(srv).
 		Equal(srv.ID(), "app").Equal(srv.Version(), "0.1.0")
@@ -344,7 +344,7 @@ func TestNewService(t *testing.T) {
 	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(202)
 }
 
-func newService(a *assert.Assertion, name, addr string, reg registry.Registry, c cache.Driver) web.Server {
+func newService(a *assert.Assertion, name, addr string, reg registry.Registry, c cache.Driver) *web.Server {
 	srv, err := NewService(name, "0.1.0", newOptions(&Options{
 		Cache:      c,
 		HTTPServer: &http.Server{Addr: addr},

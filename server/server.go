@@ -17,14 +17,14 @@ import (
 )
 
 type (
-	serviceServer struct {
-		web.Server
+	serviceStartup struct {
+		web.Startup
 		registry registry.Registry
 		peer     selector.Peer
 	}
 
-	gatewayServer struct {
-		web.Server
+	gatewayStartup struct {
+		web.Startup
 		registry registry.Registry
 	}
 )
@@ -34,62 +34,66 @@ type (
 // id 应用的 ID；
 // version 应用的版本号；
 // o 初始化应用的额外参数；
-func NewHTTP(id, version string, o *Options) (web.Server, error) {
+func NewHTTP(id, version string, o *Options) (*web.Server, error) {
 	o, err := sanitizeOptions(o, typeHTTP)
 	if err != nil {
 		return nil, err.AddFieldParent("o")
 	}
 
-	return o.newServer(id, version), nil
+	return o.newServer(id, version, web.NewHTTPServerStartup(o.HTTPServer)), nil
 }
 
 // NewService 声明微服务节点
 //
 // [Options.Registry] 和 [Options.Peer] 不能为空。
-func NewService(id, version string, o *Options) (web.Server, error) {
+func NewService(id, version string, o *Options) (*web.Server, error) {
 	o, err := sanitizeOptions(o, typeService)
 	if err != nil {
 		return nil, err.AddFieldParent("o")
 	}
 
-	return &serviceServer{
+	startup := &serviceStartup{
 		registry: o.Registry,
 		peer:     o.Peer,
-		Server:   o.newServer(id, version),
-	}, nil
+		Startup:  web.NewHTTPServerStartup(o.HTTPServer),
+	}
+
+	return o.newServer(id, version, startup), nil
 }
 
-func (s *serviceServer) Serve() error {
-	dreg, err := s.registry.Register(s.ID(), s.peer)
+func (startup *serviceStartup) Serve(s *web.Server) error {
+	dreg, err := startup.registry.Register(s.ID(), startup.peer)
 	if err != nil {
 		return err
 	}
 	s.OnClose(func() error { return dreg() })
 
-	return s.Server.Serve()
+	return startup.Startup.Serve(s)
 }
 
 // NewGateway 声明微服务的网关
 //
 // [Options.Mapper] 和 [Options.Peer] 不能为空。
-func NewGateway(id, version string, o *Options) (web.Server, error) {
+func NewGateway(id, version string, o *Options) (*web.Server, error) {
 	o, err := sanitizeOptions(o, typeGateway)
 	if err != nil {
 		return nil, err.AddFieldParent("o")
 	}
 
-	gs := &gatewayServer{
+	gs := &gatewayStartup{
 		registry: o.Registry,
-		Server:   o.newServer(id, version),
+		Startup:  web.NewHTTPServerStartup(o.HTTPServer),
 	}
 
+	s := o.newServer(id, version, gs)
+
 	for name, match := range o.Mapper {
-		proxy := gs.registry.ReverseProxy(name, gs)
-		gs.Routers().New(name, match).Any("{path}", func(ctx *web.Context) web.Responser {
+		proxy := gs.registry.ReverseProxy(name, s)
+		s.Routers().New(name, match).Any("{path}", func(ctx *web.Context) web.Responser {
 			proxy.ServeHTTP(ctx, ctx.Request())
 			return nil
 		})
 	}
 
-	return gs, nil
+	return s, nil
 }

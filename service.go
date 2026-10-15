@@ -25,7 +25,7 @@ const (
 
 type (
 	Services struct {
-		server    Server
+		server    *Server
 		services  []*service
 		scheduled *scheduled.Server
 	}
@@ -62,9 +62,10 @@ type (
 
 func (f ServiceFunc) Serve(ctx context.Context) error { return f(ctx) }
 
-func (s *serverImplement) Services() *Services { return s.services }
+// Services 服务管理接口
+func (s *Server) Services() *Services { return s.services }
 
-func (s *serverImplement) initServices() {
+func (s *Server) initServices() {
 	s.services = &Services{
 		server:    s,
 		services:  make([]*service, 0, 5),

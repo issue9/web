@@ -33,7 +33,7 @@ var once = &sync.Once{}
 //
 // key 用于指定回函数名称的查询参数名称；
 // unsetProblem 表示查询参数中没有 key 指定的参数或是参数值为空时的应该返回的 [web.Problem]
-func Install(s web.Server, key, unsetProblem string) {
+func Install(s *web.Server, key, unsetProblem string) {
 	if key == "" {
 		panic("key 不能为空")
 	}

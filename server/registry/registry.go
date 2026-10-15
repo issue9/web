@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -30,10 +30,10 @@ type Registry interface {
 	//
 	// name 为微服务的名称；
 	// s 为调用者关联的 [web.Server] 对象；
-	Discover(name string, s web.Server) selector.Selector
+	Discover(name string, s *web.Server) selector.Selector
 
 	// ReverseProxy 返回微服务 name 对应的反向代理对象
-	ReverseProxy(string, web.Server) *httputil.ReverseProxy
+	ReverseProxy(string, *web.Server) *httputil.ReverseProxy
 }
 
 // DeregisterFunc 注销微服务的函数签名

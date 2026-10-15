@@ -6,6 +6,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -22,11 +23,14 @@ import (
 	"golang.org/x/text/language"
 )
 
+var _ context.Context = &Server{}
+
 type testServer struct {
-	*serverImplement
+	*Server
 	logBuf *bytes.Buffer
 }
 
+// 创建一个自定义了日志系统的服务
 func newTestServer(a *assert.Assertion) *testServer {
 	logBuf := new(bytes.Buffer)
 	log := logs.New(
@@ -43,7 +47,8 @@ func newTestServer(a *assert.Assertion) *testServer {
 
 	cc := memory.New()
 	u := unique.NewNumber(100)
-	srv.serverImplement = NewServer("test", "1.0.0", conf, &http.Server{Addr: ":8080"}, time.Local, language.SimplifiedChinese, log, u.String, cc, newCodec(a), header.XRequestID, "").(*serverImplement)
+	startup := NewHTTPServerStartup(&http.Server{Addr: ":8080"})
+	srv.Server = NewServer("test", "1.0.0", conf, startup, time.Local, language.SimplifiedChinese, log, u.String, cc, newCodec(a), header.XRequestID, "")
 	srv.Services().Add(Phrase("unique"), u)
 
 	a.NotError(srv.Locale().SetString(language.SimplifiedChinese, "lang", "cn")).

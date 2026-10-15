@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,7 +37,7 @@ type view struct {
 // fsys 表示模板目录。如果 localized 不为空，则只解析该参数中指定的目录，否则解析整个目录；
 //
 // NOTE: 可以多次调用，相同名称的模板会覆盖。
-func Install(s web.Server, funcs template.FuncMap, localized map[language.Tag]string, glob string, fsys ...fs.FS) {
+func Install(s *web.Server, funcs template.FuncMap, localized map[language.Tag]string, glob string, fsys ...fs.FS) {
 	var v *view
 	if vv, ok := s.Vars().Load(viewContextKey); !ok {
 		v = &view{}
@@ -59,7 +59,7 @@ func Install(s web.Server, funcs template.FuncMap, localized map[language.Tag]st
 	}
 }
 
-func install(s web.Server, v *view, funcs template.FuncMap, localized map[language.Tag]string, glob string, fsys fs.FS) {
+func install(s *web.Server, v *view, funcs template.FuncMap, localized map[language.Tag]string, glob string, fsys fs.FS) {
 	tpls := make(map[language.Tag]*template.Template, len(localized))
 
 	for t, name := range localized {
@@ -84,7 +84,7 @@ func install(s web.Server, v *view, funcs template.FuncMap, localized map[langua
 	s.Vars().Store(viewContextKey, v)
 }
 
-func getTranslateFuncMap(s web.Server) template.FuncMap {
+func getTranslateFuncMap(s *web.Server) template.FuncMap {
 	return template.FuncMap{
 		"t": func(msg string, v ...any) string {
 			return s.Locale().Printer().Sprintf(msg, v...)

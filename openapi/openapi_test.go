@@ -16,7 +16,7 @@ import (
 	"github.com/issue9/web/server"
 )
 
-func newServer(a *assert.Assertion) web.Server {
+func newServer(a *assert.Assertion) *web.Server {
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		HTTPServer: &http.Server{Addr: ":8080"},
 	})

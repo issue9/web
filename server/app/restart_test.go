@@ -36,7 +36,7 @@ func TestSignalHUP(t *testing.T) {
 		Version:        "1.0.0",
 		ConfigDir:      ".",
 		ConfigFilename: "web.yaml",
-		NewServer: func(name, ver string, opt *server.Options, _ empty) (web.Server, error) {
+		NewServer: func(name, ver string, opt *server.Options, _ empty) (*web.Server, error) {
 			return server.NewHTTP(name, ver, opt)
 		},
 	}

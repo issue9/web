@@ -44,7 +44,7 @@ func ErrExitContext() error { return errExitContext }
 // 但是不推荐非必要情况下直接使用 [http.ResponseWriter] 的接口方法，
 // 而是采用返回 [Responser] 的方式向客户端输出内容。
 type Context struct {
-	s       *serverImplement
+	s       *Server
 	route   *types.Route
 	request *http.Request
 	exits   []OnExitContextFunc
@@ -81,8 +81,12 @@ type Context struct {
 
 // NewContext 将 w 和 r 包装为 [Context] 对象
 //
+// 这适合从标准库的请求中创建 [Context] 对象。
+// [types.Route] 类型的参数需要用户通过 [types.NewRoute] 自行创建。
 // 如果出错，则会向 w 输出状态码并返回 nil。
-func (s *serverImplement) NewContext(w http.ResponseWriter, r *http.Request, route *types.Route) *Context {
+//
+// NOTE: 由此方法创建的对象在整个会话结束后会被回收。
+func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types.Route) *Context {
 	id := r.Header.Get(s.requestIDKey)
 
 	debug := func() logs.Recorder { // 根据 id 是否为空返回不同的日志对象
@@ -337,7 +341,7 @@ func (ctx *Context) freeContext() {
 // 此方法添加的函数会先于 [Server.OnExitContext] 添加的函数执行。
 func (ctx *Context) OnExit(f OnExitContextFunc) { ctx.exits = append(ctx.exits, f) }
 
-func acceptLanguage(s Server, h string) language.Tag {
+func acceptLanguage(s *Server, h string) language.Tag {
 	if h == "" {
 		return s.Locale().ID()
 	}
@@ -375,7 +379,7 @@ func (ctx *Context) IsIdempotent() bool {
 func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }
 
 // Server 获取关联的 [Server] 实例
-func (ctx *Context) Server() Server { return ctx.s }
+func (ctx *Context) Server() *Server { return ctx.s }
 
 // Deadline 接口 [context.Context] 的方法。
 //
