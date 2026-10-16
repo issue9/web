@@ -170,6 +170,8 @@ func (s *Server) UniqueID() string { return s.idgen() }
 
 // OnClose 注册关闭服务时需要执行的函数
 //
+// 如果参数 f 支持 [context.Context]，可以直接使用 [context.WithCancel] 直接从 Server 订阅关闭事件。
+//
 // NOTE: 按注册的相反顺序执行。
 func (s *Server) OnClose(f ...func() error) { s.closes = append(s.closes, f...) }
 

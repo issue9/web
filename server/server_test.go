@@ -58,7 +58,7 @@ func TestNew(t *testing.T) {
 
 func newOptions(o *Options) *Options {
 	if o == nil {
-		o = &Options{HTTPServer: &http.Server{Addr: ":8080"}, Language: language.English} // 指定不存在的语言
+		o = &Options{Startup: web.NewHTTPServerStartup(&http.Server{Addr: ":8080"}), Language: language.English} // 指定不存在的语言
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
 		o.Logs = logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithLocation(true), logs.WithCreated(logs.NanoLayout), logs.WithLevels(logs.AllLevels()...))
@@ -133,12 +133,12 @@ func TestHTTPServer_Serve_HTTPS(t *testing.T) {
 	cert, err := tls.LoadX509KeyPair("./config/testdata/cert.pem", "./config/testdata/key.pem")
 	a.NotError(err).NotNil(cert)
 	srv := newTestServer(a, &Options{
-		HTTPServer: &http.Server{
+		Startup: web.NewHTTPServerStartup(&http.Server{
 			Addr: ":8088",
 			TLSConfig: &tls.Config{
 				Certificates: []tls.Certificate{cert},
 			},
-		},
+		}),
 	})
 
 	router := srv.Routers().New("default", nil)
@@ -346,10 +346,10 @@ func TestNewService(t *testing.T) {
 
 func newService(a *assert.Assertion, name, addr string, reg registry.Registry, c cache.Driver) *web.Server {
 	srv, err := NewService(name, "0.1.0", newOptions(&Options{
-		Cache:      c,
-		HTTPServer: &http.Server{Addr: addr},
-		Registry:   reg,
-		Peer:       selector.NewPeer("http://localhost" + addr),
+		Cache:    c,
+		Startup:  web.NewHTTPServerStartup(&http.Server{Addr: addr}),
+		Registry: reg,
+		Peer:     selector.NewPeer("http://localhost" + addr),
 	}))
 	a.NotError(err).NotNil(srv)
 
@@ -379,9 +379,9 @@ func TestNewGateway(t *testing.T) {
 	a.Equal(err.(*web.FieldError).Field, "o.Mapper").Nil(g)
 
 	g, err = NewGateway("app", "0.1.0", newOptions(&Options{
-		Cache:      c,
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Registry:   reg,
+		Cache:    c,
+		Startup:  web.NewHTTPServerStartup(&http.Server{Addr: ":8080"}),
+		Registry: reg,
 		Mapper: map[string]mux.Matcher{
 			"s1": mux.NewPathVersion("", "/s1"),
 			"s2": mux.NewPathVersion("", "/s2"),

@@ -20,7 +20,7 @@ import (
 
 func BenchmarkHTTPServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newTestServer(a, &Options{HTTPServer: &http.Server{Addr: ":8080"}})
+	srv := newTestServer(a, &Options{Startup: web.NewHTTPServerStartup(&http.Server{Addr: ":8080"})})
 	router := srv.Routers().New("srv", nil, web.WithPathPrefix("http://localhost:8080/"))
 	a.NotNil(router)
 

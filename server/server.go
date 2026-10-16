@@ -40,7 +40,7 @@ func NewHTTP(id, version string, o *Options) (*web.Server, error) {
 		return nil, err.AddFieldParent("o")
 	}
 
-	return o.newServer(id, version, web.NewHTTPServerStartup(o.HTTPServer)), nil
+	return o.newServer(id, version), nil
 }
 
 // NewService 声明微服务节点
@@ -52,13 +52,13 @@ func NewService(id, version string, o *Options) (*web.Server, error) {
 		return nil, err.AddFieldParent("o")
 	}
 
-	startup := &serviceStartup{
+	o.Startup = &serviceStartup{
 		registry: o.Registry,
 		peer:     o.Peer,
-		Startup:  web.NewHTTPServerStartup(o.HTTPServer),
+		Startup:  o.Startup,
 	}
 
-	return o.newServer(id, version, startup), nil
+	return o.newServer(id, version), nil
 }
 
 func (startup *serviceStartup) Serve(s *web.Server) error {
@@ -82,10 +82,11 @@ func NewGateway(id, version string, o *Options) (*web.Server, error) {
 
 	gs := &gatewayStartup{
 		registry: o.Registry,
-		Startup:  web.NewHTTPServerStartup(o.HTTPServer),
+		Startup:  o.Startup,
 	}
 
-	s := o.newServer(id, version, gs)
+	o.Startup = gs
+	s := o.newServer(id, version)
 
 	for name, match := range o.Mapper {
 		proxy := gs.registry.ReverseProxy(name, s)

@@ -186,7 +186,7 @@ func Load[T comparable](configDir, filename string) (*server.Options, T, error) 
 		Config:            conf.config,
 		Location:          conf.location,
 		Cache:             conf.cache,
-		HTTPServer:        conf.HTTP.httpServer,
+		Startup:           web.NewHTTPServerStartup(conf.HTTP.httpServer),
 		Logs:              conf.Logs.logs,
 		Language:          conf.languageTag,
 		RoutersOptions:    make([]web.RouterOption, 0, 5),

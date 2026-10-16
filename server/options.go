@@ -65,8 +65,10 @@ type (
 		// 会调用 [logs.Logs.SetLocale] 设置为 [Language] 的值。
 		Logs *logs.Logs
 
-		// http.Server 实例的值
-		HTTPServer *http.Server
+		// 指定服务的启动器
+		//
+		// 如果为空会使用 web.NewHTTPServerStartup(&http.Server{}) 作为默认值。
+		Startup web.Startup
 
 		// 生成唯一字符串的方法
 		//
@@ -167,8 +169,8 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 		o.Location = time.Local
 	}
 
-	if o.HTTPServer == nil {
-		o.HTTPServer = &http.Server{}
+	if o.Startup == nil {
+		o.Startup = web.NewHTTPServerStartup(&http.Server{})
 	}
 
 	if o.IDGenerator == nil {
@@ -209,9 +211,6 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 		if o.Mapper == nil {
 			return o, web.NewFieldError("Mapper", locales.CanNotBeEmpty)
 		}
-		if o.Mapper == nil {
-			return o, web.NewFieldError("Mapper", locales.CanNotBeEmpty)
-		}
 		if o.Registry == nil {
 			return o, web.NewFieldError("Registry", locales.CanNotBeEmpty)
 		}
@@ -229,8 +228,8 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 	return o, nil
 }
 
-func (o *Options) newServer(id, version string, startup web.Startup) *web.Server {
-	srv := web.NewServer(id, version, o.Config, startup,
+func (o *Options) newServer(id, version string) *web.Server {
+	srv := web.NewServer(id, version, o.Config, o.Startup,
 		o.Location, o.Language, o.Logs, o.IDGenerator,
 		o.Cache, o.Codec, o.RequestIDKey, o.ProblemTypePrefix,
 		o.RoutersOptions...)
