@@ -8,7 +8,7 @@ import (
 	"encoding/json/v2"
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 )
 
 func jm(a any) ([]byte, error) { return json.Marshal(a) }

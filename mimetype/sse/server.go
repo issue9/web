@@ -75,7 +75,7 @@ func NewServer[T comparable](s *web.Server, retry, keepAlive time.Duration, bufC
 
 	s.Services().AddFunc(desc, srv.serve)
 	if keepAlive > 0 {
-		s.Services().AddTicker(web.Phrase("keep alive for %s", desc), srv.keepAlive, keepAlive, false, false)
+		s.Services().AddTicker(web.Phrase("keep alive for %s", desc), srv.keepAlive, keepAlive, false)
 	}
 
 	return srv

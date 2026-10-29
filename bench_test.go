@@ -13,9 +13,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/andybalholm/brotli"
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/mux/v10"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/mux/v10/routertest"
@@ -37,7 +38,7 @@ func BenchmarkRouter(b *testing.B) {
 	}
 
 	tt := routertest.NewTester(func(o ...mux.Option) *routertest.TestRouter[HandlerFunc] {
-		s := newTestServer(a)
+		s := newTestServer(a, false)
 		r := s.Routers().g.New("main", nil, o...)
 		return &routertest.TestRouter[HandlerFunc]{
 			ServeHTTP: s.routers.g.ServeHTTP,
@@ -54,7 +55,7 @@ func BenchmarkRouter(b *testing.B) {
 func BenchmarkNewContext(b *testing.B) {
 	b.ReportAllocs()
 	a := assert.New(b, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
@@ -70,7 +71,7 @@ func BenchmarkNewContext(b *testing.B) {
 func BenchmarkContext_Render(b *testing.B) {
 	b.ReportAllocs()
 	a := assert.New(b, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 
 	b.Run("none", func(b *testing.B) {
 		b.ReportAllocs()
@@ -139,7 +140,7 @@ func BenchmarkContext_Render(b *testing.B) {
 
 func BenchmarkContext_Unmarshal(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newTestServer(a)
+	srv := newTestServer(a, false)
 
 	b.ReportAllocs()
 	for b.Loop() {
@@ -159,7 +160,7 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 // 一次普通的 POST 请求过程
 func BenchmarkPost(b *testing.B) {
 	a := assert.New(b, false)
-	srv := newTestServer(a)
+	srv := newTestServer(a, false)
 
 	b.ReportAllocs()
 	for b.Loop() {
@@ -182,7 +183,7 @@ func BenchmarkPost(b *testing.B) {
 
 func BenchmarkContext_Object(b *testing.B) {
 	a := assert.New(b, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	o := &object{}
 
 	b.ReportAllocs()
@@ -198,7 +199,7 @@ func BenchmarkContext_Object(b *testing.B) {
 
 func BenchmarkContext_Object_withHeader(b *testing.B) {
 	a := assert.New(b, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	o := &object{}
 
 	b.ReportAllocs()
@@ -227,7 +228,7 @@ func BenchmarkNewProblem(b *testing.B) {
 
 func BenchmarkProblem_unmarshal_json(b *testing.B) {
 	a := assert.New(b, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	b.ReportAllocs()
 
 	w := httptest.NewRecorder()
@@ -249,7 +250,7 @@ func BenchmarkProblem_unmarshal_json(b *testing.B) {
 
 func BenchmarkNewFilterContext(b *testing.B) {
 	a := assert.New(b, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	b.ReportAllocs()
 
 	w := httptest.NewRecorder()
@@ -518,6 +519,78 @@ func BenchmarkLocale_NewPrinter(b *testing.B) {
 		size := len(langs)
 		for i := range b.N {
 			l.NewPrinter(langs[i%size])
+		}
+	})
+}
+
+func BenchmarkHTTPServer_Serve(b *testing.B) {
+	a := assert.New(b, false)
+	srv := newTestServer(a, false)
+	router := srv.Routers().New("srv", nil)
+	a.NotNil(router)
+
+	router.Get("/path", func(c *Context) Responser {
+		return Response(http.StatusOK, "/path", "h1", "h1")
+	})
+
+	defer srv.Run()()
+	defer srv.Close(0)
+	time.Sleep(500 * time.Millisecond)
+
+	b.Run("charset", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			r := srv.Get("/path").
+				Header(header.ContentType, qheader.BuildContentType(header.JSON, "gbk")).
+				Header(header.Accept, header.JSON).
+				Header(header.AcceptCharset, "gbk;q=1,gb18080;q=0.1").
+				Request()
+			resp, err := http.DefaultClient.Do(r)
+			if err != nil {
+				b.Log(err)
+			}
+			_, err = io.ReadAll(resp.Body)
+			if err != nil {
+				b.Log(err)
+			}
+		}
+	})
+
+	b.Run("charset encoding", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			r := srv.Get("/path").
+				Header(header.ContentType, qheader.BuildContentType(header.JSON, "gbk")).
+				Header(header.Accept, header.JSON).
+				Header(header.AcceptCharset, "gbk;q=1,gb18080;q=0.1").
+				Header(header.AcceptEncoding, "gzip").
+				Request()
+			resp, err := http.DefaultClient.Do(r)
+			if err != nil {
+				b.Log(err)
+			}
+			_, err = io.ReadAll(resp.Body)
+			if err != nil {
+				b.Log(err)
+			}
+		}
+	})
+
+	b.Run("none", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			r := srv.Get("/path").
+				Header(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8)).
+				Header(header.Accept, header.JSON).
+				Request()
+			resp, err := http.DefaultClient.Do(r)
+			if err != nil {
+				b.Log(err)
+			}
+			_, err = io.ReadAll(resp.Body)
+			if err != nil {
+				b.Log(err)
+			}
 		}
 	})
 }

@@ -5,12 +5,10 @@
 package html_test
 
 import (
-	"net/http"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v10/header"
 	"golang.org/x/text/language"
@@ -18,15 +16,16 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/html"
 	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/startuptest"
 )
 
-func newServer(a *assert.Assertion, lang string) *web.Server {
+func newServer(a *assert.Assertion, lang string) (*web.Server, startuptest.Startup) {
+	ts := startuptest.NewTestServerStartup(a)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Language:   language.MustParse(lang),
-		Codec:      web.NewCodec().AddMimetype(html.Mimetype, html.Marshal, html.Unmarshal, "", true, true),
-		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil)),
+		Startup:  ts,
+		Language: language.MustParse(lang),
+		Codec:    web.NewCodec().AddMimetype(html.Mimetype, html.Marshal, html.Unmarshal, "", true, true),
+		Logs:     logs.New(logs.NewTermHandler(os.Stderr, nil)),
 	})
 	a.NotError(err).NotNil(s)
 
@@ -36,16 +35,13 @@ func newServer(a *assert.Assertion, lang string) *web.Server {
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "lang", "hans"))
 	a.NotError(b.SetString(language.MustParse("cmn-hant"), "lang", "hant"))
 
-	return s
+	return s, ts
 }
 
 func TestInstall(t *testing.T) {
 	a := assert.New(t, false)
-	s := newServer(a, "und") // und 被解析为 language.Und，将会尝试读取系统的本地化信息
+	s, ts := newServer(a, "und") // und 被解析为 language.Und，将会尝试读取系统的本地化信息
 	html.Install(s, nil, nil, "*.tpl", os.DirFS("./testdata/view"))
-
-	defer servertest.Run(a, s)()
-	defer s.Close(500 * time.Millisecond)
 
 	type obj struct {
 		XMLName struct{} `html:"t"`
@@ -56,17 +52,17 @@ func TestInstall(t *testing.T) {
 		return web.ResponserFunc(func(ctx *web.Context) { ctx.Render(200, &obj{}) })
 	})
 
-	servertest.Get(a, "http://localhost:8080/path").
+	ts.Get("/path").
 		Header(header.AcceptLanguage, "cmn-hans").
 		Header(header.Accept, html.Mimetype).
-		Do(nil).
+		Do().
 		Status(200).
 		StringBody("\n<div>hans</div>\n<div>hans</div>\n")
 
-	servertest.Get(a, "http://localhost:8080/path").
+	ts.Get("/path").
 		Header(header.AcceptLanguage, "zh-hant").
 		Header(header.Accept, html.Mimetype).
-		Do(nil).
+		Do().
 		Status(200).
 		StringBody("\n<div>hant</div>\n<div>hans</div>\n")
 }
@@ -74,11 +70,8 @@ func TestInstall(t *testing.T) {
 func TestInstall_withLocalized(t *testing.T) {
 	localized := map[language.Tag]string{language.SimplifiedChinese: "cmn-hans", language.TraditionalChinese: "cmn-hant", language.Und: "cmn-hans"}
 	a := assert.New(t, false)
-	s := newServer(a, "cmn-hans")
+	s, ts := newServer(a, "cmn-hans")
 	html.Install(s, nil, localized, "*.tpl", os.DirFS("./testdata/dir"))
-
-	defer servertest.Run(a, s)()
-	defer s.Close(500 * time.Millisecond)
 
 	type obj struct {
 		XMLName struct{} `html:"t"`
@@ -88,17 +81,17 @@ func TestInstall_withLocalized(t *testing.T) {
 	r.Get("/path", func(ctx *web.Context) web.Responser {
 		return web.ResponserFunc(func(ctx *web.Context) { ctx.Render(200, &obj{}) })
 	})
-	servertest.Get(a, "http://localhost:8080/path").
+	ts.Get("/path").
 		Header(header.AcceptLanguage, "cmn-hans").
 		Header(header.Accept, html.Mimetype).
-		Do(nil).
+		Do().
 		Status(200).
 		StringBody("\n<div>hans简</div>\n<div>hans</div>\n")
 
-	servertest.Get(a, "http://localhost:8080/path").
+	ts.Get("/path").
 		Header(header.AcceptLanguage, "cmn-hant").
 		Header(header.Accept, html.Mimetype).
-		Do(nil).
+		Do().
 		Status(200).
 		StringBody("\n<div>hant繁</div>\n<div>hans</div>\n")
 }

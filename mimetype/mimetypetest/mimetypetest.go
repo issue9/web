@@ -9,12 +9,12 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/startuptest"
 )
 
 var inst = &web.Problem{
@@ -26,9 +26,10 @@ var inst = &web.Problem{
 }
 
 func Test(a *assert.Assertion, m web.MarshalFunc, u web.UnmarshalFunc) {
+	ts := startuptest.NewTestServerStartup(a)
 	s, err := server.NewHTTP("test", "1.0", &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Language:   language.English,
+		Startup:  ts,
+		Language: language.English,
 	})
 	a.NotError(err).NotNil(s)
 
@@ -43,10 +44,7 @@ func Test(a *assert.Assertion, m web.MarshalFunc, u web.UnmarshalFunc) {
 		return web.OK(nil)
 	})
 
-	defer servertest.Run(a, s)()
-	defer s.Close(0)
-
-	servertest.Get(a, "http://localhost:8080/path").
-		Do(nil).
+	ts.Get("/path").
+		Do().
 		Status(http.StatusOK)
 }

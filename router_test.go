@@ -7,16 +7,16 @@ package web
 import (
 	"errors"
 	"net/http"
-	"net/http/httptest"
 	"slices"
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
+	"github.com/issue9/mux/v10/header"
 )
 
 func TestRouters(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	rs := s.Routers()
 	a.NotNil(rs)
 
@@ -32,7 +32,7 @@ func TestRouters(t *testing.T) {
 
 func TestRouters_Handle(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	rs := s.Routers()
 	a.NotNil(rs)
 
@@ -51,39 +51,25 @@ func TestRouters_Handle(t *testing.T) {
 		panic("panic")
 	})
 
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/get1", nil)
-	router.ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusOK)
+	defer s.Run()()
+	defer s.Close(0)
 
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/not-exists", nil)
-	router.ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusNotFound)
-
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodPatch, "/get1", nil)
-	router.ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusMethodNotAllowed)
+	s.Get("/get1").Do().Success()
+	s.Get("/not-exists").Do().Status(http.StatusNotFound)
+	s.Patch("/get1").Do().Status(http.StatusMethodNotAllowed)
 
 	s.logBuf.Reset()
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/panic-new-problem-error", nil)
-	router.ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusServiceUnavailable).
-		Contains(s.logBuf.String(), "router_test.go:45")
+	s.Get("/panic-new-problem-error").Header(header.AcceptEncoding, "").Do().
+		Status(http.StatusServiceUnavailable)
+	a.Contains(s.logBuf.String(), "router_test.go:45")
 
 	s.logBuf.Reset()
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/panic-error", nil)
-	router.ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError).
-		Contains(s.logBuf.String(), "router_test.go:48")
+	s.Get("/panic-error").Header(header.AcceptEncoding, "").Do().
+		Status(http.StatusInternalServerError)
+	a.Contains(s.logBuf.String(), "router_test.go:48")
 
 	s.logBuf.Reset()
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/panic-string", nil)
-	router.ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusInternalServerError).
-		Contains(s.logBuf.String(), "router_test.go:51")
+	s.Get("/panic-string").Header(header.AcceptEncoding, "").Do().
+		Status(http.StatusInternalServerError)
+	a.Contains(s.logBuf.String(), "router_test.go:51")
 }

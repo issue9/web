@@ -7,7 +7,7 @@ package config
 import (
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 )
 
 func TestConfig_buildCache(t *testing.T) {

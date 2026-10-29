@@ -7,7 +7,7 @@ package bufpool
 import (
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 )
 
 func TestBufpool(t *testing.T) {

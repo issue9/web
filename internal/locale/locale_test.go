@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/goccy/go-yaml"
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/config"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"

@@ -7,7 +7,7 @@ package config
 import (
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/cache/drivers/memory"
 
 	"github.com/issue9/web/selector"

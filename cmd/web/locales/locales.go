@@ -13,7 +13,7 @@ import (
 	gobuild "github.com/caixw/gobuild/locales"
 	"github.com/goccy/go-yaml"
 	"github.com/issue9/localeutil"
-	"github.com/issue9/localeutil/message/serialize"
+	"github.com/issue9/messages/serialize"
 	web "github.com/issue9/web/locales"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message/catalog"

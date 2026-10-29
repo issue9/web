@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-//go:generate web locale -l=und -m -f=yaml ./
-//go:generate web update-locale -src=./locales/und.yaml -dest=./locales/zh.yaml
+//go:generate gomsgs extract -l=und -m -f=yaml -tag=comment -func=github.com/issue9/localeutil.Phrase,github.com/issue9/localeutil.Error,github.com/issue9/localeutil.StringPhrase,github.com/issue9/web.Phrase,github.com/issue9/web.StringPhrase,github.com/issue9/web.NewLocaleError,github.com/issue9/web.Context.Sprintf,github.com/issue9/web.Locale.Sprintf,github.com/issue9/web/openapi.Document.ParameterizedDoc ./
+//go:generate gomsgs update -src=./locales/und.yaml -dest=./locales/zh.yaml
 //go:generate go run ./generate_compressors.go
 //go:generate go run ./generate_problems.go
 

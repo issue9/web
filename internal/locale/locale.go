@@ -9,7 +9,7 @@ import (
 	"io/fs"
 
 	"github.com/issue9/config"
-	"github.com/issue9/localeutil/message/serialize"
+	"github.com/issue9/messages/serialize"
 	"golang.org/x/text/message/catalog"
 )
 

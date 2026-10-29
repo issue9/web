@@ -8,10 +8,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"golang.org/x/text/language"
 )
 
@@ -52,7 +53,7 @@ func buildService() (f ServiceFunc, start, p, err chan struct{}) {
 
 func TestServer_service(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	srv := s.Services()
 	a.Equal(2, len(srv.services)) // scheduled, unique id generate
 
@@ -93,15 +94,15 @@ func TestServer_service(t *testing.T) {
 
 func TestServer_scheduled(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	srv := s.Services()
-	a.Equal(0, len(srv.scheduled.Jobs()))
+	a.Equal(0, len(slices.Collect(srv.scheduled.Jobs())))
 
 	srv.AddAt(Phrase("lang"), func(t time.Time) error {
 		println("at:", t.Format(time.RFC3339))
 		return nil
-	}, time.Now(), false)
-	a.Equal(1, len(srv.scheduled.Jobs()))
+	}, time.Now())
+	a.Equal(1, len(slices.Collect(srv.scheduled.Jobs())))
 
 	// 查找翻译项是否正确
 	var found bool
@@ -117,52 +118,53 @@ func TestServer_scheduled(t *testing.T) {
 func TestService_state(t *testing.T) {
 	t.Run("normal", func(t *testing.T) {
 		a := assert.New(t, false)
-		s := newTestServer(a)
+		ts := newTestServer(a, false)
 
-		srv1, start, _, _ := buildService()
-		s.Services().Add(Phrase("srv1"), srv1)
+		f, start, _, _ := buildService()
+		ts.Services().Add(Phrase("normal service"), f)
 		<-start
-		s1 := s.Services().services[1]
-		a.Equal(s1.state, Running)
+		ss := ts.Services().services
+		s := ss[len(ss)-1]
+		a.Equal(s.state, Running)
 
-		s.close()
-		a.Wait(500*time.Millisecond). // 等待主服务设置状态值
-						Equal(s1.state, Stopped)
+		ts.close()                         // 触发 context.WithCancel
+		time.Sleep(200 * time.Millisecond) // 等待 context.Context 链路完成
+		a.Equal(s.state, Stopped)
 	})
 
 	t.Run("panic", func(t *testing.T) {
 		a := assert.New(t, false)
-		s := newTestServer(a)
+		ts := newTestServer(a, false)
 
-		srv1, start, p, _ := buildService()
-		s.Services().Add(Phrase("srv1"), srv1)
+		f, start, p, _ := buildService()
+		ts.Services().Add(Phrase("panic service"), f)
 		<-start
-		s1 := s.Services().services[2]
-		a.Equal(s1.state, Running)
+		ss := ts.Services().services
+		s := ss[len(ss)-1]
+		a.StrictEqual(s.state, Running)
 
 		p <- struct{}{}
-		a.Wait(200*time.Millisecond). // 等待主服务设置状态值
-						Equal(s1.state, Failed).
-						Contains(s1.err.Error(), "service panic")
+		time.Sleep(200 * time.Millisecond) // 等待 p 被取出且 s 的状态设置完成
+		a.StrictEqual(s.state, Failed).Contains(s.err.Error(), "service panic")
 
-		s.close()
+		ts.close()
 	})
 
 	t.Run("error", func(t *testing.T) {
 		a := assert.New(t, false)
-		s := newTestServer(a)
+		ts := newTestServer(a, false)
 
-		srv1, start, _, err := buildService()
-		s.Services().Add(Phrase("srv1"), srv1)
+		f, start, _, err := buildService()
+		ts.Services().Add(Phrase("error service"), f)
 		<-start
-		s1 := s.Services().services[2]
-		a.Equal(s1.state, Running)
+		ss := ts.Services().services
+		s := ss[len(ss)-1]
+		a.StrictEqual(s.state, Running)
 
 		err <- struct{}{}
-		a.Wait(200*time.Millisecond). // 等待主服务设置状态值
-						Equal(s1.state, Failed).
-						Contains(s1.err.Error(), "service error")
+		time.Sleep(200 * time.Millisecond) // 等待 err 被取出且 s 的状态设置完成
+		a.StrictEqual(s.state, Failed).NotNil(s.err).Contains(s.err.Error(), "service error")
 
-		s.close()
+		ts.close()
 	})
 }

@@ -33,7 +33,7 @@ type Registry interface {
 	Discover(name string, s *web.Server) selector.Selector
 
 	// ReverseProxy 返回微服务 name 对应的反向代理对象
-	ReverseProxy(string, *web.Server) *httputil.ReverseProxy
+	ReverseProxy(name string, gateway *web.Server) *httputil.ReverseProxy
 }
 
 // DeregisterFunc 注销微服务的函数签名

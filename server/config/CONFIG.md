@@ -19,7 +19,6 @@
 | mimetypes,omitempty | mimetypes,omitempty | mimetypes&gt;mimetype,omitempty | mimetypes,omitempty | [mimetypeConfig](#mimetypeconfig) | 指定可用的 mimetype<br />如果为空，那么将不支持任何格式的内容输出。<br /> |
 | idGenerator,omitempty | idGenerator,omitempty | idGenerator,omitempty | idGenerator,omitempty | string | 唯一 ID 生成器<br />该值由 \[RegisterIDGenerator] 注册而来，默认情况下，有以下三个选项：<br />  - date 日期格式，默认值；<br />  - string 普通的字符串；<br />  - number 数值格式；<br />NOTE: 一旦运行在生产环境，就不应该修改此属性，除非能确保新的函数生成的 ID 不与之前生成的 ID 重复。<br /> |
 | problemTypePrefix,omitempty | problemTypePrefix,omitempty | problemTypePrefix,omitempty | problemTypePrefix,omitempty | string | Problem 中 type 字段的前缀<br /> |
-| onRender,omitempty | onRender,omitempty | onRender,omitempty | onRender,omitempty | string | OnRender 修改渲染结构<br />可通过 \[RegisterOnRender] 进行添加额外的序列化方法。默认为空，可以有以下可选值：<br />  - render200 所有输出都是以 \[server.RenderResponse] 作为返回对象；<br /> |
 | registry,omitempty | registry,omitempty | registry,omitempty | registry,omitempty | [registryConfig](#registryconfig) | 指定服务发现和注册中心<br />NOTE: 作为微服务和网关时才会有效果<br /> |
 | peer,omitempty | peer,omitempty | peer,omitempty | peer,omitempty | string | 作为微服务时的节点地址<br />NOTE: 作为微服务时才会有效果<br /> |
 | mappers,omitempty | mappers,omitempty | mappers&gt;mapper,omitempty | mappers,omitempty | [mapperConfig](#mapperconfig) | 作为微服务网关时的外部请求映射方式<br />NOTE: 作为微服务的网关时才会有效果<br /> |
@@ -78,7 +77,6 @@
 | idleTimeout,omitempty | idleTimeout,omitempty | idleTimeout,attr,omitempty | idleTimeout,omitempty | [Duration](#duration) | IdleTimeout 对应 \[http.Server.IdleTimeout] 字段<br /> |
 | readHeaderTimeout,omitempty | readHeaderTimeout,omitempty | readHeaderTimeout,attr,omitempty | readHeaderTimeout,omitempty | [Duration](#duration) | ReadHeaderTimeout 对应 \[http.Server.ReadHeaderTimeout] 字段<br /> |
 | maxHeaderBytes,omitempty | maxHeaderBytes,omitempty | maxHeaderBytes,attr,omitempty | maxHeaderBytes,omitempty | int | MaxHeaderBytes 对应 \[http.Server.MaxHeaderBytes] 字段<br /> |
-| recovery,omitempty | recovery,omitempty | recovery,attr,omitempty | recovery,omitempty | int | Recovery 拦截 panic 时反馈给客户端的状态码<br />NOTE: 这些设置对所有路径均有效，但会被 \[web.Routers.New] 的参数修改。<br /> |
 | headers,omitempty | headers,omitempty | headers&gt;header,omitempty | headers,omitempty | [headerConfig](#headerconfig) | 自定义报头功能<br />报头会输出到包括 404 在内的所有请求返回。可以为空。<br />NOTE: 如果是与 CORS 相关的定义，则可能在 CORS 字段的定义中被修改。<br />NOTE: 报头内容可能会被后续的中间件修改。<br /> |
 | cors,omitempty | cors,omitempty | cors,omitempty | cors,omitempty | [corsConfig](#corsconfig) | 自定义[跨域请求](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors)设置项<br />NOTE: 这些设置对所有路径均有效，但会被 \[web.Routers.New] 的参数修改。<br /> |
 | trace,omitempty | trace,omitempty | trace,omitempty | trace,omitempty | string | Trace 是否启用 TRACE 请求<br />可以有以下几种值：<br />  - disable 禁用 TRACE 请求；<br />  - body 启用 TRACE，且在返回内容中包含了请求端的 body 内容；<br />  - nobody 启用 TRACE，但是在返回内容中不包含请求端的 body 内容；<br />默认为 disable。<br />NOTE: 这些设置对所有路径均有效，但会被 \[web.Routers.New] 的参数修改。<br /> |

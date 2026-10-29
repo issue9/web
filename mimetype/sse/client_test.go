@@ -6,20 +6,19 @@ package sse
 
 import (
 	"context"
-	sj "encoding/json/v2"
-	"net/http"
+	"encoding/json/v2"
 	"os"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/logs/v7"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/nop"
 	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/startuptest"
 )
 
 func TestMessage_append(t *testing.T) {
@@ -55,10 +54,11 @@ func TestMessage_append(t *testing.T) {
 
 func TestOnMessage(t *testing.T) {
 	a := assert.New(t, false)
+	ts := startuptest.NewHTTPServerStartup(a, false)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Codec:      web.NewCodec().AddMimetype(Mimetype, nop.Marshal, nop.Unmarshal, "", true, true),
-		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout)),
+		Startup: ts,
+		Codec:   web.NewCodec().AddMimetype(Mimetype, nop.Marshal, nop.Unmarshal, "", true, true),
+		Logs:    logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout)),
 	})
 	a.NotError(err).NotNil(s)
 	e := NewServer[int64](s, 50*time.Millisecond, 5*time.Second, 10, web.StringPhrase("sse"))
@@ -73,7 +73,7 @@ func TestOnMessage(t *testing.T) {
 		s.Sent([]string{"connect", strconv.FormatInt(id, 10)}, "", "1")
 		time.Sleep(time.Microsecond * 500)
 
-		event := s.NewEvent("event", func(v any) ([]byte, error) { return sj.Marshal(v) })
+		event := s.NewEvent("event", func(v any) ([]byte, error) { return json.Marshal(v) })
 		a.NotError(event.Sent(1))
 		time.Sleep(time.Microsecond * 500)
 		a.NotError(event.Sent(&struct{ ID int }{ID: 5}))
@@ -82,16 +82,16 @@ func TestOnMessage(t *testing.T) {
 		return nil
 	})
 
-	defer servertest.Run(a, s)()
+	defer startuptest.Run(a, s)()
 	defer s.Close(500 * time.Millisecond)
 
 	// get /event/5
 
 	a.Equal(0, e.Len())
 	msg5 := make(chan *Message, 10)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	err = OnMessage(ctx, s.Logs().ERROR(), "http://localhost:8080/event/5", nil, msg5)
+	ctx, cancel1 := context.WithCancel(s)
+	defer cancel1()
+	err = OnMessage(ctx, s.Logs().ERROR(), ts.URL()+"/event/5", ts.Client(), msg5)
 	a.NotError(err).Equal(1, e.Len())
 
 	a.Equal(<-msg5, &Message{Data: []string{"connect", "5"}, ID: "1", Retry: 50}).
@@ -101,9 +101,9 @@ func TestOnMessage(t *testing.T) {
 	// get /event/6
 
 	msg6 := make(chan *Message, 10)
-	ctx, cancel = context.WithCancel(context.Background())
-	defer cancel()
-	err = OnMessage(ctx, s.Logs().ERROR(), "http://localhost:8080/event/6", nil, msg6)
+	ctx, cancel2 := context.WithCancel(s)
+	defer cancel2()
+	err = OnMessage(ctx, s.Logs().ERROR(), ts.URL()+"/event/6", ts.Client(), msg6)
 	a.NotError(err).Equal(2, e.Len())
 
 	a.Equal(<-msg6, &Message{Data: []string{"connect", "6"}, ID: "1", Retry: 50}).
@@ -112,7 +112,7 @@ func TestOnMessage(t *testing.T) {
 
 	// server event
 
-	event := e.NewEvent("se", func(v any) ([]byte, error) { return sj.Marshal(v) })
+	event := e.NewEvent("se", func(v any) ([]byte, error) { return json.Marshal(v) })
 	event.Sent(func(sid int64, lastID string) any {
 		return &struct {
 			ID     int64

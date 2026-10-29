@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/mimetypetest"

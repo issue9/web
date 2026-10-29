@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/mux/v10/types"
 )
 
@@ -28,7 +28,7 @@ func zero[T any](v T) bool { return reflect.ValueOf(v).IsZero() }
 func required[T any](v T) bool { return !zero(v) }
 
 func newFilter(a *assert.Assertion) *FilterContext {
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	ctx := s.NewContext(w, r, types.NewRoute())

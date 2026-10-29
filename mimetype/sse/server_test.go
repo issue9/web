@@ -12,22 +12,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/startuptest"
 )
 
 func TestServer(t *testing.T) {
 	a := assert.New(t, false)
+	ts := startuptest.NewHTTPServerStartup(a, false)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
-		Codec:      web.NewCodec().AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, "", true, true),
-		Logs:       logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout), logs.WithLevels(logs.AllLevels()...)),
+		Startup: ts,
+		Codec:   web.NewCodec().AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, "", true, true),
+		Logs:    logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout), logs.WithLevels(logs.AllLevels()...)),
 	})
 	a.NotError(err).NotNil(s)
 	e := NewServer[int64](s, 50*time.Millisecond, 5*time.Second, 10, web.StringPhrase("sse"))
@@ -54,7 +55,7 @@ func TestServer(t *testing.T) {
 		return nil
 	})
 
-	defer servertest.Run(a, s)()
+	defer startuptest.Run(a, s)()
 	a.Equal(0, e.Len())
 
 	time.AfterFunc(500*time.Millisecond, func() {
@@ -63,10 +64,10 @@ func TestServer(t *testing.T) {
 		s.Close(500 * time.Millisecond)
 	})
 
-	servertest.Get(a, "http://localhost:8080/event/5").
+	ts.Get("/event/5").
 		Header(header.Accept, header.JSON).
 		Header(header.AcceptEncoding, "").
-		Do(nil).
+		Do().
 		Status(http.StatusOK).
 		StringBody(`data:connect
 data:5

@@ -7,7 +7,7 @@ package openapi
 import (
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 )
 
 func TestServer_valid(t *testing.T) {

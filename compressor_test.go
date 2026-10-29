@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/andybalholm/brotli"
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 )
 
 func TestBrotli(t *testing.T) {

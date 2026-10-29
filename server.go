@@ -36,7 +36,7 @@ type (
 	//
 	// 创建该接口对象的方法在 [server] 包之下，提供了不同功能的服务对象。
 	Server struct {
-		boot    Startup
+		startup Startup
 		state   State
 		id      string
 		version string
@@ -69,7 +69,7 @@ type (
 func NewServer(
 	id, ver string,
 	conf *config.Config,
-	boot Startup,
+	startup Startup,
 	loc *time.Location,
 	lang language.Tag,
 	logs *Logs,
@@ -81,7 +81,7 @@ func NewServer(
 	o ...RouterOption,
 ) *Server {
 	srv := &Server{
-		boot:    boot,
+		startup: startup,
 		id:      id,
 		version: ver,
 
@@ -114,7 +114,7 @@ func NewServer(
 			buildNodeHandle(http.StatusOK),
 			o...),
 	}
-	srv.boot.SetHandler(srv.routers.g)
+	srv.startup.Init(srv.routers.g)
 
 	return srv
 }
@@ -218,7 +218,7 @@ func (s *Server) Serve() (err error) {
 	}
 	s.state = Running
 
-	err = s.boot.Serve(s)
+	err = s.startup.Serve(s)
 	<-s.Done()
 	return err
 }
@@ -241,7 +241,7 @@ func (s *Server) Close(shutdownTimeout time.Duration) {
 		cancel()
 	}()
 
-	if err := s.boot.Close(ctx); err != nil {
+	if err := s.startup.Close(ctx); err != nil {
 		s.Logs().ERROR().Error(err)
 	}
 }

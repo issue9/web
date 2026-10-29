@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"

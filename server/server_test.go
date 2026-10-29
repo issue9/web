@@ -5,19 +5,16 @@
 package server
 
 import (
-	"crypto/tls"
-	sj "encoding/json/v2"
 	"net/http"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/drivers/memory"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v10"
-	"github.com/issue9/mux/v10/header"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
@@ -25,7 +22,7 @@ import (
 	"github.com/issue9/web/mimetype/xml"
 	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server/registry"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/startuptest"
 )
 
 var (
@@ -39,7 +36,7 @@ func buildHandler(code int) web.HandlerFunc {
 	}
 }
 
-func TestNew(t *testing.T) {
+func TestNewHTTP(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv, err := NewHTTP("app", "0.1.0", nil)
@@ -56,9 +53,9 @@ func TestNew(t *testing.T) {
 	a.False(srv.Codec().CanCompress())
 }
 
-func newOptions(o *Options) *Options {
+func newOptions(a *assert.Assertion, o *Options) *Options {
 	if o == nil {
-		o = &Options{Startup: web.NewHTTPServerStartup(&http.Server{Addr: ":8080"}), Language: language.English} // 指定不存在的语言
+		o = &Options{Startup: startuptest.NewHTTPServerStartup(a, false), Language: language.English} // 指定不存在的语言
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
 		o.Logs = logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithLocation(true), logs.WithCreated(logs.NanoLayout), logs.WithLevels(logs.AllLevels()...))
@@ -72,288 +69,38 @@ func newOptions(o *Options) *Options {
 	return o
 }
 
-func newTestServer(a *assert.Assertion, o *Options) *web.Server {
-	srv, err := NewHTTP("app", "0.1.0", newOptions(o))
-	a.NotError(err).NotNil(srv).
-		Equal(srv.ID(), "app").Equal(srv.Version(), "0.1.0")
+func newService(a *assert.Assertion, name string, reg registry.Registry, c cache.Driver) (*web.Server, startuptest.Startup) {
+	startup := startuptest.NewHTTPServerStartup(a, false)
+	srv, err := NewService(name, "0.1.0", newOptions(a, &Options{
+		Cache:    c,
+		Startup:  startup,
+		Registry: reg,
+		Peer:     selector.NewPeer(startup.URL()),
+	}))
+	a.NotError(err).NotNil(srv)
 
-	l := srv.Locale()
-	a.NotError(l.SetString(language.Und, "lang", "und")).
-		NotError(l.SetString(language.SimplifiedChinese, "lang", "hans")).
-		NotError(l.SetString(language.TraditionalChinese, "lang", "hant"))
-
-	srv.Problems().Add(411, &web.LocaleProblem{ID: "41110", Title: web.Phrase("lang"), Detail: web.Phrase("41110")})
-
-	return srv
-}
-
-func TestHTTPServer_Serve(t *testing.T) {
-	a := assert.New(t, false)
-
-	srv := newTestServer(a, nil)
-	a.Equal(srv.State(), web.Stopped)
-	router := srv.Routers().New("default", nil)
-	router.Get("/mux/test", buildHandler(202))
-	router.Get("/m1/test", buildHandler(202))
-
-	router.Get("/m2/test", func(ctx *web.Context) web.Responser {
-		srv := ctx.Server()
-		a.NotNil(srv)
-
-		ctx.WriteHeader(http.StatusAccepted)
-		_, err := ctx.Write([]byte("1234567890"))
-		if err != nil {
-			println(err)
-		}
-		return nil
-	})
-
-	router.Get("/m2/103", func(ctx *web.Context) web.Responser {
-		ctx.Header().Set("h1", "v1")
-		ctx.WriteHeader(http.StatusEarlyHints)
-		return web.OK("123")
-	})
-
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
-
-	a.PanicString(func() { // 多次调用 srv.Serve
-		a.NotError(srv.Serve())
-	}, "当前已经处于运行状态")
-
-	servertest.Get(a, "http://localhost:8080/m1/test").Do(nil).Status(http.StatusAccepted)
-	servertest.Get(a, "http://localhost:8080/m2/test").Do(nil).Status(http.StatusAccepted)
-	servertest.Get(a, "http://localhost:8080/m2/103").Do(nil).Status(http.StatusOK)
-	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(http.StatusAccepted)
-}
-
-func TestHTTPServer_Serve_HTTPS(t *testing.T) {
-	a := assert.New(t, false)
-
-	cert, err := tls.LoadX509KeyPair("./config/testdata/cert.pem", "./config/testdata/key.pem")
-	a.NotError(err).NotNil(cert)
-	srv := newTestServer(a, &Options{
-		Startup: web.NewHTTPServerStartup(&http.Server{
-			Addr: ":8088",
-			TLSConfig: &tls.Config{
-				Certificates: []tls.Certificate{cert},
-			},
-		}),
-	})
-
-	router := srv.Routers().New("default", nil)
-	router.Get("/mux/test", buildHandler(202))
-
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
-
-	client := &http.Client{Transport: &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}}
-
-	resp, err := client.Get("https://localhost:8088/mux/test")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusAccepted)
-
-	// 无效的 http 请求
-	resp, err = client.Get("http://localhost:8088/mux/test")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusBadRequest)
-
-	resp, err = client.Get("http://localhost:8088/mux")
-	a.NotError(err).Equal(resp.StatusCode, http.StatusBadRequest)
-}
-
-func TestHTTPServer_Close(t *testing.T) {
-	a := assert.New(t, false)
-	srv := newTestServer(a, nil)
-	router := srv.Routers().New("def", nil)
-
-	router.Get("/test", buildHandler(202))
-	router.Get("/close", func(ctx *web.Context) web.Responser {
-		_, err := ctx.Write([]byte("closed"))
-		if err != nil {
-			ctx.WriteHeader(http.StatusInternalServerError)
-		}
-		a.Equal(srv.State(), web.Running)
-		srv.Close(0)
-		srv.Close(0) // 可多次调用
-		a.Equal(srv.State(), web.Stopped)
-		return nil
-	})
-
-	c := 0
-	srv.OnClose(func() error {
-		c++
-		return nil
-	})
-
-	defer servertest.Run(a, srv)()
-	// defer srv.Close() // 由 /close 关闭，不需要 srv.Close
-
-	servertest.Get(a, "http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
-
-	// 尝试关闭连接
-	a.Equal(0, c)
-	resp, err := http.Get("http://localhost:8080/close")
-	a.Wait(500 * time.Microsecond). // Handle 中的 Server.Close 是触发关闭服务，这里要等待真正完成
-					NotError(err).NotNil(resp).True(c > 0)
-
-	// 连接被关闭，返回错误内容
-	resp, err = http.Get("http://localhost:8080/close")
-	a.Error(err).Nil(resp)
-
-	// 连接被关闭，返回错误内容
-	resp, err = http.Get("http://localhost:8080/test")
-	a.Error(err).Nil(resp)
-}
-
-func TestHTTPServer_CloseWithTimeout(t *testing.T) {
-	a := assert.New(t, false)
-	srv := newTestServer(a, nil)
-	router := srv.Routers().New("def", nil)
-
-	router.Get("/test", buildHandler(202))
-	router.Get("/close", func(ctx *web.Context) web.Responser {
-		ctx.WriteHeader(http.StatusCreated)
-		_, err := ctx.Write([]byte("shutdown with ctx"))
-		a.NotError(err)
-		srv.Close(300 * time.Millisecond)
-
-		return nil
-	})
-
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
-
-	servertest.Get(a, "http://localhost:8080/test").Do(nil).Status(http.StatusAccepted)
-
-	// 关闭指令可以正常执行
-	servertest.Get(a, "http://localhost:8080/close").Do(nil).Status(http.StatusCreated)
-
-	// 未超时，但是拒绝新的链接
-	resp, err := http.Get("http://localhost:8080/test")
-	a.Error(err).Nil(resp).Wait(30 * time.Microsecond)
-
-	// 已被关闭
-	resp, err = http.Get("http://localhost:8080/test")
-	a.Error(err).Nil(resp)
-}
-
-type object struct {
-	Name string
-	Age  int
-}
-
-func TestHTTPServer_NewClient(t *testing.T) {
-	a := assert.New(t, false)
-
-	s := newTestServer(a, nil)
-	defer servertest.Run(a, s)()
-	defer s.Close(500 * time.Millisecond)
-
-	s.Routers().New("default", nil).Get("/get", func(ctx *web.Context) web.Responser {
-		return web.OK(&object{Name: "name"})
-	}).Post("/post", func(ctx *web.Context) web.Responser {
-		obj := &object{}
-		if resp := ctx.Read(true, obj, web.ProblemBadRequest); resp != nil {
-			return resp
-		}
-		if obj.Name != "name" {
-			return ctx.Problem(web.ProblemBadRequest).WithExtensions(&object{Name: "name"})
-		}
-		return web.OK(obj)
-	})
-
-	sel := selector.NewRoundRobin(false, 1)
-	sel.Update(selector.NewPeer("http://localhost:8080"))
-	c := s.NewClient(nil, sel, header.JSON, func(a any) ([]byte, error) { return sj.Marshal(a) })
-	a.NotNil(c)
-
-	resp, p, err := c.Get[object, any]("/get")
-	a.NotError(err).
-		Equal(resp, &object{Name: "name"}).
-		Nil(p)
-
-	resp, p, err = c.Delete[object, any]("/get")
-	a.NotError(err).
-		Zero(resp).
-		NotNil(p).
-		Equal(p.Type, web.ProblemMethodNotAllowed).
-		Equal(p.Status, http.StatusMethodNotAllowed)
-
-	resp, p, err = c.Post[object, *object]("/post", nil)
-	a.NotError(err).
-		Zero(resp).
-		NotNil(p).
-		Equal(p.Type, web.ProblemBadRequest).
-		Equal(p.Extensions, &object{Name: "name"})
-
-	resp, p, err = c.Post[object, any]("/post", &object{Age: 1, Name: "name"})
-	a.NotError(err).
-		Nil(p).
-		Equal(resp, &object{Age: 1, Name: "name"})
-
-	resp, p, err = c.Patch[object, any]("/not-exists", nil)
-	a.NotError(err).
-		Zero(resp).
-		NotNil(p).
-		Equal(p.Type, web.ProblemNotFound)
-}
-
-func TestHTTPServer_NewContext(t *testing.T) {
-	a := assert.New(t, false)
-	srv := newTestServer(a, nil)
-	router := srv.Routers().New("def", nil)
-
-	defer servertest.Run(a, srv)()
-	defer srv.Close(0)
-
-	// 正常，指定 Accept-Language，采用默认的 accept
-	router.Get("/path", func(ctx *web.Context) web.Responser {
-		a.NotNil(ctx).NotEmpty(ctx.ID())
-		a.Equal(ctx.Mimetype(false), header.JSON).
-			Equal(ctx.Charset(), header.UTF8).
-			Equal(ctx.LanguageTag(), language.SimplifiedChinese).
-			NotNil(ctx.LocalePrinter())
-		return nil
-	})
-	servertest.Get(a, "http://localhost:8080/path").
-		Header(header.AcceptLanguage, "cmn-hans").
-		Header(header.Accept, header.JSON).
-		Do(nil).
-		Success()
+	return srv, startup
 }
 
 func TestNewService(t *testing.T) {
 	a := assert.New(t, false)
 
 	// Registry 和 Peer 是空的
-	srv, err := NewService("app", "0.1.0", newOptions(nil))
+	srv, err := NewService("app", "0.1.0", newOptions(a, nil))
 	a.Error(err).Nil(srv)
 
 	c := memory.New()
 	reg := registry.NewCache(web.NewCache("reg:", c), registry.NewRandomStrategy(), time.Second)
 
-	srv = newService(a, "app", ":8080", reg, c)
+	srv, startup := newService(a, "app", reg, c)
 	a.Equal(srv.ID(), "app").Equal(srv.Version(), "0.1.0")
 
 	srv.Routers().New("default", nil).Get("/mux/test", buildHandler(202))
 
-	defer servertest.Run(a, srv)()
+	go srv.Serve()
 	defer srv.Close(0)
 
-	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(202)
-}
-
-func newService(a *assert.Assertion, name, addr string, reg registry.Registry, c cache.Driver) *web.Server {
-	srv, err := NewService(name, "0.1.0", newOptions(&Options{
-		Cache:    c,
-		Startup:  web.NewHTTPServerStartup(&http.Server{Addr: addr}),
-		Registry: reg,
-		Peer:     selector.NewPeer("http://localhost" + addr),
-	}))
-	a.NotError(err).NotNil(srv)
-
-	return srv
+	startup.Get("/mux/test").Do().Status(202)
 }
 
 func TestNewGateway(t *testing.T) {
@@ -363,24 +110,25 @@ func TestNewGateway(t *testing.T) {
 	reg := registry.NewCache(web.NewCache("reg:", c), registry.NewRandomStrategy(), time.Second)
 
 	// s1
-	s1 := newService(a, "s1", ":8081", reg, c)
-	defer servertest.Run(a, s1)()
+	s1, _ := newService(a, "s1", reg, c)
+	go s1.Serve()
 	defer s1.Close(0)
 	s1.Routers().New("default", nil).Get("/mux/test", buildHandler(201))
 
 	// s2
-	s2 := newService(a, "s2", ":8082", reg, c)
-	defer servertest.Run(a, s2)()
+	s2, _ := newService(a, "s2", reg, c)
+	go s2.Serve()
 	defer s2.Close(0)
 	s2.Routers().New("default", nil).Get("/mux/test", buildHandler(202))
 
 	// Registry 和 Mapper 是空的
-	g, err := NewGateway("app", "0.1.0", newOptions(nil))
+	g, err := NewGateway("app", "0.1.0", newOptions(a, nil))
 	a.Equal(err.(*web.FieldError).Field, "o.Mapper").Nil(g)
 
-	g, err = NewGateway("app", "0.1.0", newOptions(&Options{
+	sg := startuptest.NewServerStartup(a)
+	g, err = NewGateway("app", "0.1.0", newOptions(a, &Options{
 		Cache:    c,
-		Startup:  web.NewHTTPServerStartup(&http.Server{Addr: ":8080"}),
+		Startup:  sg,
 		Registry: reg,
 		Mapper: map[string]mux.Matcher{
 			"s1": mux.NewPathVersion("", "/s1"),
@@ -391,11 +139,11 @@ func TestNewGateway(t *testing.T) {
 	a.Equal(g.ID(), "app").Equal(g.Version(), "0.1.0")
 	g.Routers().New("default", nil).Get("/mux/test", buildHandler(203))
 
-	defer servertest.Run(a, g)()
+	go g.Serve()
 	defer g.Close(0)
 
-	servertest.Get(a, "http://localhost:8080/s1/mux/test").Do(nil).Status(201)
-	servertest.Get(a, "http://localhost:8080/s2/mux/test").Do(nil).Status(202)
-	servertest.Get(a, "http://localhost:8080/s3/mux/test").Do(nil).Status(http.StatusNotFound)
-	servertest.Get(a, "http://localhost:8080/mux/test").Do(nil).Status(203)
+	sg.Get("/s1/mux/test").Do().Status(201)
+	sg.Get("/s2/mux/test").Do().Status(202)
+	sg.Get("/s3/mux/test").Do().Status(http.StatusNotFound)
+	sg.Get("/mux/test").Do().Status(203)
 }

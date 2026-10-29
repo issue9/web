@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
@@ -18,7 +18,7 @@ import (
 
 func newServer(a *assert.Assertion) *web.Server {
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		HTTPServer: &http.Server{Addr: ":8080"},
+		Startup: web.NewHTTPServerStartup(&http.Server{Addr: ":8080"}),
 	})
 	a.NotError(err).NotNil(s)
 

@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/mux/v10/types"
 	"golang.org/x/text/language"
@@ -34,12 +34,12 @@ func newContext(a *assert.Assertion, w http.ResponseWriter, r *http.Request) *Co
 		r.Header.Set(header.Accept, "*/*")
 	}
 
-	return newTestServer(a).NewContext(w, r, types.NewRoute())
+	return newTestServer(a, false).NewContext(w, r, types.NewRoute())
 }
 
 func TestContext_KeepAlive(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	ctx := s.NewContext(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/p", nil), types.NewRoute())
 	dur := 500 * time.Millisecond
 	begin := time.Now()
@@ -52,7 +52,7 @@ func TestContext_KeepAlive(t *testing.T) {
 
 func TestNewContext(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 
 	t.Run("unset request id key", func(*testing.T) {
 		w := httptest.NewRecorder()
@@ -110,7 +110,7 @@ func TestNewContext(t *testing.T) {
 
 func TestContext_SetMimetype(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a)
+	srv := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
@@ -134,7 +134,7 @@ func TestContext_SetMimetype(t *testing.T) {
 
 func TestContext_SetCharset(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a)
+	srv := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
@@ -157,7 +157,7 @@ func TestContext_SetCharset(t *testing.T) {
 
 func TestContext_SetEncoding(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a)
+	srv := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
@@ -181,7 +181,7 @@ func TestContext_SetEncoding(t *testing.T) {
 
 func TestContext_SetLanguage(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a)
+	srv := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
@@ -198,7 +198,7 @@ func TestContext_SetLanguage(t *testing.T) {
 
 func TestContext_IsXHR(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
@@ -214,7 +214,7 @@ func TestContext_IsXHR(t *testing.T) {
 
 func TestContext_IsIdempotent(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
@@ -230,7 +230,7 @@ func TestContext_IsIdempotent(t *testing.T) {
 func TestServer_acceptLanguage(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := newTestServer(a)
+	srv := newTestServer(a, false)
 	b := srv.Locale()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))

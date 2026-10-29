@@ -10,17 +10,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server/registry"
-	"github.com/issue9/web/server/servertest"
 )
 
 func TestCache_Discover(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s, _ := newTestServer(a)
 
 	c := registry.NewCache(web.NewCache("registry", s.Cache()), registry.NewRandomStrategy(), time.Second)
 	a.NotNil(c)
@@ -58,37 +57,38 @@ func TestCache_Discover(t *testing.T) {
 
 func TestCache_ReverseProxy(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
-
+	s, _ := newTestServer(a)
 	c := registry.NewCache(web.NewCache("registry", s.Cache()), registry.NewRoundRobinStrategy(), time.Second)
 	a.NotNil(c)
 
-	// 空的
+	t.Run("name=", func(t *testing.T) {
+		proxy := c.ReverseProxy("", s)
+		a.NotNil(proxy)
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		a.Panic(func() { proxy.ServeHTTP(w, r) })
+	})
 
-	proxy := c.ReverseProxy("", s)
+	proxy := c.ReverseProxy("s1", s)
 	a.NotNil(proxy)
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/path", nil)
-	a.Panic(func() { proxy.ServeHTTP(w, r) })
 
-	// 空服务
+	t.Run("未注册服务", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		a.Panic(func() { proxy.ServeHTTP(w, r) })
+	})
 
-	proxy = c.ReverseProxy("s1", s)
-	a.NotNil(proxy)
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	a.Panic(func() { proxy.ServeHTTP(w, r) })
+	t.Run("正常", func(t *testing.T) {
+		s1, startup1 := newTestServer(a)
+		go s1.Serve() // s1 是的启动器 httptest.Server，不需要真正等待其完成
+		defer s1.Close(0)
 
-	// 注册微服务 s1
-
-	s1 := newTestServer(a)
-	defer servertest.Run(a, s1)()
-	defer s1.Close(0)
-
-	p1Dreg, err := c.Register("s1", selector.NewPeer("http://localhost:8080"))
-	a.NotError(err).NotNil(p1Dreg).Wait(2 * time.Second) // 等待 proxy
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/path", nil)
-	proxy.ServeHTTP(w, r)
-	a.Equal(w.Result().StatusCode, http.StatusNotFound)
+		p1Dreg, err := c.Register("s1", selector.NewPeer(startup1.URL()))
+		a.NotError(err).NotNil(p1Dreg)
+		time.Sleep(2 * time.Second) // 等待 proxy 更新
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		proxy.ServeHTTP(w, r)
+		a.Equal(w.Result().StatusCode, http.StatusNotFound)
+	})
 }

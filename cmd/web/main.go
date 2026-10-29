@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-//go:generate web locale -l=und -f=yaml ./
-//go:generate web update-locale -src=./locales/und.yaml -dest=./locales/zh.yaml
+//go:generate gomsgs extract -l=und -m -f=yaml -tag=comment -func=github.com/issue9/localeutil.Phrase,github.com/issue9/localeutil.Error,github.com/issue9/localeutil.StringPhrase,github.com/issue9/web.Phrase,github.com/issue9/web.StringPhrase,github.com/issue9/web.NewLocaleError,github.com/issue9/web.Context.Sprintf,github.com/issue9/web.Locale.Sprintf,github.com/issue9/web/openapi.Document.ParameterizedDoc ./
+//go:generate gomsgs update -src=./locales/und.yaml -dest=./locales/zh.yaml
 
 package main
 
@@ -19,8 +19,6 @@ import (
 	"github.com/issue9/web"
 
 	"github.com/issue9/web/cmd/web/enum"
-	"github.com/issue9/web/cmd/web/locale/locale"
-	"github.com/issue9/web/cmd/web/locale/update"
 	"github.com/issue9/web/cmd/web/locales"
 	"github.com/issue9/web/cmd/web/mdoc"
 	"github.com/issue9/web/cmd/web/tpl"
@@ -71,8 +69,6 @@ func main() {
 	})
 
 	mdoc.Init(opt, p)
-	locale.Init(opt, p)
-	update.Init(opt, p)
 	watch.Init(opt, p)
 	enum.Init(opt, p)
 	tpl.Init(opt, p)
@@ -83,8 +79,8 @@ func main() {
 	}
 }
 
-func buildNotFound(p *localeutil.Printer) func(string) string {
-	return func(s string) string {
+func buildNotFound(p *localeutil.Printer) cmdopt.NotFound {
+	return func(o *cmdopt.CmdOpt, s string, suggest []string) string {
 		return web.Phrase("command %s not found", s).LocaleString(p)
 	}
 }

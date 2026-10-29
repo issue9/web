@@ -13,7 +13,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/mux/v10/types"
 	"golang.org/x/text/language"
@@ -30,7 +30,7 @@ func (r *response) Write(data []byte) (int, error) { return r.w.Write(data) }
 
 func TestContext_Render(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a)
+	srv := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p1", nil)
@@ -147,7 +147,7 @@ func TestContext_Render(t *testing.T) {
 
 func TestContext_Wrap(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 
 	// 输出内容之后，不能调用 Wrap
 
@@ -210,7 +210,7 @@ func TestContext_Wrap(t *testing.T) {
 
 func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a)
+	srv := newTestServer(a, false)
 
 	b := srv.Locale()
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "test", "测试"))
@@ -235,7 +235,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 
 func TestNotModified(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 
 	// weak
 
@@ -299,7 +299,7 @@ func TestNotModified(t *testing.T) {
 
 func TestCreated(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
@@ -330,7 +330,7 @@ func TestCreated(t *testing.T) {
 
 func TestRedirect(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/p", nil)
@@ -351,7 +351,7 @@ func TestNoContent(t *testing.T) {
 	// 检测 204 是否存在 http: request method or response status code does not allow body
 
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	s.logBuf.Reset()
 
 	w := httptest.NewRecorder()

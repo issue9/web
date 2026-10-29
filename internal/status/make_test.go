@@ -7,7 +7,7 @@ package status
 import (
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 )
 
 func TestGetStatuses(t *testing.T) {

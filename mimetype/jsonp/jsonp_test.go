@@ -8,19 +8,20 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
-	"github.com/issue9/web/server/servertest"
+	"github.com/issue9/web/startuptest"
 )
 
 func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
+	ts := startuptest.NewTestServerStartup(a)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		Codec:      web.NewCodec().AddMimetype(Mimetype, Marshal, Unmarshal, "", true, true),
-		HTTPServer: &http.Server{Addr: ":8080"},
+		Codec:   web.NewCodec().AddMimetype(Mimetype, Marshal, Unmarshal, "", true, true),
+		Startup: ts,
 	})
 	a.NotError(err).NotNil(s)
 	Install(s, "callback", web.ProblemBadRequest)
@@ -29,17 +30,14 @@ func TestJSONP(t *testing.T) {
 		return web.OK("jsonp")
 	})
 
-	defer servertest.Run(a, s)()
-	defer s.Close(0)
-
-	servertest.Get(a, "http://localhost:8080/jsonp").Header(header.Accept, Mimetype).Do(nil).
+	ts.Get("/jsonp").Header(header.Accept, Mimetype).Do().
 		Status(http.StatusBadRequest).
 		BodyEmpty()
 
-	servertest.Get(a, "http://localhost:8080/jsonp?callback=cb").Header(header.Accept, Mimetype).Do(nil).
+	ts.Get("/jsonp?callback=cb").Header(header.Accept, Mimetype).Do().
 		StringBody(`cb("jsonp")`)
 
-	servertest.Get(a, "http://localhost:8080/jsonp?cb=cb").Header(header.Accept, Mimetype).Do(nil).
+	ts.Get("/jsonp?cb=cb").Header(header.Accept, Mimetype).Do().
 		Status(http.StatusBadRequest).
 		BodyEmpty()
 }

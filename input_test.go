@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/mux/v10/types"
 
@@ -38,7 +38,7 @@ func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *htt
 	r := httptest.NewRequest(http.MethodGet, path, bytes.NewBufferString("123"))
 	r.Header.Set(header.Accept, "*/*")
 	w = httptest.NewRecorder()
-	ctx = newTestServer(a).NewContext(w, r, types.NewRoute())
+	ctx = newTestServer(a, false).NewContext(w, r, types.NewRoute())
 	return ctx, w
 }
 
@@ -52,7 +52,7 @@ func newPathContext(kv ...string) *types.Route {
 
 func TestPaths(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 
@@ -132,7 +132,7 @@ func TestPaths(t *testing.T) {
 
 func TestContext_PathID(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 
@@ -147,7 +147,7 @@ func TestContext_PathID(t *testing.T) {
 
 func TestContext_PathInt64(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 
@@ -263,7 +263,7 @@ func TestContext_Object(t *testing.T) {
 
 func TestContext_Unmarshal(t *testing.T) {
 	a := assert.New(t, false)
-	srv := newTestServer(a)
+	srv := newTestServer(a, false)
 
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))
 	r.Header.Set(header.ContentType, header.JSON)
@@ -301,7 +301,7 @@ func TestContext_Unmarshal(t *testing.T) {
 
 func TestContext_Read(t *testing.T) {
 	a := assert.New(t, false)
-	s := newTestServer(a)
+	s := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString(objectJSONString))

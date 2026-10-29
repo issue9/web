@@ -14,7 +14,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web/internal/qheader"

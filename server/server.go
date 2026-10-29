@@ -86,15 +86,15 @@ func NewGateway(id, version string, o *Options) (*web.Server, error) {
 	}
 
 	o.Startup = gs
-	s := o.newServer(id, version)
+	gateway := o.newServer(id, version)
 
 	for name, match := range o.Mapper {
-		proxy := gs.registry.ReverseProxy(name, s)
-		s.Routers().New(name, match).Any("{path}", func(ctx *web.Context) web.Responser {
+		proxy := gs.registry.ReverseProxy(name, gateway)
+		gateway.Routers().New(name, match).Any("{path}", func(ctx *web.Context) web.Responser {
 			proxy.ServeHTTP(ctx, ctx.Request())
 			return nil
 		})
 	}
 
-	return s, nil
+	return gateway, nil
 }

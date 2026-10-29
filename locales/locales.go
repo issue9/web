@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ import (
 	cache "github.com/issue9/cache/locales"
 	config "github.com/issue9/config/locales"
 	"github.com/issue9/localeutil"
-	localeutilL "github.com/issue9/localeutil/locales"
+	messages "github.com/issue9/messages/locales"
 	scheduled "github.com/issue9/scheduled/locales"
 )
 
@@ -27,7 +27,7 @@ var locales embed.FS
 //	s.Locale().LoadMessages("*.yaml", locales.Locales()...)
 var Locales = []fs.FS{
 	locales,
-	localeutilL.Locales,
+	messages.Locales,
 	config.Locales,
 	cache.Locales,
 	scheduled.Locales,

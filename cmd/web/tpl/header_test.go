@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	xcopy "github.com/otiai10/copy"
 
 	"github.com/issue9/web"

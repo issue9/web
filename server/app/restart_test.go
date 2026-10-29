@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
@@ -56,12 +56,14 @@ func TestSignalHUP(t *testing.T) {
 
 	// hup1
 	t1 := c.App.(*app).getServer().Uptime()
-	a.NotError(p.Signal(syscall.SIGHUP)).Wait(500 * time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
+	a.NotError(p.Signal(syscall.SIGHUP))
+	time.Sleep(500 * time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
 	t2 := c.App.(*app).getServer().Uptime()
 	a.True(t2.After(t1))
 
 	// hup2
-	a.NotError(p.Signal(syscall.SIGHUP)).Wait(500 * time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
+	a.NotError(p.Signal(syscall.SIGHUP))
+	time.Sleep(500 * time.Millisecond) // 此值要大于 CLI.ShutdownTimeout
 	t3 := c.App.(*app).getServer().Uptime()
 	a.True(t3.After(t2))
 

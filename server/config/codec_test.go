@@ -7,7 +7,7 @@ package config
 import (
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/mimetype/json"

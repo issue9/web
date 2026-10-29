@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/issue9/assert/v5"
+	"github.com/issue9/assert/v6"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/mux/v10/types"
 	"golang.org/x/text/language"
@@ -23,7 +23,7 @@ var _ Responser = &Problem{}
 func TestContext_Log(t *testing.T) {
 	a := assert.New(t, false)
 
-	srv := newTestServer(a)
+	srv := newTestServer(a, false)
 
 	t.Run("problemID=empty", func(t *testing.T) {
 		a := assert.New(t, false)
