@@ -239,6 +239,7 @@ func (s *Server) Close(shutdownTimeout time.Duration) {
 	defer func() {
 		s.close()
 		cancel()
+		s.services.waitExit() // 这要放在 cancel 之后
 	}()
 
 	if err := s.startup.Close(ctx); err != nil {

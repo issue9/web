@@ -177,7 +177,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 		u := unique.NewString(1000)
 		o.IDGenerator = u.String
 		o.Plugins = append(o.Plugins, web.PluginFunc(func(s *web.Server) {
-			s.Services().Add(locales.UniqueIdentityGenerator, u)
+			s.Services().Add(locales.UniqueIdentityGenerator, u.Serve)
 		}))
 	}
 

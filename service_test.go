@@ -55,7 +55,8 @@ func TestServer_service(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a, false)
 	srv := s.Services()
-	a.Equal(2, len(srv.services)) // scheduled, unique id generate
+	a.Length(srv.services, 2). // scheduled, unique id generate
+					Length(slices.Collect(srv.All()), 2)
 
 	s1, start1, _, _ := buildService()
 	srv.Add(Phrase("srv1"), s1)
@@ -106,12 +107,12 @@ func TestServer_scheduled(t *testing.T) {
 
 	// 查找翻译项是否正确
 	var found bool
-	srv.VisitJobs(func(j *Job) {
+	for j := range srv.Jobs() {
 		p := s.Locale().NewPrinter(language.SimplifiedChinese)
 		if !found {
 			found = j.Title().LocaleString(p) == "cn"
 		}
-	})
+	}
 	a.True(found)
 }
 

@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"iter"
 	"net/http"
 	"slices"
 	"sync"
@@ -24,31 +25,29 @@ const (
 )
 
 type (
+	// Services [Service] 管理接口
 	Services struct {
 		server    *Server
-		services  []*service
+		services  []*Service
 		scheduled *scheduled.Server
+		wait      *sync.WaitGroup
 	}
 
-	service struct {
+	// Service 单个服务对象
+	Service struct {
 		s       *Services
 		title   LocaleStringer
-		service Service
+		service ServiceFunc
 		err     error // 保存上次的出错内容，不会清空该值。
 
 		state    State
 		stateMux sync.RWMutex
 	}
 
-	// Service 长期运行的服务需要实现的接口
-	Service interface {
-		// Serve 运行服务
-		//
-		// 这是个阻塞方法，实现者需要正确处理 [context.Context.Done] 事件。
-		// 如果是通过 [context.Context] 的相关操作取消的，应该返回 [context.Context.Err]。
-		Serve(context.Context) error
-	}
-
+	// ServiceFunc 服务函数
+	//
+	// 这是个阻塞方法，实现者需要正确处理 [context.Context.Done] 事件。
+	// 如果是通过 [context.Context] 的相关操作取消的，应该返回 [context.Context.Err]。
 	ServiceFunc func(context.Context) error
 
 	// State 服务状态
@@ -60,41 +59,49 @@ type (
 	SchedulerFunc = scheduled.SchedulerFunc
 )
 
-func (f ServiceFunc) Serve(ctx context.Context) error { return f(ctx) }
-
 // Services 服务管理接口
 func (s *Server) Services() *Services { return s.services }
 
 func (s *Server) initServices() {
 	s.services = &Services{
 		server:    s,
-		services:  make([]*service, 0, 5),
+		services:  make([]*Service, 0, 5),
 		scheduled: scheduled.NewServer(s.Location(), s.Logs().ERROR(), s.Logs().DEBUG()),
+		wait:      &sync.WaitGroup{},
 	}
-	s.Services().Add(StringPhrase("scheduler jobs"), s.services.scheduled)
+
+	f := func(ctx context.Context) error { return s.services.scheduled.Serve(ctx) }
+	s.Services().Add(StringPhrase("scheduler jobs"), f)
 }
 
-func (srv *service) getState() State {
+// Title 服务的描述信息
+func (srv *Service) Title() LocaleStringer { return srv.title }
+
+// Err 服务的出错时的错误信息
+func (srv *Service) Err() error { return srv.err }
+
+// State 服务的当前状态
+func (srv *Service) State() State {
 	srv.stateMux.RLock()
 	s := srv.state
 	srv.stateMux.RUnlock()
 	return s
 }
 
-func (srv *service) setState(s State) {
+func (srv *Service) setState(s State) {
 	srv.stateMux.Lock()
 	srv.state = s
 	srv.stateMux.Unlock()
 }
 
-func (srv *service) goServe(ctx context.Context) {
-	if srv.getState() != Running {
+func (srv *Service) goServe(ctx context.Context) {
+	if srv.State() != Running {
 		srv.setState(Running)
-		go srv.serve(ctx)
+		srv.s.wait.Go(func() { srv.serve(ctx) })
 	}
 }
 
-func (srv *service) serve(ctx context.Context) {
+func (srv *Service) serve(ctx context.Context) {
 	defer func() {
 		if msg := recover(); msg != nil {
 			srv.err = fmt.Errorf("panic:%v", msg)
@@ -102,7 +109,7 @@ func (srv *service) serve(ctx context.Context) {
 			srv.setState(Failed)
 		}
 	}()
-	srv.err = srv.service.Serve(ctx)
+	srv.err = srv.service(ctx)
 	state := Stopped
 	if !errors.Is(srv.err, context.Canceled) && !errors.Is(srv.err, http.ErrServerClosed) {
 		srv.s.server.Logs().ERROR().Error(srv.err)
@@ -116,8 +123,8 @@ func (srv *service) serve(ctx context.Context) {
 //
 // title 是对该服务的简要说明；
 // 返回取消该服务的操作函数，该函数同时会将整个服务从列表中删除；
-func (srv *Services) Add(title LocaleStringer, f Service) context.CancelFunc {
-	s := &service{
+func (srv *Services) Add(title LocaleStringer, f ServiceFunc) context.CancelFunc {
+	s := &Service{
 		s:       srv,
 		title:   title,
 		service: f,
@@ -130,28 +137,13 @@ func (srv *Services) Add(title LocaleStringer, f Service) context.CancelFunc {
 	return func() {
 		s.setState(Stopped)
 		cancel()
-		srv.services = slices.DeleteFunc(srv.services, func(e *service) bool { return e == s })
+		srv.services = slices.DeleteFunc(srv.services, func(e *Service) bool { return e == s })
 	}
 }
 
 // AddFunc 将函数 f 作为服务添加并运行
 func (srv *Services) AddFunc(title LocaleStringer, f func(context.Context) error) context.CancelFunc {
 	return srv.Add(title, ServiceFunc(f))
-}
-
-// Visit 访问所有的服务
-//
-// visit 的原型为：
-//
-//	func(title LocaleStringer, state State, err error)
-//
-// title 为服务的说明；
-// state 为服务的当前状态；
-// err 只在 state 为 [Failed] 时才有的错误说明；
-func (srv *Services) Visit(visit func(title LocaleStringer, state State, err error)) {
-	for _, s := range srv.services {
-		visit(s.title, s.getState(), s.err)
-	}
 }
 
 // AddCron 添加新的定时任务
@@ -183,14 +175,22 @@ func (srv *Services) AddAt(title LocaleStringer, job JobFunc, at time.Time) cont
 //
 // title 是对该服务的简要说明；
 // scheduler 计划任务的时间调度算法实现；
-// delay 是否在任务执行完之后，才计算下一次的执行时间点。
 func (srv *Services) AddJob(title LocaleStringer, job JobFunc, scheduler Scheduler) context.CancelFunc {
 	return srv.scheduled.New(title, job, scheduler)
 }
 
-// VisitJobs 访问所有的计划任务
-func (srv *Services) VisitJobs(visit func(*Job)) {
-	for j := range srv.scheduled.Jobs() {
-		visit(j)
+// Jobs 访问所有的计划任务
+func (srv *Services) Jobs() iter.Seq[*scheduled.Job] { return srv.scheduled.Jobs() }
+
+// All 返回所有的服务对象
+func (srv *Services) All() iter.Seq[*Service] {
+	return func(yield func(*Service) bool) {
+		for _, s := range srv.services {
+			if !yield(s) {
+				break
+			}
+		}
 	}
 }
+
+func (srv *Services) waitExit() { srv.wait.Wait() }

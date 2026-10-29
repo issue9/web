@@ -43,7 +43,7 @@ func newServer(a *assert.Assertion, ts Startup) *web.Server {
 
 	s := web.NewServer("id", "1.0.0", conf, ts, time.Local, language.SimplifiedChinese, logs.New(logs.NewNopHandler()), u.String, cc, codec, header.XRequestID, "")
 	a.NotNil(s)
-	s.Services().Add(locales.UniqueIdentityGenerator, u)
+	s.Services().Add(locales.UniqueIdentityGenerator, u.Serve)
 
 	return s
 }

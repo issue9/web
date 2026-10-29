@@ -81,7 +81,7 @@ func newTestServer(a *assert.Assertion, sec bool) *testServer {
 	startup := NewHTTPServerStartup(hs)
 
 	srv.Server = NewServer("test", "1.0.0", conf, startup, time.Local, language.SimplifiedChinese, log, u.String, cc, newCodec(a), header.XRequestID, "")
-	srv.Services().Add(Phrase("unique"), u)
+	srv.Services().Add(Phrase("unique"), u.Serve)
 
 	a.NotError(srv.Locale().SetString(language.SimplifiedChinese, "lang", "cn")).
 		NotError(srv.Locale().SetString(language.TraditionalChinese, "lang", "tw"))

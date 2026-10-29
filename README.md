@@ -100,7 +100,6 @@ router.Get("/openapi", doc.Handler()) // 将文档以接口的形式输出
 
 <https://github.com/issue9/web/releases> 提供了一个简易的辅助工具。可以帮助用户完成以下工作：
 
-- 提取和更新本地化信息；
 - 热编译项目；
 - 为枚举类型生成常用接口；
 - 根据对象的注释生成 markdown 文档；

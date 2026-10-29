@@ -82,7 +82,7 @@ var (
 // IDGeneratorBuilder 构建生成唯一 ID 的方法
 //
 // f 表示生成唯一 ID 的方法；s 为 f 依赖的服务，可以为空；
-type IDGeneratorBuilder = func() (f func() string, s web.Service)
+type IDGeneratorBuilder = func() (f func() string, s web.ServiceFunc)
 
 // RegisterLogsHandler 注册日志的 [LogsWriterBuilder]
 //
@@ -178,17 +178,17 @@ func init() {
 
 	// RegisterIDGenerator
 
-	RegisterIDGenerator("date", func() (func() string, web.Service) {
+	RegisterIDGenerator("date", func() (func() string, web.ServiceFunc) {
 		u := unique.NewNumber(100)
-		return u.String, u
+		return u.String, u.Serve
 	})
-	RegisterIDGenerator("string", func() (func() string, web.Service) {
+	RegisterIDGenerator("string", func() (func() string, web.ServiceFunc) {
 		u := unique.NewString(100)
-		return u.String, u
+		return u.String, u.Serve
 	})
-	RegisterIDGenerator("number", func() (func() string, web.Service) {
+	RegisterIDGenerator("number", func() (func() string, web.ServiceFunc) {
 		u := unique.NewDate(100)
-		return u.String, u
+		return u.String, u.Serve
 	})
 
 	// RegisterMimetype
