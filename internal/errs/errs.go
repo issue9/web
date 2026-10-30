@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,20 +19,7 @@ func Sprint(p *localeutil.Printer, err error, detail bool) string {
 	switch t := err.(type) {
 	case xerrors.Formatter:
 		b := logs.NewBuffer(detail)
-		e := t.FormatError(b)
-	FOR:
-		for e != nil {
-			switch tt := e.(type) {
-			case xerrors.Formatter:
-				e = tt.FormatError(b)
-			case localeutil.Stringer:
-				b.AppendString(tt.LocaleString(p))
-				break FOR
-			default:
-				b.AppendString(tt.Error())
-				break FOR
-			}
-		}
+		logs.AppendError(p, b, t)
 		return string(b.Bytes())
 	case localeutil.Stringer:
 		return t.LocaleString(p)

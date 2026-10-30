@@ -109,6 +109,7 @@ func (srv *Service) serve(ctx context.Context) {
 			srv.setState(Failed)
 		}
 	}()
+
 	srv.err = srv.service(ctx)
 	state := Stopped
 	if !errors.Is(srv.err, context.Canceled) && !errors.Is(srv.err, http.ErrServerClosed) {
