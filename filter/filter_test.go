@@ -69,7 +69,7 @@ func TestFilter_AddFilter(t *testing.T) {
 	a.Equal(c.params, map[string]localeutil.Stringer{
 		"v1.f1":    localeutil.StringPhrase("s1"),
 		"v1.v2.f2": localeutil.StringPhrase("s2"),
-	})
+	}).True(f.HasError())
 }
 
 func TestFilter_When(t *testing.T) {

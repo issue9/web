@@ -13,10 +13,11 @@ type Collector func(name string, reason localeutil.Stringer)
 //
 // 包含了数据验证和数据修正功能
 type Filter struct {
-	name        string
+	name      string
+	collector Collector
+
 	exitOnError bool
-	collector   Collector
-	len         int
+	hasError    bool
 }
 
 // New 声明过滤器
@@ -35,9 +36,11 @@ func (v *Filter) Name() string { return v.name }
 
 func (v *Filter) ExitOnError() bool { return v.exitOnError }
 
+func (v *Filter) HasError() bool { return v.hasError }
+
 // AddReason 直接添加一条错误信息
 func (v *Filter) AddReason(name string, reason localeutil.Stringer) *Filter {
-	if v.len > 0 && v.exitOnError {
+	if v.HasError() && v.exitOnError {
 		return v
 	}
 
@@ -45,7 +48,7 @@ func (v *Filter) AddReason(name string, reason localeutil.Stringer) *Filter {
 		name = v.name + name
 	}
 
-	v.len++
+	v.hasError = true
 	v.collector(name, reason)
 	return v
 }
@@ -60,7 +63,7 @@ func (v *Filter) AddError(name string, err error) *Filter {
 
 // Add 使用 rule 规则验证字段 name 表示的值 value
 func (v *Filter) Add[T any](name string, value *T, rule ...Rule[T]) *Filter {
-	if v.len > 0 && v.exitOnError {
+	if v.HasError() && v.exitOnError {
 		return v
 	}
 
@@ -75,7 +78,13 @@ func (v *Filter) Add[T any](name string, value *T, rule ...Rule[T]) *Filter {
 }
 
 func (v *Filter) AddFilter(name string, f func(f *Filter)) *Filter {
-	f(New(v.name+name, v.exitOnError, v.collector))
+	ff := New(v.name+name, v.exitOnError, v.collector)
+
+	f(ff)
+	if ff.HasError() {
+		v.hasError = true
+	}
+
 	return v
 }
 
