@@ -13,41 +13,73 @@ import (
 
 	"github.com/issue9/query/v3"
 
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 )
 
+var pathPool = &sync.Pool{New: func() any { return &Paths{} }}
+
 var queryPool = &sync.Pool{New: func() any { return &Queries{} }}
 
+// ContextFilter 用户提交数据的验证修正接口
+type ContextFilter interface {
+	FilterContext(*filter.Filter, *Context)
+}
+
 // Paths 提供对路径参数的处理
-type Paths FilterContext
+type Paths struct {
+	filter  *filter.Filter
+	ctx     *Context
+	problem *Problem
+}
 
 // Queries 提供对查询参数的处理
 type Queries struct {
-	filter  *FilterContext
+	filter  *filter.Filter
+	ctx     *Context
+	problem *Problem
+
 	queries url.Values
+}
+
+func (ctx *Context) newFilter(p *Problem, exitAtError bool) *filter.Filter {
+	return filter.New("", exitAtError, func(name string, reason LocaleStringer) {
+		p.WithParam(name, reason.LocaleString(ctx.LocalePrinter()))
+	})
 }
 
 // Paths 声明一个用于获取路径参数的对象
 //
 // 返回对象的生命周期在 [Context] 结束时也随之结束。
 func (ctx *Context) Paths(exitAtError bool) *Paths {
-	return (*Paths)(ctx.NewFilterContext(exitAtError))
+	p := newProblem()
+
+	pp := pathPool.Get().(*Paths)
+	pp.filter = ctx.newFilter(p, exitAtError)
+	pp.ctx = ctx
+	pp.problem = p
+
+	ctx.OnExit(func(*Context, int) { queryPool.Put(pp) })
+
+	return pp
 }
 
-func (p *Paths) filter() *FilterContext { return (*FilterContext)(p) }
+func (p *Paths) continueNext() bool { return !p.filter.ExitOnError() || len(p.problem.Params) == 0 }
+
+func (p *Paths) Context() *Context { return p.ctx }
 
 // ID 返回 key 所表示的值且必须大于 0
 func (p *Paths) ID(key string) int64 {
-	if !p.filter().continueNext() {
+	if !p.continueNext() {
 		return 0
 	}
 
-	id, err := p.filter().Context().Route().Int(key)
+	id, err := p.ctx.Route().Int(key)
 	if err != nil {
-		p.filter().AddError(key, err)
+		p.filter.AddError(key, err)
 		return 0
 	} else if id <= 0 {
-		p.filter().AddReason(key, locales.ShouldGreatThan(0))
+		p.filter.AddReason(key, locales.ShouldGreatThan(0))
 		return 0
 	}
 	return id
@@ -55,13 +87,13 @@ func (p *Paths) ID(key string) int64 {
 
 // Int64 获取参数 key 所代表的值并转换成 int64 类型
 func (p *Paths) Int64(key string) int64 {
-	if !p.filter().continueNext() {
+	if !p.continueNext() {
 		return 0
 	}
 
-	ret, err := p.filter().Context().Route().Int(key)
+	ret, err := p.Context().Route().Int(key)
 	if err != nil {
-		p.filter().AddError(key, err)
+		p.filter.AddError(key, err)
 		return 0
 	}
 	return ret
@@ -69,13 +101,13 @@ func (p *Paths) Int64(key string) int64 {
 
 // String 获取参数 key 所代表的值并转换成 string
 func (p *Paths) String(key string) string {
-	if !p.filter().continueNext() {
+	if !p.continueNext() {
 		return ""
 	}
 
-	ret, err := p.filter().Context().Route().String(key)
+	ret, err := p.Context().Route().String(key)
 	if err != nil {
-		p.filter().AddError(key, err)
+		p.filter.AddError(key, err)
 		return ""
 	}
 	return ret
@@ -85,32 +117,37 @@ func (p *Paths) String(key string) string {
 //
 // 由 [strconv.ParseBool] 进行转换。
 func (p *Paths) Bool(key string) bool {
-	if !p.filter().continueNext() {
+	if !p.continueNext() {
 		return false
 	}
 
-	ret, err := p.filter().Context().Route().Bool(key)
+	ret, err := p.Context().Route().Bool(key)
 	if err != nil {
-		p.filter().AddError(key, err)
+		p.filter.AddError(key, err)
 	}
 	return ret
 }
 
 // Float64 获取参数 key 所代表的值并转换成 float64
 func (p *Paths) Float64(key string) float64 {
-	if !p.filter().continueNext() {
+	if !p.continueNext() {
 		return 0
 	}
 
-	ret, err := p.filter().Context().Route().Float(key)
+	ret, err := p.Context().Route().Float(key)
 	if err != nil {
-		p.filter().AddError(key, err)
+		p.filter.AddError(key, err)
 	}
 	return ret
 }
 
 // Problem 如果有错误信息转换成 [Problem] 否则返回 nil
-func (p *Paths) Problem(id string) Responser { return p.filter().Problem(id) }
+func (p *Paths) Problem(id string) Responser {
+	if p.filter.HasError() {
+		return p.Context().initProblem(p.problem, id)
+	}
+	return nil
+}
 
 // PathID 获取地址参数中表示 key 的值并转换成大于 0 的 int64
 //
@@ -162,13 +199,21 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 		return nil, err
 	}
 
+	p := newProblem()
 	q := queryPool.Get().(*Queries)
-	q.filter = ctx.NewFilterContext(exitAtError)
+	q.filter = ctx.newFilter(p, exitAtError)
 	q.queries = values
+	q.ctx = ctx
+	q.problem = p
+
 	ctx.queries = q
 	ctx.OnExit(func(*Context, int) { queryPool.Put(q) })
 	return q, nil
 }
+
+func (q *Queries) continueNext() bool { return !q.filter.ExitOnError() || len(q.problem.Params) == 0 }
+
+func (q *Queries) Context() *Context { return q.ctx }
 
 func (q *Queries) getItem(key string) string { return q.queries.Get(key) }
 
@@ -176,7 +221,7 @@ func (q *Queries) getItem(key string) string { return q.queries.Get(key) }
 //
 // 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Int(key string, def int) int {
-	if !q.filter.continueNext() {
+	if !q.continueNext() {
 		return 0
 	}
 
@@ -197,7 +242,7 @@ func (q *Queries) Int(key string, def int) int {
 //
 // 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Int64(key string, def int64) int64 {
-	if !q.filter.continueNext() {
+	if !q.continueNext() {
 		return 0
 	}
 
@@ -218,7 +263,7 @@ func (q *Queries) Int64(key string, def int64) int64 {
 //
 // 若不存在则返回 def 作为其默认值。
 func (q *Queries) String(key, def string) string {
-	if !q.filter.continueNext() {
+	if !q.continueNext() {
 		return ""
 	}
 
@@ -232,7 +277,7 @@ func (q *Queries) String(key, def string) string {
 //
 // 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Bool(key string, def bool) bool {
-	if !q.filter.continueNext() {
+	if !q.continueNext() {
 		return false
 	}
 
@@ -253,7 +298,7 @@ func (q *Queries) Bool(key string, def bool) bool {
 //
 // 若不存在则返回 def 作为其默认值。若是无法转换，则会保存错误信息并返回 def。
 func (q *Queries) Float64(key string, def float64) float64 {
-	if !q.filter.continueNext() {
+	if !q.continueNext() {
 		return 0
 	}
 
@@ -271,12 +316,17 @@ func (q *Queries) Float64(key string, def float64) float64 {
 }
 
 // Problem 如果有错误信息转换成 Problem 否则返回 nil
-func (q *Queries) Problem(id string) Responser { return q.filter.Problem(id) }
+func (q *Queries) Problem(id string) Responser {
+	if q.filter.HasError() {
+		return q.Context().initProblem(q.problem, id)
+	}
+	return nil
+}
 
 // Object 将查询参数解析到一个对象中
 //
 // 具体的文档信息可以参考 [Query]。
-// 如果 v 实现了 [Filter] 接口，则在读取数据之后，会调用该接口方法。
+// 如果 v 实现了 [ContextFilter] 接口，则在读取数据之后，会调用该接口方法。
 //
 // [Query]: https://github.com/issue9/query
 func (q *Queries) Object(v any) {
@@ -291,9 +341,9 @@ func (q *Queries) Object(v any) {
 		q.filter.AddReason(field, msg)
 	})
 
-	if q.filter.continueNext() {
-		if s, ok := v.(Filter); ok {
-			s.Filter(q.filter)
+	if q.continueNext() {
+		if s, ok := v.(ContextFilter); ok {
+			s.FilterContext(q.filter, q.Context())
 		}
 	}
 }
@@ -325,17 +375,17 @@ func (ctx *Context) Unmarshal(v any) error {
 
 // Read 从客户端读取数据并转换成 v 对象
 //
-// 如果 v 实现了 [Filter] 接口，则在读取数据之后，会调用该接口方法。
+// 如果 v 实现了 [ContextFilter] 接口，则在读取数据之后，会调用该接口方法。
 // 如果验证失败，会返回以 id 作为错误代码的 [Problem] 对象。
 func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
 		return ctx.Log(err, ProblemUnprocessableEntity)
 	}
 
-	if vv, ok := v.(Filter); ok {
-		f := ctx.NewFilterContext(exitAtError)
-		vv.Filter(f)
-		return f.Problem(id)
+	p := newProblem()
+	if vv, ok := v.(ContextFilter); ok {
+		vv.FilterContext(ctx.newFilter(p, exitAtError), ctx)
+		return ctx.initProblem(p, id)
 	}
 	return nil
 }

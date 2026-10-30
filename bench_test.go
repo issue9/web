@@ -248,24 +248,6 @@ func BenchmarkProblem_unmarshal_json(b *testing.B) {
 	}
 }
 
-func BenchmarkNewFilterContext(b *testing.B) {
-	a := assert.New(b, false)
-	s := newTestServer(a, false)
-	b.ReportAllocs()
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/path", nil)
-	r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8))
-	r.Header.Set(header.Accept, header.JSON)
-	ctx := s.NewContext(w, r, types.NewRoute())
-	defer ctx.freeContext()
-
-	for b.Loop() {
-		p := ctx.NewFilterContext(false)
-		filterContextPool.Put(p)
-	}
-}
-
 func BenchmarkCodec_NewEncoder(b *testing.B) {
 	b.ReportAllocs()
 
