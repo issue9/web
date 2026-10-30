@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+// Package filter 提供数据验证和修正功能
 package filter
 
 import "github.com/issue9/localeutil"
@@ -45,7 +46,7 @@ func (v *Filter) AddReason(name string, reason localeutil.Stringer) *Filter {
 	}
 
 	if v.name != "" {
-		name = v.name + name
+		name = v.name + "." + name
 	}
 
 	v.hasError = true
@@ -77,8 +78,14 @@ func (v *Filter) Add[T any](name string, value *T, rule ...Rule[T]) *Filter {
 	return v
 }
 
+// AddFilter 执行一个过滤器函数
+//
+// 该过滤器产生的错误信息字段名会以参数 name 作为前缀。
 func (v *Filter) AddFilter(name string, f func(f *Filter)) *Filter {
-	ff := New(v.name+name, v.exitOnError, v.collector)
+	if v.name != "" {
+		name = v.name + "." + name
+	}
+	ff := New(name, v.exitOnError, v.collector)
 
 	f(ff)
 	if ff.HasError() {

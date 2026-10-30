@@ -57,9 +57,9 @@ func TestFilter_AddFilter(t *testing.T) {
 	a := assert.New(t, false)
 
 	f, c := newFilter(false)
-	f1 := f.AddFilter("v1.", func(f *Filter) {
+	f1 := f.AddFilter("v1", func(f *Filter) {
 		f.AddReason("f1", localeutil.StringPhrase("s1"))
-		f2 := f.AddFilter("v2.", func(f *Filter) {
+		f2 := f.AddFilter("v2", func(f *Filter) {
 			f.AddError("f2", errors.New("s2"))
 		})
 		a.Equal(f2, f)

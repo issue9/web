@@ -21,7 +21,9 @@ var pathPool = &sync.Pool{New: func() any { return &Paths{} }}
 
 var queryPool = &sync.Pool{New: func() any { return &Queries{} }}
 
-// ContextFilter 用户提交数据的验证修正接口
+// ContextFilter 数据的验证和修正接口
+//
+// 通过 [Context] 从客户端提交的数据对象，如果实现了此接口，那么在解码时会调用此接口的方法验证数据。
 type ContextFilter interface {
 	FilterContext(*filter.Filter, *Context)
 }
