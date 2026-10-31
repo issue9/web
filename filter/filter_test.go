@@ -59,7 +59,7 @@ func TestFilter_AddFilter(t *testing.T) {
 	f, c := newFilter(false)
 	f1 := f.AddFilter("v1", func(f *Filter) {
 		f.AddReason("f1", localeutil.StringPhrase("s1"))
-		f2 := f.AddFilter("v2", func(f *Filter) {
+		f2 := f.AddFilter("", func(f *Filter) {
 			f.AddError("f2", errors.New("s2"))
 		})
 		a.Equal(f2, f)
@@ -67,8 +67,8 @@ func TestFilter_AddFilter(t *testing.T) {
 	a.Equal(f1, f)
 
 	a.Equal(c.params, map[string]localeutil.Stringer{
-		"v1.f1":    localeutil.StringPhrase("s1"),
-		"v1.v2.f2": localeutil.StringPhrase("s2"),
+		"v1.f1": localeutil.StringPhrase("s1"),
+		"v1.f2": localeutil.StringPhrase("s2"),
 	}).True(f.HasError())
 }
 

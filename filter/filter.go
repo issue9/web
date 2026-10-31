@@ -45,7 +45,9 @@ func (v *Filter) AddReason(name string, reason localeutil.Stringer) *Filter {
 		return v
 	}
 
-	if v.name != "" {
+	if name == "" {
+		name = v.name
+	} else if v.name != "" {
 		name = v.name + "." + name
 	}
 
@@ -82,9 +84,12 @@ func (v *Filter) Add[T any](name string, value *T, rule ...Rule[T]) *Filter {
 //
 // 该过滤器产生的错误信息字段名会以参数 name 作为前缀。
 func (v *Filter) AddFilter(name string, f func(f *Filter)) *Filter {
-	if v.name != "" {
+	if name == "" {
+		name = v.name
+	} else if v.name != "" {
 		name = v.name + "." + name
 	}
+
 	ff := New(name, v.exitOnError, v.collector)
 
 	f(ff)
