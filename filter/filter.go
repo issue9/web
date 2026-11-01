@@ -123,8 +123,12 @@ func (f *Filter) AddFilter(name string, fun func(f *Filter)) *Filter {
 // When 只有满足 cond 才执行 f 中的验证
 //
 // f 中的 v 即为当前对象；
-func (f *Filter) When(cond bool, fun func(v *Filter)) *Filter {
-	if cond {
+func (f *Filter) When(cond func() bool, fun func(v *Filter)) *Filter {
+	if f.HasError() && f.ExitOnError() {
+		return f
+	}
+
+	if cond() {
 		fun(f)
 	}
 	return f

@@ -81,7 +81,7 @@ func TestFilter_When(t *testing.T) {
 	f, c := newFilter(false)
 	obj := &object{}
 	f.Add("obj/age", &obj.Age, min18).
-		When(obj.Age > 0, func(v *Filter) {
+		When(func() bool { return obj.Age > 0 }, func(v *Filter) {
 			v.Add("obj/name", &obj.Name, notEmpty)
 		})
 	a.Equal(c.params, map[string]localeutil.Stringer{
@@ -91,7 +91,7 @@ func TestFilter_When(t *testing.T) {
 	f, c = newFilter(false)
 	obj = &object{Age: 15}
 	f.Add("obj/age", &obj.Age, min18).
-		When(obj.Age > 0, func(v *Filter) {
+		When(func() bool { return obj.Age > 0 }, func(v *Filter) {
 			v.Add("obj/name", &obj.Name, notEmpty)
 		})
 	a.Equal(c.params, map[string]localeutil.Stringer{
