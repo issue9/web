@@ -23,12 +23,16 @@ type Filter struct {
 
 // New 声明过滤器
 //
-// name 过滤器的名称，如果不这空，那么所有验证属性名称都会加上此值；
-func New(name string, exitOnError bool, collecter Collector) *Filter {
+// name 过滤器的名称，如果不为空，那么所有验证属性名称都会加上此值；
+func New(name string, exitOnError bool, collector Collector) *Filter {
+	if collector == nil {
+		panic("参数 collector 不能为空")
+	}
+
 	return &Filter{
 		name:        name,
 		exitOnError: exitOnError,
-		collector:   collecter,
+		collector:   collector,
 	}
 }
 
@@ -41,7 +45,11 @@ func (f *Filter) HasError() bool { return f.hasError }
 
 // AddReason 直接添加一条错误信息
 func (f *Filter) AddReason(name string, reason localeutil.Stringer) *Filter {
-	if f.HasError() && f.exitOnError {
+	if name == "" || reason == nil {
+		panic("参数 name 和 reason 不能为空")
+	}
+
+	if f.HasError() && f.ExitOnError() {
 		return f
 	}
 
@@ -66,7 +74,11 @@ func (f *Filter) AddError(name string, err error) *Filter {
 
 // Add 使用 rule 规则验证字段 name 表示的值 value
 func (f *Filter) Add[T any](name string, value *T, rule ...Rule[T]) *Filter {
-	if f.HasError() && f.exitOnError {
+	if value == nil {
+		panic("参数 value 不能为空")
+	}
+
+	if f.HasError() && f.ExitOnError() {
 		return f
 	}
 
@@ -85,6 +97,10 @@ func (f *Filter) Add[T any](name string, value *T, rule ...Rule[T]) *Filter {
 // 该过滤器产生的错误信息字段名会以参数 name 作为前缀。
 // 如果 name 为空，那么直接传递当前对象 f 给 fun 函数。
 func (f *Filter) AddFilter(name string, fun func(f *Filter)) *Filter {
+	if f.HasError() && f.ExitOnError() {
+		return f
+	}
+
 	if name == "" {
 		fun(f)
 		return f
@@ -94,7 +110,7 @@ func (f *Filter) AddFilter(name string, fun func(f *Filter)) *Filter {
 		name = f.name + "." + name
 	}
 
-	ff := New(name, f.exitOnError, f.collector)
+	ff := New(name, f.ExitOnError(), f.collector)
 
 	fun(ff)
 	if ff.HasError() {

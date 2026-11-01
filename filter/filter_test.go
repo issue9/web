@@ -30,10 +30,10 @@ func (c *collector) collect(name string, reason localeutil.Stringer) {
 func TestFilter(t *testing.T) {
 	a := assert.New(t, false)
 
-	min2 := ValidatorRule(buildMinValidator(-2), localeutil.Phrase("-2"))
-	min3 := ValidatorRule(buildMinValidator(-3), localeutil.Phrase("-3"))
-	max50 := ValidatorRule(buildMaxValidator(50), localeutil.Phrase("50"))
-	max4 := ValidatorRule(buildMaxValidator(-4), localeutil.Phrase("-4"))
+	min2 := Validator(buildMinValidator(-2), localeutil.Phrase("-2"))
+	min3 := Validator(buildMinValidator(-3), localeutil.Phrase("-3"))
+	max50 := Validator(buildMaxValidator(50), localeutil.Phrase("50"))
+	max4 := Validator(buildMaxValidator(-4), localeutil.Phrase("-4"))
 
 	f, c := newFilter(false)
 	n100 := -100
@@ -75,8 +75,8 @@ func TestFilter_AddFilter(t *testing.T) {
 func TestFilter_When(t *testing.T) {
 	a := assert.New(t, false)
 
-	min18 := ValidatorRule(buildMinValidator(18), localeutil.Phrase("不能小于 18"))
-	notEmpty := ValidatorRule(required[string], localeutil.Phrase("不能为空"))
+	min18 := Validator(buildMinValidator(18), localeutil.Phrase("不能小于 18"))
+	notEmpty := Validator(required[string], localeutil.Phrase("不能为空"))
 
 	f, c := newFilter(false)
 	obj := &object{}

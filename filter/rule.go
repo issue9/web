@@ -30,8 +30,8 @@ func Rules[T any](rule ...Rule[T]) Rule[T] {
 	}
 }
 
-// SanitizerRule 将一组修正数据的函数封装为 [Rule]
-func SanitizerRule[T any](f ...func(*T)) Rule[T] {
+// Sanitizer 将一组修正数据的函数封装为 [Rule]
+func Sanitizer[T any](f ...func(*T)) Rule[T] {
 	return func(_ string, v *T) (string, localeutil.Stringer) {
 		for _, ff := range f {
 			ff(v)
@@ -40,8 +40,8 @@ func SanitizerRule[T any](f ...func(*T)) Rule[T] {
 	}
 }
 
-// ValidatorRule 将验证器函数封装为 [Rule]
-func ValidatorRule[T any](f func(T) bool, msg localeutil.Stringer) Rule[T] {
+// Validator 将验证器函数封装为 [Rule]
+func Validator[T any](f func(T) bool, msg localeutil.Stringer) Rule[T] {
 	return func(name string, v *T) (string, localeutil.Stringer) {
 		if !f(*v) {
 			return name, msg
@@ -50,8 +50,8 @@ func ValidatorRule[T any](f func(T) bool, msg localeutil.Stringer) Rule[T] {
 	}
 }
 
-// SliceSanitizerRule 将一组修正函数封装为 [Rule] 用以验证切片的元素
-func SliceSanitizerRule[S ~[]T, T any](f ...func(*T)) Rule[S] {
+// SliceSanitizer 将一组修正函数封装为 [Rule] 用以验证切片的元素
+func SliceSanitizer[S ~[]T, T any](f ...func(*T)) Rule[S] {
 	return func(_ string, s *S) (string, localeutil.Stringer) {
 		for _, ff := range f {
 			for index, item := range *s {
@@ -63,19 +63,21 @@ func SliceSanitizerRule[S ~[]T, T any](f ...func(*T)) Rule[S] {
 	}
 }
 
-// MapSanitizerRule 将一组修正函数封装为 [Rule] 用以验证 map 的元素
-func MapSanitizerRule[M ~map[K]V, K comparable, V any](v func(*V)) Rule[M] {
+// MapSanitizer 将一组修正函数封装为 [Rule] 用以修正 map 的元素
+func MapSanitizer[M ~map[K]V, K comparable, V any](f ...func(*V)) Rule[M] {
 	return func(_ string, m *M) (string, localeutil.Stringer) {
-		for key, val := range *m {
-			v(&val)
-			(*m)[key] = val
+		for _, ff := range f {
+			for key, val := range *m {
+				ff(&val)
+				(*m)[key] = val
+			}
 		}
 		return "", nil
 	}
 }
 
-// SliceValidatorRule 将验证器封装为 [Rule] 用以验证切片元素
-func SliceValidatorRule[S ~[]T, T any](v func(T) bool, msg localeutil.Stringer) Rule[S] {
+// SliceValidator 将验证器封装为 [Rule] 用以验证切片元素
+func SliceValidator[S ~[]T, T any](v func(T) bool, msg localeutil.Stringer) Rule[S] {
 	return func(name string, val *S) (string, localeutil.Stringer) {
 		for index, vv := range *val {
 			if !v(vv) {
@@ -86,11 +88,11 @@ func SliceValidatorRule[S ~[]T, T any](v func(T) bool, msg localeutil.Stringer) 
 	}
 }
 
-// MapValidatorRule 将验证器封装为 [Rule] 用以验证 map
+// MapValidator 将验证器封装为 [Rule] 用以验证 map
 //
-// v 用于验证键名和键值，两者可以有一个是空值，表示不需要验证，但不能都为空；
+// v 用于验证键值，两者可以有一个是空值，表示不需要验证，但不能都为空；
 // msg 表示验证出错时的错误提示；
-func MapValidatorRule[M ~map[K]V, K comparable, V any](v func(V) bool, msg localeutil.Stringer) Rule[M] {
+func MapValidator[M ~map[K]V, K comparable, V any](v func(V) bool, msg localeutil.Stringer) Rule[M] {
 	return func(name string, m *M) (string, localeutil.Stringer) {
 		for key, val := range *m {
 			if !v(val) {
