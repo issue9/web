@@ -33,79 +33,83 @@ func New(name string, exitOnError bool, collecter Collector) *Filter {
 }
 
 // Name 由 [New] 的参数 name
-func (v *Filter) Name() string { return v.name }
+func (f *Filter) Name() string { return f.name }
 
-func (v *Filter) ExitOnError() bool { return v.exitOnError }
+func (f *Filter) ExitOnError() bool { return f.exitOnError }
 
-func (v *Filter) HasError() bool { return v.hasError }
+func (f *Filter) HasError() bool { return f.hasError }
 
 // AddReason 直接添加一条错误信息
-func (v *Filter) AddReason(name string, reason localeutil.Stringer) *Filter {
-	if v.HasError() && v.exitOnError {
-		return v
+func (f *Filter) AddReason(name string, reason localeutil.Stringer) *Filter {
+	if f.HasError() && f.exitOnError {
+		return f
 	}
 
 	if name == "" {
-		name = v.name
-	} else if v.name != "" {
-		name = v.name + "." + name
+		name = f.name
+	} else if f.name != "" {
+		name = f.name + "." + name
 	}
 
-	v.hasError = true
-	v.collector(name, reason)
-	return v
+	f.hasError = true
+	f.collector(name, reason)
+	return f
 }
 
 // AddError 添加一条类型为 err 的错误信息
-func (v *Filter) AddError(name string, err error) *Filter {
+func (f *Filter) AddError(name string, err error) *Filter {
 	if ls, ok := err.(localeutil.Stringer); ok {
-		return v.AddReason(name, ls)
+		return f.AddReason(name, ls)
 	}
-	return v.AddReason(name, localeutil.Phrase(err.Error()))
+	return f.AddReason(name, localeutil.Phrase(err.Error()))
 }
 
 // Add 使用 rule 规则验证字段 name 表示的值 value
-func (v *Filter) Add[T any](name string, value *T, rule ...Rule[T]) *Filter {
-	if v.HasError() && v.exitOnError {
-		return v
+func (f *Filter) Add[T any](name string, value *T, rule ...Rule[T]) *Filter {
+	if f.HasError() && f.exitOnError {
+		return f
 	}
 
 	for _, r := range rule {
 		if name, ls := r(name, value); ls != nil {
-			v.AddReason(name, ls)
+			f.AddReason(name, ls)
 			break
 		}
 	}
 
-	return v
+	return f
 }
 
 // AddFilter 执行一个过滤器函数
 //
 // 该过滤器产生的错误信息字段名会以参数 name 作为前缀。
-func (v *Filter) AddFilter(name string, f func(f *Filter)) *Filter {
+// 如果 name 为空，那么直接传递当前对象 f 给 fun 函数。
+func (f *Filter) AddFilter(name string, fun func(f *Filter)) *Filter {
 	if name == "" {
-		name = v.name
-	} else if v.name != "" {
-		name = v.name + "." + name
+		fun(f)
+		return f
 	}
 
-	ff := New(name, v.exitOnError, v.collector)
+	if f.name != "" {
+		name = f.name + "." + name
+	}
 
-	f(ff)
+	ff := New(name, f.exitOnError, f.collector)
+
+	fun(ff)
 	if ff.HasError() {
-		v.hasError = true
+		f.hasError = true
 	}
 
-	return v
+	return f
 }
 
 // When 只有满足 cond 才执行 f 中的验证
 //
 // f 中的 v 即为当前对象；
-func (v *Filter) When(cond bool, f func(v *Filter)) *Filter {
+func (f *Filter) When(cond bool, fun func(v *Filter)) *Filter {
 	if cond {
-		f(v)
+		fun(f)
 	}
-	return v
+	return f
 }
