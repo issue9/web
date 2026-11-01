@@ -36,6 +36,14 @@ func New(name string, exitOnError bool, collector Collector) *Filter {
 	}
 }
 
+// Reset 重置对象
+func (f *Filter) Reset(name string, exitOnError bool, collector Collector) {
+	f.name = name
+	f.exitOnError = exitOnError
+	f.collector = collector
+	f.hasError = false
+}
+
 // Name 由 [New] 的参数 name
 func (f *Filter) Name() string { return f.name }
 

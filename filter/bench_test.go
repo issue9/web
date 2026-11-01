@@ -11,12 +11,24 @@ import (
 	"github.com/issue9/localeutil"
 )
 
+var benchFilter *Filter
+
 func BenchmarkNew(b *testing.B) {
 	b.ReportAllocs()
 	c := newCollector()
 
 	for b.Loop() {
-		_ = New("", false, c.collect)
+		benchFilter = New("", false, c.collect)
+	}
+}
+
+func BenchmarkFilter_Reset(b *testing.B) {
+	b.ReportAllocs()
+	c := newCollector()
+	f := New("reset", true, c.collect)
+
+	for b.Loop() {
+		f.Reset("reset", false, c.collect)
 	}
 }
 

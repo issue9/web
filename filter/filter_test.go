@@ -51,6 +51,9 @@ func TestFilter(t *testing.T) {
 	a.Equal(c.params, map[string]localeutil.Stringer{
 		"f1": localeutil.Phrase("-2"),
 	})
+
+	f.Reset("reset", false, newCollector().collect)
+	a.Equal(f.Name(), "reset").False(f.ExitOnError())
 }
 
 func TestFilter_AddFilter(t *testing.T) {

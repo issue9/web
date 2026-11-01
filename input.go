@@ -57,7 +57,13 @@ func (ctx *Context) Paths(exitAtError bool) *Paths {
 	p := newProblem()
 
 	pp := pathPool.Get().(*Paths)
-	pp.filter = ctx.newFilter(p, exitAtError)
+	if pp.filter == nil {
+		pp.filter = ctx.newFilter(p, exitAtError)
+	} else {
+		pp.filter.Reset("", exitAtError, func(name string, reason LocaleStringer) {
+			p.WithParam(name, reason.LocaleString(ctx.LocalePrinter()))
+		})
+	}
 	pp.ctx = ctx
 	pp.problem = p
 
@@ -203,7 +209,13 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 
 	p := newProblem()
 	q := queryPool.Get().(*Queries)
-	q.filter = ctx.newFilter(p, exitAtError)
+	if q.filter == nil {
+		q.filter = ctx.newFilter(p, exitAtError)
+	} else {
+		q.filter.Reset("", exitAtError, func(name string, reason LocaleStringer) {
+			p.WithParam(name, reason.LocaleString(ctx.LocalePrinter()))
+		})
+	}
 	q.queries = values
 	q.ctx = ctx
 	q.problem = p
