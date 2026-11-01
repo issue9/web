@@ -77,7 +77,7 @@ type (
 	}
 )
 
-func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
+func (conf *configOf[T]) buildMicro(c web.Cache) *fieldError {
 	if conf.Registry != nil {
 		if err := conf.Registry.build(c); err != nil {
 			return err.AddFieldParent("registry")
@@ -87,7 +87,7 @@ func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
 	if conf.Peer != "" {
 		conf.peer = conf.Registry.s().NewPeer()
 		if err := conf.peer.UnmarshalText([]byte(conf.Peer)); err != nil {
-			return web.NewFieldError("peer", err)
+			return newFieldError("peer", err)
 		}
 	}
 
@@ -96,7 +96,7 @@ func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
 		for i, m := range conf.Mappers {
 			mm, found := routerMatcherFactory.get(m.Matcher)
 			if !found {
-				return web.NewFieldError("mappers["+strconv.Itoa(i)+"].matcher", locales.ErrNotFound())
+				return newFieldError("mappers["+strconv.Itoa(i)+"].matcher", locales.ErrNotFound())
 			}
 			conf.mapper[m.Name] = mm(strings.Split(m.Args, ",")...)
 		}
@@ -105,15 +105,15 @@ func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
 	return nil
 }
 
-func (r *registryConfig) build(c web.Cache) *web.FieldError {
+func (r *registryConfig) build(c web.Cache) *fieldError {
 	t, found := registryTypeFactory.get(r.Type)
 	if !found {
-		return web.NewFieldError("type", locales.ErrNotFound())
+		return newFieldError("type", locales.ErrNotFound())
 	}
 
 	s, found := strategyFactory.get(r.Strategy)
 	if !found {
-		return web.NewFieldError("strategy", locales.ErrNotFound())
+		return newFieldError("strategy", locales.ErrNotFound())
 	}
 	r.s = s
 

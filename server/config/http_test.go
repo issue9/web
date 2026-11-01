@@ -34,17 +34,17 @@ func TestHTTP_sanitize(t *testing.T) {
 	http := &httpConfig{}
 	http.ReadTimeout = -1
 	ferr := http.sanitize()
-	a.Equal(ferr.Field, "readTimeout")
+	a.Equal(ferr.Name, "readTimeout")
 
 	http.ReadTimeout = 0
 	http.IdleTimeout = -1
 	ferr = http.sanitize()
-	a.Equal(ferr.Field, "idleTimeout")
+	a.Equal(ferr.Name, "idleTimeout")
 
 	http.IdleTimeout = 0
 	http.ReadHeaderTimeout = -1
 	ferr = http.sanitize()
-	a.Equal(ferr.Field, "readHeaderTimeout")
+	a.Equal(ferr.Name, "readHeaderTimeout")
 }
 
 func TestHTTP_buildTLSConfig(t *testing.T) {

@@ -107,7 +107,7 @@ type logHandlerConfig struct {
 	Args []string `xml:"args>arg,omitempty" yaml:"args,omitempty" json:"args,omitempty" toml:"args,omitempty"`
 }
 
-func (conf *configOf[T]) buildLogs() *web.FieldError {
+func (conf *configOf[T]) buildLogs() *fieldError {
 	if conf.Logs == nil {
 		conf.Logs = &logsConfig{}
 	}
@@ -121,7 +121,7 @@ func (conf *configOf[T]) buildLogs() *web.FieldError {
 	return nil
 }
 
-func (conf *logsConfig) build() *web.FieldError {
+func (conf *logsConfig) build() *fieldError {
 	defer func() {
 		if conf.logs == nil {
 			conf.logs = logs.New(logs.NewNopHandler())
@@ -159,7 +159,7 @@ func (conf *logsConfig) build() *web.FieldError {
 	return nil
 }
 
-func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.FieldError) {
+func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *fieldError) {
 	switch len(conf.Handlers) {
 	case 0:
 		return logs.NewNopHandler(), nil, nil
@@ -168,15 +168,15 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.Field
 
 		f, found := logHandlersFactory.get(item.Type)
 		if !found {
-			return nil, nil, web.NewFieldError("handlers[0].type", locales.ErrNotFound())
+			return nil, nil, newFieldError("handlers[0].type", locales.ErrNotFound())
 		}
 
 		ww, c, err := f(item.Args)
 		if err != nil {
-			if ce, ok := errors.AsType[*web.FieldError](err); ok {
+			if ce, ok := errors.AsType[*fieldError](err); ok {
 				return nil, nil, ce.AddFieldParent("handlers[0]")
 			}
-			return nil, nil, web.NewFieldError("handlers[0].args", err)
+			return nil, nil, newFieldError("handlers[0].args", err)
 		}
 
 		return ww, []func() error{c}, nil
@@ -189,15 +189,15 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *web.Field
 
 		f, found := logHandlersFactory.get(w.Type)
 		if !found {
-			return nil, nil, web.NewFieldError(field+".type", locales.ErrNotFound())
+			return nil, nil, newFieldError(field+".type", locales.ErrNotFound())
 		}
 
 		ww, c, err := f(w.Args)
 		if err != nil {
-			if ce, ok := errors.AsType[*web.FieldError](err); ok {
+			if ce, ok := errors.AsType[*fieldError](err); ok {
 				return nil, nil, ce.AddFieldParent(field)
 			}
-			return nil, nil, web.NewFieldError(field+".args", err)
+			return nil, nil, newFieldError(field+".args", err)
 		}
 		if c != nil {
 			cleanup = append(cleanup, c)

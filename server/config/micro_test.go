@@ -62,7 +62,7 @@ func TestConfigOf_buildMicro(t *testing.T) {
 			Args:     "1s",
 		},
 	}
-	a.Equal(conf.buildMicro(c).Field, "registry.type")
+	a.Equal(conf.buildMicro(c).Name, "registry.type")
 }
 
 func TestRegistryConfig_build(t *testing.T) {
@@ -82,7 +82,7 @@ func TestRegistryConfig_build(t *testing.T) {
 		Args:     "1s",
 	}
 	err := conf.build(c)
-	a.Equal(err.Field, "type")
+	a.Equal(err.Name, "type")
 
 	conf = &registryConfig{
 		Type:     "cache",
@@ -90,5 +90,5 @@ func TestRegistryConfig_build(t *testing.T) {
 		Args:     "1s",
 	}
 	err = conf.build(c)
-	a.Equal(err.Field, "strategy")
+	a.Equal(err.Name, "strategy")
 }

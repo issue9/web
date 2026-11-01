@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,6 @@ package config
 import (
 	"github.com/issue9/cache"
 
-	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
 )
 
@@ -34,19 +33,19 @@ type cacheConfig struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn" toml:"dsn"`
 }
 
-func (conf *configOf[T]) buildCache() *web.FieldError {
+func (conf *configOf[T]) buildCache() *fieldError {
 	if conf.Cache == nil {
 		return nil
 	}
 
 	b, found := cacheFactory.get(conf.Cache.Type)
 	if !found {
-		return web.NewFieldError("type", locales.InvalidValue)
+		return newFieldError("type", locales.InvalidValue)
 	}
 
 	drv, err := b(conf.Cache.DSN)
 	if err != nil {
-		return web.NewFieldError("dsn", err)
+		return newFieldError("dsn", err)
 	}
 	conf.cache = drv
 

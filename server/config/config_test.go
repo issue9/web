@@ -15,8 +15,6 @@ import (
 	"github.com/issue9/web/locales"
 )
 
-var _ config.Sanitizer = &configOf[empty]{}
-
 type empty struct{}
 
 type userData struct {
@@ -41,17 +39,17 @@ func TestLoad(t *testing.T) {
 	a.ErrorIs(err, fs.ErrNotExist).Nil(s).Equal(data, empty{})
 }
 
-func TestConfig_sanitize(t *testing.T) {
+func TestConfig_filter(t *testing.T) {
 	a := assert.New(t, false)
 
 	conf := &configOf[empty]{}
-	a.NotError(conf.SanitizeConfig()).
+	a.NotError(conf.filter("./testdata/web.yaml")).
 		Equal(conf.languageTag, language.Und).
 		NotNil(conf.HTTP).
 		Nil(conf.location)
 
 	conf = &configOf[empty]{Language: "zh-hans"}
-	a.NotError(conf.SanitizeConfig()).
+	a.NotError(conf.filter("./testdata/web.yaml")).
 		NotEqual(conf.languageTag, language.Und)
 }
 
@@ -66,7 +64,7 @@ func TestConfig_buildTimezone(t *testing.T) {
 
 	conf = &configOf[empty]{Timezone: "undefined"}
 	err := conf.buildTimezone()
-	a.NotNil(err).Equal(err.Field, "timezone")
+	a.NotNil(err).Equal(err.Name, "timezone")
 }
 
 func TestNewPrinter(t *testing.T) {

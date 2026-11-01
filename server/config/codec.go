@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -76,7 +76,7 @@ type mimetype struct {
 	unmarshal web.UnmarshalFunc
 }
 
-func (conf *configOf[T]) buildCodec() *web.FieldError {
+func (conf *configOf[T]) buildCodec() *fieldError {
 	if len(conf.Compressors) == 0 && len(conf.Mimetypes) == 0 {
 		return nil
 	}
@@ -87,7 +87,7 @@ func (conf *configOf[T]) buildCodec() *web.FieldError {
 		enc, found := compressorFactory.get(e.ID)
 		if !found {
 			field := "compresses[" + strconv.Itoa(index) + "].id"
-			return web.NewFieldError(field, locales.ErrNotFound())
+			return newFieldError(field, locales.ErrNotFound())
 		}
 
 		c.AddCompressor(enc, e.Types...)
@@ -96,18 +96,16 @@ func (conf *configOf[T]) buildCodec() *web.FieldError {
 	return conf.sanitizeMimetypes(c)
 }
 
-func (conf *configOf[T]) sanitizeMimetypes(c *web.Codec) *web.FieldError {
+func (conf *configOf[T]) sanitizeMimetypes(c *web.Codec) *fieldError {
 	if indexes := sliceutil.Dup(conf.Mimetypes, func(i, j *mimetypeConfig) bool { return i.Type == j.Type }); len(indexes) > 0 {
-		value := conf.Mimetypes[indexes[1]].Type
-		err := web.NewFieldError("mimetypes["+strconv.Itoa(indexes[1])+"].type", locales.DuplicateValue)
-		err.Value = value
+		err := newFieldError("mimetypes["+strconv.Itoa(indexes[1])+"].type", locales.DuplicateValue)
 		return err
 	}
 
 	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory.get(item.Target)
 		if !found {
-			return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].target", locales.ErrNotFound())
+			return newFieldError("mimetypes["+strconv.Itoa(index)+"].target", locales.ErrNotFound())
 		}
 
 		var request, response bool
@@ -115,18 +113,18 @@ func (conf *configOf[T]) sanitizeMimetypes(c *web.Codec) *web.FieldError {
 
 			switch s := strings.Split(strings.ToLower(item.Accept), ","); {
 			case len(s) > 2:
-				return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].accept", locales.ErrInvalidValue())
+				return newFieldError("mimetypes["+strconv.Itoa(index)+"].accept", locales.ErrInvalidValue())
 			case len(s) == 2:
 				request = slices.Contains(s, "request")
 				response = slices.Contains(s, "response")
 				if !request || !response {
-					return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].accept", locales.ErrInvalidValue())
+					return newFieldError("mimetypes["+strconv.Itoa(index)+"].accept", locales.ErrInvalidValue())
 				}
 			case len(s) == 1:
 				request = slices.Contains(s, "request")
 				response = slices.Contains(s, "response")
 				if !request && !response {
-					return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].accept", locales.ErrInvalidValue())
+					return newFieldError("mimetypes["+strconv.Itoa(index)+"].accept", locales.ErrInvalidValue())
 				}
 			}
 		}

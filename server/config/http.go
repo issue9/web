@@ -158,7 +158,7 @@ type (
 	}
 )
 
-func (conf *configOf[T]) buildHTTP() *web.FieldError {
+func (conf *configOf[T]) buildHTTP() *fieldError {
 	if conf.HTTP == nil {
 		conf.HTTP = &httpConfig{}
 	}
@@ -183,31 +183,31 @@ type Number interface {
 
 func durShouldGreatThan0[T Number](d T) bool { return d < 0 }
 
-func (cert *certificateConfig) sanitize() *web.FieldError {
+func (cert *certificateConfig) sanitize() *fieldError {
 	if !fileExistsRule(cert.Cert) {
-		return web.NewFieldError("cert", locales.NotFound)
+		return newFieldError("cert", locales.NotFound)
 	}
 	if !fileExistsRule(cert.Key) {
-		return web.NewFieldError("key", locales.NotFound)
+		return newFieldError("key", locales.NotFound)
 	}
 	return nil
 }
 
-func (h *httpConfig) sanitize() *web.FieldError {
+func (h *httpConfig) sanitize() *fieldError {
 	if durShouldGreatThan0(h.ReadTimeout) {
-		return web.NewFieldError("readTimeout", locales.ShouldGreatThan(0))
+		return newFieldError("readTimeout", locales.ShouldGreatThan(0))
 	}
 	if durShouldGreatThan0(h.WriteTimeout) {
-		return web.NewFieldError("writeTimeout", locales.ShouldGreatThan(0))
+		return newFieldError("writeTimeout", locales.ShouldGreatThan(0))
 	}
 	if durShouldGreatThan0(h.IdleTimeout) {
-		return web.NewFieldError("idleTimeout", locales.ShouldGreatThan(0))
+		return newFieldError("idleTimeout", locales.ShouldGreatThan(0))
 	}
 	if durShouldGreatThan0(h.ReadHeaderTimeout) {
-		return web.NewFieldError("readHeaderTimeout", locales.ShouldGreatThan(0))
+		return newFieldError("readHeaderTimeout", locales.ShouldGreatThan(0))
 	}
 	if durShouldGreatThan0(h.MaxHeaderBytes) {
-		return web.NewFieldError("maxHeaderBytes", locales.ShouldGreatThan(0))
+		return newFieldError("maxHeaderBytes", locales.ShouldGreatThan(0))
 	}
 	if h.RequestID == "" {
 		h.RequestID = header.XRequestID
@@ -224,7 +224,7 @@ func (h *httpConfig) sanitize() *web.FieldError {
 		h.trace = web.WithTrace(false)
 	case "disable":
 	default:
-		return web.NewFieldError("trace", locales.InvalidValue)
+		return newFieldError("trace", locales.InvalidValue)
 	}
 
 	if err := h.buildTLSConfig(); err != nil {
@@ -279,9 +279,9 @@ func (h *httpConfig) buildInit() {
 	}
 }
 
-func (h *httpConfig) buildTLSConfig() *web.FieldError {
+func (h *httpConfig) buildTLSConfig() *fieldError {
 	if len(h.Certificates) > 0 && h.ACME != nil {
-		return web.NewFieldError("acme", web.Phrase("conflict with certificates"))
+		return newFieldError("acme", web.Phrase("conflict with certificates"))
 	}
 
 	if h.ACME != nil {
@@ -301,7 +301,7 @@ func (h *httpConfig) buildTLSConfig() *web.FieldError {
 
 		cert, err := tls.LoadX509KeyPair(certificate.Cert, certificate.Key)
 		if err != nil {
-			return web.NewFieldError("certificates", err)
+			return newFieldError("certificates", err)
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, cert)
 	}
@@ -320,12 +320,12 @@ func (l *acmeConfig) tlsConfig() *tls.Config {
 	}).TLSConfig()
 }
 
-func (l *acmeConfig) sanitize() *web.FieldError {
+func (l *acmeConfig) sanitize() *fieldError {
 	if !fileExistsRule(l.Cache) {
-		return web.NewFieldError("cache", locales.NotFound)
+		return newFieldError("cache", locales.NotFound)
 	}
 	if len(l.Domains) == 0 {
-		return web.NewFieldError("domains", locales.CanNotBeEmpty)
+		return newFieldError("domains", locales.CanNotBeEmpty)
 	}
 	return nil
 }

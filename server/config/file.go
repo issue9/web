@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,19 +18,19 @@ type fileSerializer struct {
 	unmarshal config.UnmarshalFunc
 }
 
-func (conf *configOf[T]) buildConfig() *web.FieldError {
+func (conf *configOf[T]) buildConfig() *fieldError {
 	ss := make(config.Serializer, len(fileSerializerFactory.items))
 	for i, name := range conf.FileSerializers {
 		s, found := fileSerializerFactory.get(name)
 		if !found {
-			return web.NewFieldError("fileSerializers["+strconv.Itoa(i)+"]", web.NewLocaleError("not found serialization function for %s", name))
+			return newFieldError("fileSerializers["+strconv.Itoa(i)+"]", web.NewLocaleError("not found serialization function for %s", name))
 		}
 		ss.Add(s.marshal, s.unmarshal, s.exts...)
 	}
 
 	c, err := config.BuildDir(ss, conf.dir)
 	if err != nil {
-		return web.NewFieldError("", err) // 应该是与目录相关的错误引起的
+		return newFieldError("", err) // 应该是与目录相关的错误引起的
 	}
 
 	conf.config = c
@@ -47,6 +47,11 @@ func loadConfigOf[T comparable](configDir, name string) (*configOf[T], error) {
 	if err := c.Load(name, conf); err != nil {
 		return nil, err
 	}
+
+	if ferr := conf.filter(name); ferr != nil {
+		return nil, ferr
+	}
+
 	return conf, nil
 }
 

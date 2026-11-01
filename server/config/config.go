@@ -25,6 +25,7 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/selector"
@@ -204,7 +205,10 @@ func Load[T comparable](configDir, filename string) (*server.Options, T, error) 
 	return o, conf.User, nil
 }
 
-func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
+func (conf *configOf[T]) filter(filename string) *fieldError {
+	e := &fieldError{Path: filename}
+	f := filter.New("", true, e.collect)
+
 	if conf.MemoryLimit > 0 {
 		conf.init = append(conf.init, func(*server.Options) { debug.SetMemoryLimit(conf.MemoryLimit) })
 	}
@@ -212,7 +216,7 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 	if conf.Language != "" {
 		tag, err := language.Parse(conf.Language)
 		if err != nil {
-			return web.NewFieldError("language", err)
+			return newFieldError("language", err)
 		}
 		conf.languageTag = tag
 	}
@@ -249,9 +253,9 @@ func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
 
 	var zero T
 	if conf.User != zero {
-		if s, ok := (any)(conf.User).(config.Sanitizer); ok {
-			if err := s.SanitizeConfig(); err != nil {
-				return err.AddFieldParent("user")
+		if s, ok := (any)(conf.User).(ConfigFilter); ok {
+			if s.FilterConfig(f); f.HasError() {
+				return e.AddFieldParent("User")
 			}
 		}
 	}
@@ -276,14 +280,14 @@ func (conf *configOf[T]) buildIDGen() {
 	}
 }
 
-func (conf *configOf[T]) buildTimezone() *web.FieldError {
+func (conf *configOf[T]) buildTimezone() *fieldError {
 	if conf.Timezone == "" {
 		return nil
 	}
 
 	loc, err := time.LoadLocation(conf.Timezone)
 	if err != nil {
-		return config.NewFieldError("timezone", err)
+		return newFieldError("timezone", err)
 	}
 	conf.location = loc
 

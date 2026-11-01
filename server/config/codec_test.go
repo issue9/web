@@ -32,7 +32,7 @@ func TestConfigOf_buildCodec(t *testing.T) {
 		},
 	}
 	err := conf.buildCodec()
-	a.Error(err).Equal(err.Field, "compresses[1].id")
+	a.Error(err).Equal(err.Name, "compresses[1].id")
 }
 
 func TestConfigOf_sanitizeMimetypes(t *testing.T) {
@@ -53,7 +53,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 		},
 	}
 	err := conf.buildCodec()
-	a.Error(err).Equal(err.Field, "mimetypes[1].type")
+	a.Error(err).Equal(err.Name, "mimetypes[1].type")
 
 	conf = &configOf[empty]{
 		Mimetypes: []*mimetypeConfig{
@@ -63,7 +63,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	}
 	err = conf.buildCodec()
 	a.Error(err).
-		Equal(err.Field, "mimetypes[1].target").
+		Equal(err.Name, "mimetypes[1].target").
 		Equal(err.Message, locales.ErrNotFound())
 
 	// Accept
@@ -75,7 +75,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	}
 	err = conf.buildCodec()
 	a.Error(err).
-		Equal(err.Field, "mimetypes[0].accept").
+		Equal(err.Name, "mimetypes[0].accept").
 		Equal(err.Message, locales.ErrInvalidValue())
 
 	conf = &configOf[empty]{
@@ -85,7 +85,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	}
 	err = conf.buildCodec()
 	a.Error(err).
-		Equal(err.Field, "mimetypes[0].accept").
+		Equal(err.Name, "mimetypes[0].accept").
 		Equal(err.Message, locales.ErrInvalidValue())
 
 	conf = &configOf[empty]{
@@ -95,7 +95,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	}
 	err = conf.buildCodec()
 	a.Error(err).
-		Equal(err.Field, "mimetypes[0].accept").
+		Equal(err.Name, "mimetypes[0].accept").
 		Equal(err.Message, locales.ErrInvalidValue())
 }
 
