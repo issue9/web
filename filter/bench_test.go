@@ -15,20 +15,20 @@ var benchFilter *Filter
 
 func BenchmarkNew(b *testing.B) {
 	b.ReportAllocs()
-	c := newCollector()
+	_, c := CreateMapCollector()
 
 	for b.Loop() {
-		benchFilter = New("", false, c.collect)
+		benchFilter = New("", false, c)
 	}
 }
 
 func BenchmarkFilter_Reset(b *testing.B) {
 	b.ReportAllocs()
-	c := newCollector()
-	f := New("reset", true, c.collect)
+	_, c := CreateMapCollector()
+	f := New("reset", true, c)
 
 	for b.Loop() {
-		f.Reset("reset", false, c.collect)
+		f.Reset("reset", false, c)
 	}
 }
 

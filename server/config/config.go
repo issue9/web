@@ -32,6 +32,10 @@ import (
 	"github.com/issue9/web/server"
 )
 
+type ConfigFilter interface {
+	FilterConfig(*filter.Filter)
+}
+
 // 在项目正式运行之后，对于配置项的修改应该慎之又慎，
 // 不当的修改可能导致项目运行过程中出错，比如改变了唯一 ID
 // 的生成规则，可能会导致新生成的唯一 ID 与之前的 ID 重复。
@@ -205,15 +209,15 @@ func Load[T comparable](configDir, filename string) (*server.Options, T, error) 
 	return o, conf.User, nil
 }
 
-func (conf *configOf[T]) filter(filename string) *fieldError {
+func (conf *configOf[T]) filter() filter.Map {
 	if conf.MemoryLimit > 0 {
 		conf.init = append(conf.init, func(*server.Options) { debug.SetMemoryLimit(conf.MemoryLimit) })
 	}
 
-	e := &fieldError{Path: filename}
-	f := filter.New("", true, e.collect)
+	e, c := filter.CreateMapCollector()
+	f := filter.New("", true, c)
 
-	f.Add("language", &conf.languageTag, func(name string, value *language.Tag) (string, localeutil.Stringer) {
+	f.Add("language", &conf.languageTag, func(name string, value *language.Tag) (string, web.LocaleStringer) {
 		if conf.Language == "" {
 			conf.Language = localeutil.DetectUserLanguage()
 		}

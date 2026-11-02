@@ -37,9 +37,9 @@ func (u *userData) FilterConfig(f *filter.Filter) {
 	f.Add("id", &u.ID, filter.Validator(func(id int) bool { return id > 0 }, locales.ShouldGreatThan(0)))
 }
 
-func buildFilter() (*fieldError, *filter.Filter) {
-	e := &fieldError{}
-	return e, filter.New("", true, e.collect)
+func buildFilter() (filter.Map, *filter.Filter) {
+	m, c := filter.CreateMapCollector()
+	return m, filter.New("", true, c)
 }
 
 func TestLoad(t *testing.T) {
@@ -57,14 +57,14 @@ func TestConfig_filter(t *testing.T) {
 	a := assert.New(t, false)
 
 	conf := &configOf[empty]{}
-	a.NotError(conf.filter("./testdata/web.yaml")).
+	a.Nil(conf.filter()).
 		Equal(conf.languageTag, systemLanguage).
 		NotNil(conf.HTTP).
 		Equal(conf.location, time.Local)
 
 	// 已经指定了 Language
 	conf = &configOf[empty]{Language: "zh-hans"}
-	a.NotError(conf.filter("./testdata/web.yaml")).
+	a.Nil(conf.filter()).
 		NotEqual(conf.languageTag, systemLanguage)
 }
 
@@ -82,7 +82,8 @@ func TestConfig_buildTimezone(t *testing.T) {
 
 	conf = &configOf[empty]{Timezone: "undefined"}
 	conf.buildTimezone(f)
-	a.True(f.HasError()).Equal(e.Name, "timezone")
+	a.True(f.HasError()).
+		Length(e["timezone"], 1) // 有一条错误信息
 }
 
 func TestNewPrinter(t *testing.T) {

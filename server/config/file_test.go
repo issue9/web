@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v6"
+	"github.com/issue9/web"
+	"github.com/issue9/web/locales"
 )
 
 func TestLoadConfigOf(t *testing.T) {
@@ -45,10 +47,7 @@ func TestLoadConfigOf(t *testing.T) {
 
 	conf, err := loadConfigOf[empty](configDir, "invalid-web.xml")
 	a.Error(err).Nil(conf)
-	err2, ok := err.(*fieldError)
-	a.True(ok).NotNil(err2)
-	a.Equal(err2.Path, "invalid-web.xml").
-		Equal(err2.Name, "http.acme.domains")
+	a.Equal(err, web.NewLocaleError("%s at %s:%s", locales.CanNotBeEmpty, "invalid-web.xml", "http.acme.domains"))
 
 	conf, err = loadConfigOf[empty]("./testdata/not-exists", "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(conf)

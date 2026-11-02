@@ -17,16 +17,6 @@ type object struct {
 	Age  int
 }
 
-type collector struct {
-	params map[string]localeutil.Stringer
-}
-
-func newCollector() *collector { return &collector{params: make(map[string]localeutil.Stringer, 3)} }
-
-func (c *collector) collect(name string, reason localeutil.Stringer) {
-	c.params[name] = reason
-}
-
 func TestFilter(t *testing.T) {
 	a := assert.New(t, false)
 
@@ -39,20 +29,21 @@ func TestFilter(t *testing.T) {
 	n100 := -100
 	p100 := 100
 	f.Add("f1", &n100, min2, min3).Add("f2", &p100, max50, max4)
-	a.Equal(c.params, map[string]localeutil.Stringer{
-		"f1": localeutil.Phrase("-2"),
-		"f2": localeutil.Phrase("50"),
+	a.Equal(c, map[string][]localeutil.Stringer{
+		"f1": []localeutil.Stringer{localeutil.Phrase("-2")},
+		"f2": []localeutil.Stringer{localeutil.Phrase("50")},
 	})
 
 	f, c = newFilter(true)
 	n100 = -100
 	p100 = 100
 	f.Add("f1", &n100, min2, min3).Add("f2", &p100, max50, max4)
-	a.Equal(c.params, map[string]localeutil.Stringer{
-		"f1": localeutil.Phrase("-2"),
+	a.Equal(c, map[string][]localeutil.Stringer{
+		"f1": []localeutil.Stringer{localeutil.Phrase("-2")},
 	})
 
-	f.Reset("reset", false, newCollector().collect)
+	_, collector := CreateMapCollector()
+	f.Reset("reset", false, collector)
 	a.Equal(f.Name(), "reset").False(f.ExitOnError())
 }
 
@@ -69,9 +60,9 @@ func TestFilter_AddFilter(t *testing.T) {
 	})
 	a.Equal(f1, f)
 
-	a.Equal(c.params, map[string]localeutil.Stringer{
-		"v1.f1": localeutil.StringPhrase("s1"),
-		"v1.f2": localeutil.StringPhrase("s2"),
+	a.Equal(c, map[string][]localeutil.Stringer{
+		"v1.f1": []localeutil.Stringer{localeutil.StringPhrase("s1")},
+		"v1.f2": []localeutil.Stringer{localeutil.StringPhrase("s2")},
 	}).True(f.HasError())
 }
 
@@ -87,8 +78,8 @@ func TestFilter_When(t *testing.T) {
 		When(func() bool { return obj.Age > 0 }, func(v *Filter) {
 			v.Add("obj/name", &obj.Name, notEmpty)
 		})
-	a.Equal(c.params, map[string]localeutil.Stringer{
-		"obj/age": localeutil.Phrase("不能小于 18"),
+	a.Equal(c, map[string][]localeutil.Stringer{
+		"obj/age": []localeutil.Stringer{localeutil.Phrase("不能小于 18")},
 	})
 
 	f, c = newFilter(false)
@@ -97,8 +88,8 @@ func TestFilter_When(t *testing.T) {
 		When(func() bool { return obj.Age > 0 }, func(v *Filter) {
 			v.Add("obj/name", &obj.Name, notEmpty)
 		})
-	a.Equal(c.params, map[string]localeutil.Stringer{
-		"obj/age":  localeutil.Phrase("不能小于 18"),
-		"obj/name": localeutil.Phrase("不能为空"),
+	a.Equal(c, map[string][]localeutil.Stringer{
+		"obj/age":  []localeutil.Stringer{localeutil.Phrase("不能小于 18")},
+		"obj/name": []localeutil.Stringer{localeutil.Phrase("不能为空")},
 	})
 }

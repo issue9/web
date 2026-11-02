@@ -22,7 +22,7 @@ import (
 )
 
 // LogsHandlerBuilder 构建 [logs.Handler] 的方法
-type LogsHandlerBuilder = func(args []string) (h logs.Handler, close func() error, err error)
+type LogsHandlerBuilder = func(args []string, f *filter.Filter) (h logs.Handler, close func() error)
 
 type logsConfig struct {
 	// 是否在日志中显示调用位置
@@ -112,8 +112,7 @@ func (conf *configOf[T]) buildLogs(f *filter.Filter) {
 		conf.Logs = &logsConfig{}
 	}
 
-	if err := conf.Logs.build(); err != nil {
-		f.AddError("logs", err)
+	if f.AddFilter("", conf.Logs.build); f.HasError() {
 		return
 	}
 
@@ -122,7 +121,7 @@ func (conf *configOf[T]) buildLogs(f *filter.Filter) {
 	})
 }
 
-func (conf *logsConfig) build() error {
+func (conf *logsConfig) build(f *filter.Filter) {
 	defer func() {
 		if conf.logs == nil {
 			conf.logs = logs.New(logs.NewNopHandler())
@@ -150,48 +149,33 @@ func (conf *logsConfig) build() error {
 		o = append(o, logs.WithLevels(conf.Levels...))
 	}
 
-	h, c, err := conf.buildHandler()
-	if err != nil {
-		return err
+	h, c := conf.buildHandler(f)
+	if f.HasError() {
+		return
 	}
 	conf.logs = logs.New(h, o...)
 	conf.cleanup = c
-	return nil
 }
 
-func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *fieldError) {
-	switch len(conf.Handlers) {
-	case 0:
-		return logs.NewNopHandler(), nil, nil
-	case 1:
-		item := conf.Handlers[0]
-
-		f, found := logHandlersFactory.get(item.Type)
-		if !found {
-			return nil, nil, newFieldError("handlers[0].type", locales.ErrNotFound())
-		}
-
-		ww, c, err := f(item.Args)
-		if err != nil {
-			return nil, nil, newFieldError("handlers[0]", err)
-		}
-
-		return ww, []func() error{c}, nil
+func (conf *logsConfig) buildHandler(f *filter.Filter) (logs.Handler, []func() error) {
+	if len(conf.Handlers) == 0 {
+		return logs.NewNopHandler(), nil
 	}
 
 	cleanup := make([]func() error, 0, 10)
 	m := make(map[logs.Level][]logs.Handler, 6)
 	for i, w := range conf.Handlers {
-		field := "handlers[" + strconv.Itoa(i) + "]"
+		field := "logs.handlers[" + strconv.Itoa(i) + "]"
 
-		f, found := logHandlersFactory.get(w.Type)
+		factory, found := logHandlersFactory.get(w.Type)
 		if !found {
-			return nil, nil, newFieldError(field+".type", locales.ErrNotFound())
+			f.AddReason(field+".type", locales.NotFound)
+			return nil, nil
 		}
 
-		ww, c, err := f(w.Args)
-		if err != nil {
-			return nil, nil, newFieldError(field, err)
+		ww, c := factory(w.Args, f)
+		if f.HasError() {
+			return nil, nil
 		}
 		if c != nil {
 			cleanup = append(cleanup, c)
@@ -218,34 +202,36 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *fieldErro
 		}
 	}
 
-	return logs.NewDispatchHandler(d), cleanup, nil
+	return logs.NewDispatchHandler(d), cleanup
 }
 
-func newFileLogsHandler(args []string) (logs.Handler, func() error, error) {
+func newFileLogsHandler(args []string, f *filter.Filter) (logs.Handler, func() error) {
 	size, err := strconv.ParseInt(args[2], 10, 64)
 	if err != nil {
-		return nil, nil, err
+		f.AddError("args", err)
+		return nil, nil
 	}
 
 	w, err := rotate.New(args[1], args[0], size)
 	if err != nil {
-		return nil, nil, err
+		f.AddError("args", err)
+		return nil, nil
 	}
 
 	if len(args) < 4 || args[3] == "text" {
-		return logs.NewTextHandler(w), w.Close, nil
+		return logs.NewTextHandler(w), w.Close
 	}
-	return logs.NewJSONHandler(w), w.Close, nil
+	return logs.NewJSONHandler(w), w.Close
 }
 
-func newSMTPLogsHandler(args []string) (logs.Handler, func() error, error) {
+func newSMTPLogsHandler(args []string, f *filter.Filter) (logs.Handler, func() error) {
 	sendTo := strings.Split(args[4], ",")
 	w := writers.NewSMTP(args[0], args[1], args[2], args[3], sendTo)
 
 	if len(args) < 6 || args[6] == "text" {
-		return logs.NewTextHandler(w), nil, nil
+		return logs.NewTextHandler(w), nil
 	}
-	return logs.NewJSONHandler(w), nil, nil
+	return logs.NewJSONHandler(w), nil
 }
 
 var colorMap = map[string]colors.Color{
@@ -263,9 +249,10 @@ var colorMap = map[string]colors.Color{
 // args 参数格式如下：
 // - 0 为输出通道，可以为 stdout 和 stderr；
 // - 1-7 为 level 与颜色的配置，格式为 Info:green,Warn:yellow；
-func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
+func newTermLogsHandler(args []string, f *filter.Filter) (logs.Handler, func() error) {
 	if len(args) < 1 {
-		return nil, nil, newFieldError("args", locales.InvalidValue)
+		f.AddReason("args", locales.InvalidValue)
+		return nil, nil
 	}
 
 	var w io.Writer
@@ -275,33 +262,38 @@ func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
 	case "stdout":
 		w = os.Stdout
 	default:
-		return nil, nil, newFieldError("args[0]", locales.InvalidValue)
+		f.AddReason("args[0]", locales.InvalidValue)
+		return nil, nil
 	}
 
 	args = args[1:]
 	if len(args) > 5 {
-		return nil, nil, newFieldError("args", locales.InvalidValue)
+		f.AddReason("args", locales.InvalidValue)
+		return nil, nil
 	}
 	cs := make(map[logs.Level]colors.Color, len(args))
 	for index, arg := range args {
 		a := strings.SplitN(arg, ":", 2)
 
 		if len(a) != 2 || a[1] == "" {
-			return nil, nil, newFieldError("args["+strconv.Itoa(1+index)+"]", locales.InvalidValue)
+			f.AddReason("args["+strconv.Itoa(1+index)+"]", locales.InvalidValue)
+			return nil, nil
 		}
 
 		lv, err := logs.ParseLevel(a[0])
 		if err != nil {
-			return nil, nil, newFieldError("args["+strconv.Itoa(1+index)+"]", err)
+			f.AddError("args["+strconv.Itoa(1+index)+"]", err)
+			return nil, nil
 		}
 
 		c, found := colorMap[a[1]]
 		if !found {
-			return nil, nil, newFieldError("args["+strconv.Itoa(1+index)+"]", locales.InvalidValue)
+			f.AddReason("args["+strconv.Itoa(1+index)+"]", locales.InvalidValue)
+			return nil, nil
 		}
 
 		cs[lv] = c
 	}
 
-	return logs.NewTermHandler(w, cs), nil, nil
+	return logs.NewTermHandler(w, cs), nil
 }

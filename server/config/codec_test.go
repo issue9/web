@@ -9,6 +9,8 @@ import (
 
 	"github.com/issue9/assert/v6"
 
+	"github.com/issue9/web"
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/mimetype/json"
 )
@@ -25,7 +27,7 @@ func TestConfigOf_buildCodec(t *testing.T) {
 	}
 	e, f := buildFilter()
 	conf.buildCodec(f)
-	a.False(f.HasError()).Empty(e.Name)
+	a.False(f.HasError()).Empty(e)
 
 	conf = &configOf[empty]{
 		Compressors: []*compressConfig{
@@ -35,7 +37,7 @@ func TestConfigOf_buildCodec(t *testing.T) {
 	}
 	e, f = buildFilter()
 	conf.buildCodec(f)
-	a.True(f.HasError()).Equal(e.Name, "compresses[1].id")
+	a.True(f.HasError()).NotEmpty(e["compresses[1].id"])
 }
 
 func TestConfigOf_sanitizeMimetypes(t *testing.T) {
@@ -49,7 +51,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	}
 	e, f := buildFilter()
 	conf.buildCodec(f)
-	a.False(f.HasError()).NotNil(conf.codec).Empty(e.Name)
+	a.False(f.HasError()).NotNil(conf.codec).Empty(e)
 
 	conf = &configOf[empty]{
 		Mimetypes: []*mimetypeConfig{
@@ -59,7 +61,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	}
 	e, f = buildFilter()
 	conf.buildCodec(f)
-	a.True(f.HasError()).Equal(e.Name, "mimetypes[1].type")
+	a.True(f.HasError()).NotEmpty(e["mimetypes[1].type"])
 
 	conf = &configOf[empty]{
 		Mimetypes: []*mimetypeConfig{
@@ -70,8 +72,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	e, f = buildFilter()
 	conf.buildCodec(f)
 	a.True(f.HasError()).
-		Equal(e.Name, "mimetypes[1].target").
-		Equal(e.Message, locales.NotFound)
+		Equal(e, filter.Map{"mimetypes[1].target": []web.LocaleStringer{locales.NotFound}})
 
 	// Accept
 
@@ -83,8 +84,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	e, f = buildFilter()
 	conf.buildCodec(f)
 	a.True(f.HasError()).
-		Equal(e.Name, "mimetypes[0].accept").
-		Equal(e.Message, locales.InvalidValue)
+		Equal(e, filter.Map{"mimetypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
 
 	conf = &configOf[empty]{
 		Mimetypes: []*mimetypeConfig{
@@ -94,8 +94,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	e, f = buildFilter()
 	conf.buildCodec(f)
 	a.True(f.HasError()).
-		Equal(e.Name, "mimetypes[0].accept").
-		Equal(e.Message, locales.InvalidValue)
+		Equal(e, filter.Map{"mimetypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
 
 	conf = &configOf[empty]{
 		Mimetypes: []*mimetypeConfig{
@@ -105,8 +104,7 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	e, f = buildFilter()
 	conf.buildCodec(f)
 	a.True(f.HasError()).
-		Equal(e.Name, "mimetypes[0].accept").
-		Equal(e.Message, locales.InvalidValue)
+		Equal(e, filter.Map{"mimetypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
 }
 
 func TestRegisterMimetype(t *testing.T) {

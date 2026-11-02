@@ -20,7 +20,7 @@ func TestConfigOf_buildMicro(t *testing.T) {
 	conf := &configOf[empty]{cache: c}
 	e, f := buildFilter()
 	conf.buildMicro(f)
-	a.False(f.HasError()).Empty(e.Name)
+	a.False(f.HasError()).Empty(e)
 
 	conf = &configOf[empty]{
 		cache: c,
@@ -76,7 +76,7 @@ func TestConfigOf_buildMicro(t *testing.T) {
 	}
 	e, f = buildFilter()
 	conf.buildMicro(f)
-	a.True(f.HasError()).Equal(e.Name, "registry.type")
+	a.True(f.HasError()).NotEmpty(e["registry.type"])
 }
 
 func TestRegistryConfig_build(t *testing.T) {
@@ -90,7 +90,7 @@ func TestRegistryConfig_build(t *testing.T) {
 	}
 	e, f := buildFilter()
 	conf.build(c, f)
-	a.False(f.HasError()).Empty(e.Name)
+	a.False(f.HasError()).Empty(e)
 
 	conf = &registryConfig{
 		Type:     "not-exists",
@@ -99,7 +99,7 @@ func TestRegistryConfig_build(t *testing.T) {
 	}
 	e, f = buildFilter()
 	conf.build(c, f)
-	a.True(f.HasError()).Equal(e.Name, "type")
+	a.True(f.HasError()).NotEmpty(e["type"])
 
 	conf = &registryConfig{
 		Type:     "cache",
@@ -108,5 +108,5 @@ func TestRegistryConfig_build(t *testing.T) {
 	}
 	e, f = buildFilter()
 	conf.build(c, f)
-	a.True(f.HasError()).Equal(e.Name, "strategy")
+	a.True(f.HasError()).NotEmpty(e["strategy"])
 }
