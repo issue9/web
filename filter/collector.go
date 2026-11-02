@@ -4,7 +4,10 @@
 
 package filter
 
-import "github.com/issue9/localeutil"
+import (
+	"github.com/issue9/errwrap"
+	"github.com/issue9/localeutil"
+)
 
 // Collector 过滤器的错误信息收集函数
 type Collector func(name string, reason localeutil.Stringer)
@@ -28,4 +31,24 @@ func (f Map) collect(name string, reason localeutil.Stringer) {
 func CreateMapCollector() (Map, Collector) {
 	f := Map{}
 	return f, f.collect
+}
+
+func (m Map) Error() string { return m.LocaleString(nil) }
+
+func (m Map) LocaleString(p *localeutil.Printer) string {
+	if len(m) == 0 {
+		return ""
+	}
+
+	sb := errwrap.StringBuilder{}
+
+	for k, v := range m {
+		sb.WString(k).WByte(':')
+		for _, vv := range v {
+			sb.WString(vv.LocaleString(p)).WByte(';')
+		}
+		sb.WByte('\n')
+	}
+
+	return sb.String()
 }

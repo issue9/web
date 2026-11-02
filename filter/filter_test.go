@@ -30,8 +30,8 @@ func TestFilter(t *testing.T) {
 	p100 := 100
 	f.Add("f1", &n100, min2, min3).Add("f2", &p100, max50, max4)
 	a.Equal(c, map[string][]localeutil.Stringer{
-		"f1": []localeutil.Stringer{localeutil.Phrase("-2")},
-		"f2": []localeutil.Stringer{localeutil.Phrase("50")},
+		"f1": {localeutil.Phrase("-2")},
+		"f2": {localeutil.Phrase("50")},
 	})
 
 	f, c = newFilter(true)
@@ -39,7 +39,7 @@ func TestFilter(t *testing.T) {
 	p100 = 100
 	f.Add("f1", &n100, min2, min3).Add("f2", &p100, max50, max4)
 	a.Equal(c, map[string][]localeutil.Stringer{
-		"f1": []localeutil.Stringer{localeutil.Phrase("-2")},
+		"f1": {localeutil.Phrase("-2")},
 	})
 
 	_, collector := CreateMapCollector()
@@ -61,8 +61,8 @@ func TestFilter_AddFilter(t *testing.T) {
 	a.Equal(f1, f)
 
 	a.Equal(c, map[string][]localeutil.Stringer{
-		"v1.f1": []localeutil.Stringer{localeutil.StringPhrase("s1")},
-		"v1.f2": []localeutil.Stringer{localeutil.StringPhrase("s2")},
+		"v1.f1": {localeutil.StringPhrase("s1")},
+		"v1.f2": {localeutil.StringPhrase("s2")},
 	}).True(f.HasError())
 }
 
@@ -79,7 +79,7 @@ func TestFilter_When(t *testing.T) {
 			v.Add("obj/name", &obj.Name, notEmpty)
 		})
 	a.Equal(c, map[string][]localeutil.Stringer{
-		"obj/age": []localeutil.Stringer{localeutil.Phrase("不能小于 18")},
+		"obj/age": {localeutil.Phrase("不能小于 18")},
 	})
 
 	f, c = newFilter(false)
@@ -89,7 +89,7 @@ func TestFilter_When(t *testing.T) {
 			v.Add("obj/name", &obj.Name, notEmpty)
 		})
 	a.Equal(c, map[string][]localeutil.Stringer{
-		"obj/age":  []localeutil.Stringer{localeutil.Phrase("不能小于 18")},
-		"obj/name": []localeutil.Stringer{localeutil.Phrase("不能为空")},
+		"obj/age":  {localeutil.Phrase("不能小于 18")},
+		"obj/name": {localeutil.Phrase("不能为空")},
 	})
 }
