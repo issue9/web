@@ -5,8 +5,6 @@
 package config
 
 import (
-	"maps"
-	"slices"
 	"strconv"
 
 	"github.com/issue9/config"
@@ -52,10 +50,7 @@ func loadConfigOf[T comparable](configDir, filename string) (*configOf[T], error
 	}
 
 	if f := conf.filter(); f != nil {
-		keys := slices.Collect(maps.Keys(f))
-		slices.Sort(keys)
-		key := keys[0]
-		return nil, web.NewLocaleError("%s at %s:%s", f[key][0], filename, key)
+		return nil, web.NewLocaleError("file %s has following errors:\n%s", filename, f)
 	}
 	return conf, nil
 }

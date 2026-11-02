@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v6"
+
 	"github.com/issue9/web"
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 )
 
@@ -47,7 +49,8 @@ func TestLoadConfigOf(t *testing.T) {
 
 	conf, err := loadConfigOf[empty](configDir, "invalid-web.xml")
 	a.Error(err).Nil(conf)
-	a.Equal(err, web.NewLocaleError("%s at %s:%s", locales.CanNotBeEmpty, "invalid-web.xml", "http.acme.domains"))
+	merr := filter.Map{"http.acme.domains": []web.LocaleStringer{locales.CanNotBeEmpty}}
+	a.Equal(err, web.NewLocaleError("file %s has following errors:\n%s", "invalid-web.xml", merr))
 
 	conf, err = loadConfigOf[empty]("./testdata/not-exists", "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(conf)
