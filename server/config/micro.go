@@ -11,6 +11,7 @@ import (
 	"github.com/issue9/mux/v10"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server/registry"
 )
@@ -77,17 +78,25 @@ type (
 	}
 )
 
-func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
+func (conf *configOf[T]) buildMicro(f *filter.Filter) {
+	if conf.cache == nil {
+		panic("当前函数需要在 conf.Cache 初始化之后再调用")
+	}
+
 	if conf.Registry != nil {
-		if err := conf.Registry.build(c); err != nil {
-			return err.AddFieldParent("registry")
-		}
+		f.AddFilter("registry", func(f *filter.Filter) {
+			conf.Registry.build(conf.cache, f)
+			if f.HasError() {
+				return
+			}
+		})
 	}
 
 	if conf.Peer != "" {
 		conf.peer = conf.Registry.s().NewPeer()
 		if err := conf.peer.UnmarshalText([]byte(conf.Peer)); err != nil {
-			return web.NewFieldError("peer", err)
+			f.AddError("peer", err)
+			return
 		}
 	}
 
@@ -96,28 +105,27 @@ func (conf *configOf[T]) buildMicro(c web.Cache) *web.FieldError {
 		for i, m := range conf.Mappers {
 			mm, found := routerMatcherFactory.get(m.Matcher)
 			if !found {
-				return web.NewFieldError("mappers["+strconv.Itoa(i)+"].matcher", locales.ErrNotFound())
+				f.AddReason("mappers["+strconv.Itoa(i)+"].matcher", locales.NotFound)
+				return
 			}
 			conf.mapper[m.Name] = mm(strings.Split(m.Args, ",")...)
 		}
 	}
-
-	return nil
 }
 
-func (r *registryConfig) build(c web.Cache) *web.FieldError {
+func (r *registryConfig) build(c web.Cache, f *filter.Filter) {
 	t, found := registryTypeFactory.get(r.Type)
 	if !found {
-		return web.NewFieldError("type", locales.ErrNotFound())
+		f.AddReason("type", locales.NotFound)
+		return
 	}
 
 	s, found := strategyFactory.get(r.Strategy)
 	if !found {
-		return web.NewFieldError("strategy", locales.ErrNotFound())
+		f.AddReason("strategy", locales.NotFound)
+		return
 	}
+
 	r.s = s
-
 	r.registry = t(c, s(), strings.Split(r.Args, ",")...)
-
-	return nil
 }

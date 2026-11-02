@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2025 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,6 +12,7 @@ import (
 	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 )
 
@@ -76,57 +77,56 @@ type mimetype struct {
 	unmarshal web.UnmarshalFunc
 }
 
-func (conf *configOf[T]) buildCodec() *web.FieldError {
+func (conf *configOf[T]) buildCodec(f *filter.Filter) {
 	if len(conf.Compressors) == 0 && len(conf.Mimetypes) == 0 {
-		return nil
+		return
 	}
 
 	c := web.NewCodec()
 
 	for index, e := range conf.Compressors {
-		enc, found := compressorFactory.get(e.ID)
-		if !found {
-			field := "compresses[" + strconv.Itoa(index) + "].id"
-			return web.NewFieldError(field, locales.ErrNotFound())
+		if enc, found := compressorFactory.get(e.ID); !found {
+			f.AddReason("compresses["+strconv.Itoa(index)+"].id", locales.NotFound)
+		} else {
+			c.AddCompressor(enc, e.Types...)
 		}
-
-		c.AddCompressor(enc, e.Types...)
 	}
 
-	return conf.sanitizeMimetypes(c)
+	conf.sanitizeMimetypes(c, f)
 }
 
-func (conf *configOf[T]) sanitizeMimetypes(c *web.Codec) *web.FieldError {
+func (conf *configOf[T]) sanitizeMimetypes(c *web.Codec, f *filter.Filter) {
 	if indexes := sliceutil.Dup(conf.Mimetypes, func(i, j *mimetypeConfig) bool { return i.Type == j.Type }); len(indexes) > 0 {
-		value := conf.Mimetypes[indexes[1]].Type
-		err := web.NewFieldError("mimetypes["+strconv.Itoa(indexes[1])+"].type", locales.DuplicateValue)
-		err.Value = value
-		return err
+		f.AddReason("mimetypes["+strconv.Itoa(indexes[1])+"].type", locales.DuplicateValue)
+		return
 	}
 
 	for index, item := range conf.Mimetypes {
 		m, found := mimetypesFactory.get(item.Target)
 		if !found {
-			return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].target", locales.ErrNotFound())
+			f.AddReason("mimetypes["+strconv.Itoa(index)+"].target", locales.NotFound)
+			return
 		}
 
 		var request, response bool
 		if item.Accept != "" {
-
 			switch s := strings.Split(strings.ToLower(item.Accept), ","); {
 			case len(s) > 2:
-				return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].accept", locales.ErrInvalidValue())
+				f.AddReason("mimetypes["+strconv.Itoa(index)+"].accept", locales.InvalidValue)
+				return
 			case len(s) == 2:
 				request = slices.Contains(s, "request")
 				response = slices.Contains(s, "response")
 				if !request || !response {
-					return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].accept", locales.ErrInvalidValue())
+					f.AddReason("mimetypes["+strconv.Itoa(index)+"].accept", locales.InvalidValue)
+					return
 				}
 			case len(s) == 1:
 				request = slices.Contains(s, "request")
 				response = slices.Contains(s, "response")
 				if !request && !response {
-					return web.NewFieldError("mimetypes["+strconv.Itoa(index)+"].accept", locales.ErrInvalidValue())
+					f.AddReason("mimetypes["+strconv.Itoa(index)+"].accept", locales.InvalidValue)
+					return
 				}
 			}
 		}
@@ -135,5 +135,4 @@ func (conf *configOf[T]) sanitizeMimetypes(c *web.Codec) *web.FieldError {
 	}
 
 	conf.codec = c
-	return nil
 }

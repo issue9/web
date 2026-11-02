@@ -17,17 +17,22 @@ func TestConfigOf_buildMicro(t *testing.T) {
 	a := assert.New(t, false)
 	c := memory.New()
 
-	conf := &configOf[empty]{}
-	a.NotError(conf.buildMicro(c))
+	conf := &configOf[empty]{cache: c}
+	e, f := buildFilter()
+	conf.buildMicro(f)
+	a.False(f.HasError()).Empty(e.Name)
 
 	conf = &configOf[empty]{
+		cache: c,
 		Registry: &registryConfig{
 			Type:     "cache",
 			Strategy: "random",
 			Args:     "1s",
 		},
 	}
-	a.NotError(conf.buildMicro(c))
+	e, f = buildFilter()
+	conf.buildMicro(f)
+	a.False(f.HasError())
 
 	conf = &configOf[empty]{
 		Registry: &registryConfig{
@@ -35,9 +40,12 @@ func TestConfigOf_buildMicro(t *testing.T) {
 			Strategy: "weighted-random",
 			Args:     "1s",
 		},
-		Peer: "https://localhost:8080,5",
+		Peer:  "https://localhost:8080,5",
+		cache: c,
 	}
-	a.NotError(conf.buildMicro(c)).
+	e, f = buildFilter()
+	conf.buildMicro(f)
+	a.False(f.HasError()).
 		Equal(conf.peer, selector.NewWeightedPeer("https://localhost:8080", 5))
 
 	conf = &configOf[empty]{
@@ -50,8 +58,11 @@ func TestConfigOf_buildMicro(t *testing.T) {
 		Mappers: []*mapperConfig{
 			{Name: "s1", Matcher: "prefix", Args: ",/s1"},
 		},
+		cache: c,
 	}
-	a.NotError(conf.buildMicro(c)).
+	e, f = buildFilter()
+	conf.buildMicro(f)
+	a.False(f.HasError()).
 		Equal(conf.peer, selector.NewWeightedPeer("https://localhost:8080", 5)).
 		NotNil(conf.mapper["s1"])
 
@@ -61,8 +72,11 @@ func TestConfigOf_buildMicro(t *testing.T) {
 			Strategy: "random",
 			Args:     "1s",
 		},
+		cache: c,
 	}
-	a.Equal(conf.buildMicro(c).Field, "registry.type")
+	e, f = buildFilter()
+	conf.buildMicro(f)
+	a.True(f.HasError()).Equal(e.Name, "registry.type")
 }
 
 func TestRegistryConfig_build(t *testing.T) {
@@ -74,21 +88,25 @@ func TestRegistryConfig_build(t *testing.T) {
 		Strategy: "random",
 		Args:     "1s",
 	}
-	a.NotError(conf.build(c))
+	e, f := buildFilter()
+	conf.build(c, f)
+	a.False(f.HasError()).Empty(e.Name)
 
 	conf = &registryConfig{
 		Type:     "not-exists",
 		Strategy: "random",
 		Args:     "1s",
 	}
-	err := conf.build(c)
-	a.Equal(err.Field, "type")
+	e, f = buildFilter()
+	conf.build(c, f)
+	a.True(f.HasError()).Equal(e.Name, "type")
 
 	conf = &registryConfig{
 		Type:     "cache",
 		Strategy: "not-exists",
 		Args:     "1s",
 	}
-	err = conf.build(c)
-	a.Equal(err.Field, "strategy")
+	e, f = buildFilter()
+	conf.build(c, f)
+	a.True(f.HasError()).Equal(e.Name, "strategy")
 }

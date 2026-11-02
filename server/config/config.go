@@ -25,6 +25,7 @@ import (
 	"golang.org/x/text/message/catalog"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/selector"
@@ -204,58 +205,47 @@ func Load[T comparable](configDir, filename string) (*server.Options, T, error) 
 	return o, conf.User, nil
 }
 
-func (conf *configOf[T]) SanitizeConfig() *web.FieldError {
+func (conf *configOf[T]) filter(filename string) *fieldError {
 	if conf.MemoryLimit > 0 {
 		conf.init = append(conf.init, func(*server.Options) { debug.SetMemoryLimit(conf.MemoryLimit) })
 	}
 
-	if conf.Language != "" {
+	e := &fieldError{Path: filename}
+	f := filter.New("", true, e.collect)
+
+	f.Add("language", &conf.languageTag, func(name string, value *language.Tag) (string, localeutil.Stringer) {
+		if conf.Language == "" {
+			conf.Language = localeutil.DetectUserLanguage()
+		}
+
 		tag, err := language.Parse(conf.Language)
 		if err != nil {
-			return web.NewFieldError("language", err)
+			return "", web.Phrase(err.Error())
 		}
-		conf.languageTag = tag
-	}
 
-	if err := conf.buildCache(); err != nil {
-		return err.AddFieldParent("cache")
-	}
-
-	if err := conf.buildLogs(); err != nil {
-		return err
-	}
-
-	if err := conf.buildTimezone(); err != nil {
-		return err
-	}
-
-	if err := conf.buildHTTP(); err != nil {
-		return err
-	}
-
-	if err := conf.buildCodec(); err != nil {
-		return err
-	}
-
-	if err := conf.buildConfig(); err != nil {
-		return err
-	}
-
+		*value = tag
+		return "", nil
+	}).AddFilter("cache", conf.buildCache).
+		AddFilter("", conf.buildLogs).
+		AddFilter("", conf.buildTimezone).
+		AddFilter("", conf.buildHTTP).
+		AddFilter("", conf.buildCodec).
+		AddFilter("", conf.buildConfig).
+		AddFilter("", conf.buildMicro)
 	conf.buildIDGen()
-
-	if err := conf.buildMicro(conf.cache); err != nil {
-		return err
-	}
 
 	var zero T
 	if conf.User != zero {
-		if s, ok := (any)(conf.User).(config.Sanitizer); ok {
-			if err := s.SanitizeConfig(); err != nil {
-				return err.AddFieldParent("user")
+		if s, ok := (any)(conf.User).(ConfigFilter); ok {
+			if f.AddFilter("user", s.FilterConfig); f.HasError() {
+				return e
 			}
 		}
 	}
 
+	if f.HasError() {
+		return e
+	}
 	return nil
 }
 
@@ -276,18 +266,14 @@ func (conf *configOf[T]) buildIDGen() {
 	}
 }
 
-func (conf *configOf[T]) buildTimezone() *web.FieldError {
+func (conf *configOf[T]) buildTimezone(f *filter.Filter) {
 	if conf.Timezone == "" {
-		return nil
+		conf.location = time.Local
+	} else if loc, err := time.LoadLocation(conf.Timezone); err != nil {
+		f.AddError("timezone", err)
+	} else {
+		conf.location = loc
 	}
-
-	loc, err := time.LoadLocation(conf.Timezone)
-	if err != nil {
-		return config.NewFieldError("timezone", err)
-	}
-	conf.location = loc
-
-	return nil
 }
 
 // CheckConfigSyntax 检测配置项语法是否正确
