@@ -5,7 +5,6 @@
 package config
 
 import (
-	"errors"
 	"io"
 	"os"
 	"strconv"
@@ -17,12 +16,13 @@ import (
 	"github.com/issue9/term/v3/colors"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 )
 
 // LogsHandlerBuilder 构建 [logs.Handler] 的方法
-type LogsHandlerBuilder = func(args []string) (logs.Handler, func() error, error)
+type LogsHandlerBuilder = func(args []string) (h logs.Handler, close func() error, err error)
 
 type logsConfig struct {
 	// 是否在日志中显示调用位置
@@ -107,21 +107,22 @@ type logHandlerConfig struct {
 	Args []string `xml:"args>arg,omitempty" yaml:"args,omitempty" json:"args,omitempty" toml:"args,omitempty"`
 }
 
-func (conf *configOf[T]) buildLogs() *fieldError {
+func (conf *configOf[T]) buildLogs(f *filter.Filter) {
 	if conf.Logs == nil {
 		conf.Logs = &logsConfig{}
 	}
+
 	if err := conf.Logs.build(); err != nil {
-		return err.AddFieldParent("logs")
+		f.AddError("logs", err)
+		return
 	}
+
 	conf.init = append(conf.init, func(o *server.Options) {
 		o.Plugins = append(o.Plugins, web.PluginFunc(func(s *web.Server) { s.OnClose(conf.Logs.cleanup...) }))
 	})
-
-	return nil
 }
 
-func (conf *logsConfig) build() *fieldError {
+func (conf *logsConfig) build() error {
 	defer func() {
 		if conf.logs == nil {
 			conf.logs = logs.New(logs.NewNopHandler())
@@ -155,7 +156,6 @@ func (conf *logsConfig) build() *fieldError {
 	}
 	conf.logs = logs.New(h, o...)
 	conf.cleanup = c
-
 	return nil
 }
 
@@ -173,10 +173,7 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *fieldErro
 
 		ww, c, err := f(item.Args)
 		if err != nil {
-			if ce, ok := errors.AsType[*fieldError](err); ok {
-				return nil, nil, ce.AddFieldParent("handlers[0]")
-			}
-			return nil, nil, newFieldError("handlers[0].args", err)
+			return nil, nil, newFieldError("handlers[0]", err)
 		}
 
 		return ww, []func() error{c}, nil
@@ -194,10 +191,7 @@ func (conf *logsConfig) buildHandler() (logs.Handler, []func() error, *fieldErro
 
 		ww, c, err := f(w.Args)
 		if err != nil {
-			if ce, ok := errors.AsType[*fieldError](err); ok {
-				return nil, nil, ce.AddFieldParent(field)
-			}
-			return nil, nil, newFieldError(field+".args", err)
+			return nil, nil, newFieldError(field, err)
 		}
 		if c != nil {
 			cleanup = append(cleanup, c)
@@ -271,7 +265,7 @@ var colorMap = map[string]colors.Color{
 // - 1-7 为 level 与颜色的配置，格式为 Info:green,Warn:yellow；
 func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
 	if len(args) < 1 {
-		return nil, nil, web.NewFieldError("args", locales.InvalidValue)
+		return nil, nil, newFieldError("args", locales.InvalidValue)
 	}
 
 	var w io.Writer
@@ -281,29 +275,29 @@ func newTermLogsHandler(args []string) (logs.Handler, func() error, error) {
 	case "stdout":
 		w = os.Stdout
 	default:
-		return nil, nil, web.NewFieldError("args[0]", locales.InvalidValue)
+		return nil, nil, newFieldError("args[0]", locales.InvalidValue)
 	}
 
 	args = args[1:]
 	if len(args) > 5 {
-		return nil, nil, web.NewFieldError("args", locales.InvalidValue)
+		return nil, nil, newFieldError("args", locales.InvalidValue)
 	}
 	cs := make(map[logs.Level]colors.Color, len(args))
 	for index, arg := range args {
 		a := strings.SplitN(arg, ":", 2)
 
 		if len(a) != 2 || a[1] == "" {
-			return nil, nil, web.NewFieldError("args["+strconv.Itoa(1+index)+"]", locales.InvalidValue)
+			return nil, nil, newFieldError("args["+strconv.Itoa(1+index)+"]", locales.InvalidValue)
 		}
 
 		lv, err := logs.ParseLevel(a[0])
 		if err != nil {
-			return nil, nil, web.NewFieldError("args["+strconv.Itoa(1+index)+"]", err)
+			return nil, nil, newFieldError("args["+strconv.Itoa(1+index)+"]", err)
 		}
 
 		c, found := colorMap[a[1]]
 		if !found {
-			return nil, nil, web.NewFieldError("args["+strconv.Itoa(1+index)+"]", locales.InvalidValue)
+			return nil, nil, newFieldError("args["+strconv.Itoa(1+index)+"]", locales.InvalidValue)
 		}
 
 		cs[lv] = c

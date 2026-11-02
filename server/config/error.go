@@ -47,26 +47,9 @@ func (err *fieldError) LocaleString(p *localeutil.Printer) string {
 	return localeutil.Phrase("%s at %s:%s", err.Message, err.Path, err.Name).LocaleString(p)
 }
 
-// AddFieldParent 为字段名加上一个前缀
-//
-// 当字段名存在层级关系时，外层在处理错误时，需要为其加上当前层的字段名作为前缀。
-func (err *fieldError) AddFieldParent(prefix string) *fieldError {
-	if prefix == "" {
-		return err
-	}
-
-	if err.Name == "" {
-		err.Name = prefix
-		return err
-	}
-
-	err.Name = prefix + "." + err.Name
-	return err
-}
-
 func newFieldError(field string, msg any) *fieldError {
 	if err, ok := msg.(*fieldError); ok {
-		err.AddFieldParent(field)
+		err.Name = field + "." + err.Name
 		return err
 	}
 	if m, ok := msg.(localeutil.Stringer); ok {

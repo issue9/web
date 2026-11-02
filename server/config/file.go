@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/issue9/config"
+	"github.com/issue9/web/filter"
 
 	"github.com/issue9/web"
 )
@@ -18,23 +19,23 @@ type fileSerializer struct {
 	unmarshal config.UnmarshalFunc
 }
 
-func (conf *configOf[T]) buildConfig() *fieldError {
+func (conf *configOf[T]) buildConfig(f *filter.Filter) {
 	ss := make(config.Serializer, len(fileSerializerFactory.items))
 	for i, name := range conf.FileSerializers {
 		s, found := fileSerializerFactory.get(name)
 		if !found {
-			return newFieldError("fileSerializers["+strconv.Itoa(i)+"]", web.NewLocaleError("not found serialization function for %s", name))
+			f.AddReason("fileSerializers["+strconv.Itoa(i)+"]", web.Phrase("not found serialization function for %s", name))
+			return
 		}
 		ss.Add(s.marshal, s.unmarshal, s.exts...)
 	}
 
 	c, err := config.BuildDir(ss, conf.dir)
 	if err != nil {
-		return newFieldError("", err) // 应该是与目录相关的错误引起的
+		f.AddError("dir", err)
 	}
 
 	conf.config = c
-	return nil
 }
 
 func loadConfigOf[T comparable](configDir, name string) (*configOf[T], error) {
@@ -51,7 +52,6 @@ func loadConfigOf[T comparable](configDir, name string) (*configOf[T], error) {
 	if ferr := conf.filter(name); ferr != nil {
 		return nil, ferr
 	}
-
 	return conf, nil
 }
 

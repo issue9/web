@@ -6,7 +6,9 @@ package config
 
 import (
 	"github.com/issue9/cache"
+	"github.com/issue9/cache/drivers/memory"
 
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 )
 
@@ -33,21 +35,18 @@ type cacheConfig struct {
 	DSN string `yaml:"dsn" json:"dsn" xml:"dsn" toml:"dsn"`
 }
 
-func (conf *configOf[T]) buildCache() *fieldError {
+func (conf *configOf[T]) buildCache(f *filter.Filter) {
 	if conf.Cache == nil {
-		return nil
+		conf.cache = memory.New()
+		return
 	}
 
-	b, found := cacheFactory.get(conf.Cache.Type)
-	if !found {
-		return newFieldError("type", locales.InvalidValue)
+	if b, found := cacheFactory.get(conf.Cache.Type); !found {
+		f.AddReason("type", locales.InvalidValue)
+	} else {
+		var err error
+		if conf.cache, err = b(conf.Cache.DSN); err != nil {
+			f.AddError("dsn", err)
+		}
 	}
-
-	drv, err := b(conf.Cache.DSN)
-	if err != nil {
-		return newFieldError("dsn", err)
-	}
-	conf.cache = drv
-
-	return nil
 }
