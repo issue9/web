@@ -7,9 +7,6 @@ package filter
 
 import "github.com/issue9/localeutil"
 
-// Collector 错误信息收集函数
-type Collector func(name string, reason localeutil.Stringer)
-
 // Filter 过滤器
 //
 // 包含了数据验证和数据修正功能
