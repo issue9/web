@@ -21,12 +21,12 @@ func TestCertificate_sanitize(t *testing.T) {
 	e, f := buildFilter()
 	cert := &certificateConfig{}
 	cert.sanitize(f)
-	a.True(f.HasError()).Equal(e.Name, "cert")
+	a.True(f.HasError()).NotEmpty(e["cert"])
 
 	e, f = buildFilter()
 	cert.Cert = "./testdata/cert.pem"
 	cert.sanitize(f)
-	a.True(f.HasError()).Equal(e.Name, "key")
+	a.True(f.HasError()).NotEmpty(e["key"])
 
 	e, f = buildFilter()
 	cert.Key = "./testdata/key.pem"
@@ -41,19 +41,19 @@ func TestHTTP_sanitize(t *testing.T) {
 	http := &httpConfig{}
 	http.ReadTimeout = -1
 	http.sanitize(f)
-	a.Equal(e.Name, "readTimeout")
+	a.NotEmpty(e["readTimeout"])
 
 	e, f = buildFilter()
 	http.ReadTimeout = 0
 	http.IdleTimeout = -1
 	http.sanitize(f)
-	a.Equal(e.Name, "idleTimeout")
+	a.NotEmpty(e["idleTimeout"])
 
 	e, f = buildFilter()
 	http.IdleTimeout = 0
 	http.ReadHeaderTimeout = -1
 	http.sanitize(f)
-	a.Equal(e.Name, "readHeaderTimeout")
+	a.NotEmpty(e["readHeaderTimeout"])
 }
 
 func TestHTTP_buildTLSConfig(t *testing.T) {
@@ -71,7 +71,7 @@ func TestHTTP_buildTLSConfig(t *testing.T) {
 	e, f := buildFilter()
 	h.buildTLSConfig(f)
 	a.False(f.HasError()).NotNil(h.tlsConfig)
-	a.Equal(1, len(h.tlsConfig.Certificates)).Empty(e.Name)
+	a.Equal(1, len(h.tlsConfig.Certificates)).Empty(e)
 
 	e, f = buildFilter()
 	h = &httpConfig{ACME: &acmeConfig{}}
@@ -97,7 +97,7 @@ func TestHTTP_buildTLSConfig(t *testing.T) {
 		ACME: &acmeConfig{},
 	}
 	h.buildTLSConfig(f)
-	a.True(f.HasError()).Equal(e.Name, "acme")
+	a.True(f.HasError()).NotEmpty(e["acme"])
 }
 
 func TestACME_sanitize(t *testing.T) {
@@ -106,23 +106,23 @@ func TestACME_sanitize(t *testing.T) {
 	e, f := buildFilter()
 	l := &acmeConfig{}
 	l.sanitize(f)
-	a.True(f.HasError()).Equal(e.Name, "cache")
+	a.True(f.HasError()).NotEmpty(e["cache"])
 
 	l = &acmeConfig{Cache: "./not-exists"}
 	e, f = buildFilter()
 	l.sanitize(f)
-	a.True(f.HasError()).Equal(e.Name, "cache")
+	a.True(f.HasError()).NotEmpty(e["cache"])
 
 	// 未指定域名
 	e, f = buildFilter()
 	l = &acmeConfig{Cache: "./"}
 	l.sanitize(f)
-	a.True(f.HasError()).Equal(e.Name, "domains")
+	a.True(f.HasError()).NotEmpty(e["domains"])
 
 	e, f = buildFilter()
 	l = &acmeConfig{Cache: "./", Domains: []string{"example.com"}}
 	l.sanitize(f)
-	a.False(f.HasError()).Empty(e.Name)
+	a.False(f.HasError()).Empty(e)
 }
 
 var (

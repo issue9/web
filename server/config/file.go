@@ -5,6 +5,8 @@
 package config
 
 import (
+	"maps"
+	"slices"
 	"strconv"
 
 	"github.com/issue9/config"
@@ -38,19 +40,22 @@ func (conf *configOf[T]) buildConfig(f *filter.Filter) {
 	conf.config = c
 }
 
-func loadConfigOf[T comparable](configDir, name string) (*configOf[T], error) {
+func loadConfigOf[T comparable](configDir, filename string) (*configOf[T], error) {
 	c, err := config.BuildDir(buildSerializerFromFactory(), configDir)
 	if err != nil {
 		return nil, err
 	}
 
 	conf := &configOf[T]{dir: configDir}
-	if err := c.Load(name, conf); err != nil {
+	if err := c.Load(filename, conf); err != nil {
 		return nil, err
 	}
 
-	if ferr := conf.filter(name); ferr != nil {
-		return nil, ferr
+	if f := conf.filter(); f != nil {
+		keys := slices.Collect(maps.Keys(f))
+		slices.Sort(keys)
+		key := keys[0]
+		return nil, web.NewLocaleError("%s at %s:%s", f[key][0], filename, key)
 	}
 	return conf, nil
 }
