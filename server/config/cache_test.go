@@ -12,13 +12,17 @@ import (
 
 func TestConfig_buildCache(t *testing.T) {
 	a := assert.New(t, false)
+	_, f := buildFilter()
 
 	cfg := &configOf[empty]{}
-	a.NotError(cfg.buildCache()).Nil(cfg.cache)
+	cfg.buildCache(f)
+	a.False(f.HasError()).NotNil(cfg.cache)
 
 	cfg = &configOf[empty]{Cache: &cacheConfig{Type: "memory", DSN: "1h"}}
-	a.NotError(cfg.buildCache()).NotNil(cfg.cache)
+	cfg.buildCache(f)
+	a.False(f.HasError()).NotNil(cfg.cache)
 
 	cfg = &configOf[empty]{Cache: &cacheConfig{Type: "not-exists"}}
-	a.Error(cfg.buildCache()).Nil(cfg.cache)
+	cfg.buildCache(f)
+	a.True(f.HasError()).Nil(cfg.cache)
 }

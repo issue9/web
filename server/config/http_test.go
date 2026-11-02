@@ -18,33 +18,42 @@ import (
 func TestCertificate_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
+	e, f := buildFilter()
 	cert := &certificateConfig{}
-	a.Error(cert.sanitize())
+	cert.sanitize(f)
+	a.True(f.HasError()).NotEmpty(e["cert"])
 
+	e, f = buildFilter()
 	cert.Cert = "./testdata/cert.pem"
-	a.Error(cert.sanitize())
+	cert.sanitize(f)
+	a.True(f.HasError()).NotEmpty(e["key"])
 
+	e, f = buildFilter()
 	cert.Key = "./testdata/key.pem"
-	a.NotError(cert.sanitize())
+	cert.sanitize(f)
+	a.False(f.HasError())
 }
 
 func TestHTTP_sanitize(t *testing.T) {
 	a := assert.New(t, false)
+	e, f := buildFilter()
 
 	http := &httpConfig{}
 	http.ReadTimeout = -1
-	ferr := http.sanitize()
-	a.Equal(ferr.Field, "readTimeout")
+	http.sanitize(f)
+	a.NotEmpty(e["readTimeout"])
 
+	e, f = buildFilter()
 	http.ReadTimeout = 0
 	http.IdleTimeout = -1
-	ferr = http.sanitize()
-	a.Equal(ferr.Field, "idleTimeout")
+	http.sanitize(f)
+	a.NotEmpty(e["idleTimeout"])
 
+	e, f = buildFilter()
 	http.IdleTimeout = 0
 	http.ReadHeaderTimeout = -1
-	ferr = http.sanitize()
-	a.Equal(ferr.Field, "readHeaderTimeout")
+	http.sanitize(f)
+	a.NotEmpty(e["readHeaderTimeout"])
 }
 
 func TestHTTP_buildTLSConfig(t *testing.T) {
@@ -58,20 +67,26 @@ func TestHTTP_buildTLSConfig(t *testing.T) {
 			},
 		},
 	}
-	a.NotError(h.buildTLSConfig()).NotNil(h.tlsConfig)
-	a.Equal(1, len(h.tlsConfig.Certificates))
 
-	h = &httpConfig{
-		ACME: &acmeConfig{},
-	}
-	a.Error(h.buildTLSConfig()).Nil(h.tlsConfig)
+	e, f := buildFilter()
+	h.buildTLSConfig(f)
+	a.False(f.HasError()).NotNil(h.tlsConfig)
+	a.Equal(1, len(h.tlsConfig.Certificates)).Empty(e)
 
+	e, f = buildFilter()
+	h = &httpConfig{ACME: &acmeConfig{}}
+	h.buildTLSConfig(f)
+	a.True(f.HasError()).Nil(h.tlsConfig)
+
+	e, f = buildFilter()
 	h = &httpConfig{
 		ACME: &acmeConfig{Cache: ".", Domains: []string{"example.com"}},
 	}
-	a.NotError(h.buildTLSConfig()).NotNil(h.tlsConfig)
+	h.buildTLSConfig(f)
+	a.False(f.HasError()).NotNil(h.tlsConfig)
 
 	// 同时有 Certificates 和 LetsEncrypt
+	e, f = buildFilter()
 	h = &httpConfig{
 		Certificates: []*certificateConfig{
 			{
@@ -81,24 +96,33 @@ func TestHTTP_buildTLSConfig(t *testing.T) {
 		},
 		ACME: &acmeConfig{},
 	}
-	a.Error(h.buildTLSConfig())
+	h.buildTLSConfig(f)
+	a.True(f.HasError()).NotEmpty(e["acme"])
 }
 
 func TestACME_sanitize(t *testing.T) {
 	a := assert.New(t, false)
 
+	e, f := buildFilter()
 	l := &acmeConfig{}
-	a.Error(l.sanitize())
+	l.sanitize(f)
+	a.True(f.HasError()).NotEmpty(e["cache"])
 
 	l = &acmeConfig{Cache: "./not-exists"}
-	a.Error(l.sanitize())
+	e, f = buildFilter()
+	l.sanitize(f)
+	a.True(f.HasError()).NotEmpty(e["cache"])
 
 	// 未指定域名
+	e, f = buildFilter()
 	l = &acmeConfig{Cache: "./"}
-	a.Error(l.sanitize())
+	l.sanitize(f)
+	a.True(f.HasError()).NotEmpty(e["domains"])
 
+	e, f = buildFilter()
 	l = &acmeConfig{Cache: "./", Domains: []string{"example.com"}}
-	a.NotError(l.sanitize())
+	l.sanitize(f)
+	a.False(f.HasError()).Empty(e)
 }
 
 var (

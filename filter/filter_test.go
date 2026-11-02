@@ -1,0 +1,95 @@
+// SPDX-FileCopyrightText: 2026 caixw
+//
+// SPDX-License-Identifier: MIT
+
+package filter
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/issue9/assert/v6"
+	"github.com/issue9/localeutil"
+)
+
+type object struct {
+	Name string `json:"name"`
+	Age  int
+}
+
+func TestFilter(t *testing.T) {
+	a := assert.New(t, false)
+
+	min2 := Validator(buildMinValidator(-2), localeutil.Phrase("-2"))
+	min3 := Validator(buildMinValidator(-3), localeutil.Phrase("-3"))
+	max50 := Validator(buildMaxValidator(50), localeutil.Phrase("50"))
+	max4 := Validator(buildMaxValidator(-4), localeutil.Phrase("-4"))
+
+	f, c := newFilter(false)
+	n100 := -100
+	p100 := 100
+	f.Add("f1", &n100, min2, min3).Add("f2", &p100, max50, max4)
+	a.Equal(c, map[string][]localeutil.Stringer{
+		"f1": {localeutil.Phrase("-2")},
+		"f2": {localeutil.Phrase("50")},
+	})
+
+	f, c = newFilter(true)
+	n100 = -100
+	p100 = 100
+	f.Add("f1", &n100, min2, min3).Add("f2", &p100, max50, max4)
+	a.Equal(c, map[string][]localeutil.Stringer{
+		"f1": {localeutil.Phrase("-2")},
+	})
+
+	_, collector := CreateMapCollector()
+	f.Reset("reset", false, collector)
+	a.Equal(f.Name(), "reset").False(f.ExitOnError())
+}
+
+func TestFilter_AddFilter(t *testing.T) {
+	a := assert.New(t, false)
+
+	f, c := newFilter(false)
+	f1 := f.AddFilter("v1", func(f *Filter) {
+		f.AddReason("f1", localeutil.StringPhrase("s1"))
+		f2 := f.AddFilter("", func(f *Filter) {
+			f.AddError("f2", errors.New("s2"))
+		})
+		a.Equal(f2, f)
+	})
+	a.Equal(f1, f)
+
+	a.Equal(c, map[string][]localeutil.Stringer{
+		"v1.f1": {localeutil.StringPhrase("s1")},
+		"v1.f2": {localeutil.StringPhrase("s2")},
+	}).True(f.HasError())
+}
+
+func TestFilter_When(t *testing.T) {
+	a := assert.New(t, false)
+
+	min18 := Validator(buildMinValidator(18), localeutil.Phrase("不能小于 18"))
+	notEmpty := Validator(required[string], localeutil.Phrase("不能为空"))
+
+	f, c := newFilter(false)
+	obj := &object{}
+	f.Add("obj/age", &obj.Age, min18).
+		When(func() bool { return obj.Age > 0 }, func(v *Filter) {
+			v.Add("obj/name", &obj.Name, notEmpty)
+		})
+	a.Equal(c, map[string][]localeutil.Stringer{
+		"obj/age": {localeutil.Phrase("不能小于 18")},
+	})
+
+	f, c = newFilter(false)
+	obj = &object{Age: 15}
+	f.Add("obj/age", &obj.Age, min18).
+		When(func() bool { return obj.Age > 0 }, func(v *Filter) {
+			v.Add("obj/name", &obj.Name, notEmpty)
+		})
+	a.Equal(c, map[string][]localeutil.Stringer{
+		"obj/age":  {localeutil.Phrase("不能小于 18")},
+		"obj/name": {localeutil.Phrase("不能为空")},
+	})
+}

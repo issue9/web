@@ -16,6 +16,7 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/server"
 )
@@ -158,18 +159,17 @@ type (
 	}
 )
 
-func (conf *configOf[T]) buildHTTP() *web.FieldError {
+func (conf *configOf[T]) buildHTTP(f *filter.Filter) {
 	if conf.HTTP == nil {
 		conf.HTTP = &httpConfig{}
 	}
-	if err := conf.HTTP.sanitize(); err != nil {
-		return err.AddFieldParent("http")
+
+	if f.AddFilter("http", conf.HTTP.sanitize); f.HasError() {
+		return
 	}
 	if conf.HTTP.init != nil {
 		conf.init = append(conf.init, conf.HTTP.init)
 	}
-
-	return nil
 }
 
 func fileExistsRule(p string) bool {
@@ -177,38 +177,25 @@ func fileExistsRule(p string) bool {
 	return err == nil || errors.Is(err, fs.ErrExist)
 }
 
-type Number interface {
-	~int | ~int64
+type number interface{ ~int | ~int64 }
+
+func durShouldGreatThan0[T number](d T) bool { return d >= 0 }
+
+func (cert *certificateConfig) sanitize(f *filter.Filter) {
+	f.Add("cert", &cert.Cert, filter.Validator(fileExistsRule, locales.NotFound)).
+		Add("key", &cert.Key, filter.Validator(fileExistsRule, locales.NotFound))
 }
 
-func durShouldGreatThan0[T Number](d T) bool { return d < 0 }
+func (h *httpConfig) sanitize(f *filter.Filter) {
+	f.Add("readTimeout", &h.ReadTimeout, filter.Validator[Duration](durShouldGreatThan0, locales.ShouldGreatThan(0))).
+		Add("writeTimeout", &h.WriteTimeout, filter.Validator[Duration](durShouldGreatThan0, locales.ShouldGreatThan(0))).
+		Add("idleTimeout", &h.IdleTimeout, filter.Validator[Duration](durShouldGreatThan0, locales.ShouldGreatThan(0))).
+		Add("readHeaderTimeout", &h.ReadHeaderTimeout, filter.Validator[Duration](durShouldGreatThan0, locales.ShouldGreatThan(0))).
+		Add("maxHeaderBytes", &h.MaxHeaderBytes, filter.Validator[int](durShouldGreatThan0, locales.ShouldGreatThan(0)))
+	if f.HasError() {
+		return
+	}
 
-func (cert *certificateConfig) sanitize() *web.FieldError {
-	if !fileExistsRule(cert.Cert) {
-		return web.NewFieldError("cert", locales.NotFound)
-	}
-	if !fileExistsRule(cert.Key) {
-		return web.NewFieldError("key", locales.NotFound)
-	}
-	return nil
-}
-
-func (h *httpConfig) sanitize() *web.FieldError {
-	if durShouldGreatThan0(h.ReadTimeout) {
-		return web.NewFieldError("readTimeout", locales.ShouldGreatThan(0))
-	}
-	if durShouldGreatThan0(h.WriteTimeout) {
-		return web.NewFieldError("writeTimeout", locales.ShouldGreatThan(0))
-	}
-	if durShouldGreatThan0(h.IdleTimeout) {
-		return web.NewFieldError("idleTimeout", locales.ShouldGreatThan(0))
-	}
-	if durShouldGreatThan0(h.ReadHeaderTimeout) {
-		return web.NewFieldError("readHeaderTimeout", locales.ShouldGreatThan(0))
-	}
-	if durShouldGreatThan0(h.MaxHeaderBytes) {
-		return web.NewFieldError("maxHeaderBytes", locales.ShouldGreatThan(0))
-	}
 	if h.RequestID == "" {
 		h.RequestID = header.XRequestID
 	}
@@ -224,16 +211,17 @@ func (h *httpConfig) sanitize() *web.FieldError {
 		h.trace = web.WithTrace(false)
 	case "disable":
 	default:
-		return web.NewFieldError("trace", locales.InvalidValue)
+		f.AddReason("trace", locales.InvalidValue)
+		return
 	}
 
-	if err := h.buildTLSConfig(); err != nil {
-		return err
+	f.AddFilter("", h.buildTLSConfig)
+	if f.HasError() {
+		return
 	}
 
 	h.buildInit()
 	h.buildHTTPServer()
-	return nil
 }
 
 func (h *httpConfig) buildHTTPServer() {
@@ -279,35 +267,35 @@ func (h *httpConfig) buildInit() {
 	}
 }
 
-func (h *httpConfig) buildTLSConfig() *web.FieldError {
+func (h *httpConfig) buildTLSConfig(f *filter.Filter) {
 	if len(h.Certificates) > 0 && h.ACME != nil {
-		return web.NewFieldError("acme", web.Phrase("conflict with certificates"))
+		f.AddReason("acme", web.Phrase("conflict with certificates"))
+		return
 	}
 
 	if h.ACME != nil {
-		if err := h.ACME.sanitize(); err != nil {
-			return err.AddFieldParent("acme")
+		f.AddFilter("acme", h.ACME.sanitize)
+		if !f.HasError() {
+			h.tlsConfig = h.ACME.tlsConfig()
 		}
-
-		h.tlsConfig = h.ACME.tlsConfig()
-		return nil
+		return
 	}
 
 	tlsConfig := &tls.Config{Certificates: make([]tls.Certificate, 0, len(h.Certificates))}
 	for _, certificate := range h.Certificates {
-		if err := certificate.sanitize(); err != nil {
-			return err
+		f.AddFilter("certificates", certificate.sanitize)
+		if f.HasError() {
+			return
 		}
 
 		cert, err := tls.LoadX509KeyPair(certificate.Cert, certificate.Key)
 		if err != nil {
-			return web.NewFieldError("certificates", err)
+			f.AddError("certificates", err)
+			return
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, cert)
 	}
 	h.tlsConfig = tlsConfig
-
-	return nil
 }
 
 func (l *acmeConfig) tlsConfig() *tls.Config {
@@ -320,14 +308,9 @@ func (l *acmeConfig) tlsConfig() *tls.Config {
 	}).TLSConfig()
 }
 
-func (l *acmeConfig) sanitize() *web.FieldError {
-	if !fileExistsRule(l.Cache) {
-		return web.NewFieldError("cache", locales.NotFound)
-	}
-	if len(l.Domains) == 0 {
-		return web.NewFieldError("domains", locales.CanNotBeEmpty)
-	}
-	return nil
+func (l *acmeConfig) sanitize(f *filter.Filter) {
+	f.Add("cache", &l.Cache, filter.Validator(fileExistsRule, locales.NotFound)).
+		Add("domains", &l.Domains, filter.Validator(func(domains []string) bool { return len(domains) > 0 }, locales.CanNotBeEmpty))
 }
 
 // Duration 转换为标准库的 [time.Duration]

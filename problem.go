@@ -164,14 +164,6 @@ func (ctx *Context) NotFound() *Problem { return ctx.Problem(ProblemNotFound) }
 
 func (ctx *Context) NotImplemented() *Problem { return ctx.Problem(ProblemNotImplemented) }
 
-// Problem 如果有错误信息转换成 [Problem] 否则返回 nil
-func (v *FilterContext) Problem(id string) Responser {
-	if v == nil || v.len() == 0 {
-		return nil
-	}
-	return v.Context().initProblem(v.problem, id)
-}
-
 // newProblems 创建用于管理 [Problem] 的对象
 //
 // 可通过 prefix 参数为所有 [Problem.Type] 提供统一的前缀。
