@@ -84,7 +84,7 @@ func (conf *configOf[T]) buildMicro(f *filter.Filter) {
 	}
 
 	if conf.Registry != nil {
-		f.AddFilter("registry", func(f *filter.Filter) {
+		f.ApplyFilter("registry", func(f *filter.Filter) {
 			conf.Registry.build(conf.cache, f)
 			if f.HasError() {
 				return

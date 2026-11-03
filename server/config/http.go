@@ -164,7 +164,7 @@ func (conf *configOf[T]) buildHTTP(f *filter.Filter) {
 		conf.HTTP = &httpConfig{}
 	}
 
-	if f.AddFilter("http", conf.HTTP.sanitize); f.HasError() {
+	if f.ApplyFilter("http", conf.HTTP.sanitize); f.HasError() {
 		return
 	}
 	if conf.HTTP.init != nil {
@@ -182,16 +182,16 @@ type number interface{ ~int | ~int64 }
 func durShouldGreatThan0[T number](d T) bool { return d >= 0 }
 
 func (cert *certificateConfig) sanitize(f *filter.Filter) {
-	f.Add("cert", &cert.Cert, filter.Validator(fileExistsRule, locales.NotFound)).
-		Add("key", &cert.Key, filter.Validator(fileExistsRule, locales.NotFound))
+	f.ApplyRule("cert", &cert.Cert, filter.V2R(locales.NotFound, fileExistsRule)).
+		ApplyRule("key", &cert.Key, filter.V2R(locales.NotFound, fileExistsRule))
 }
 
 func (h *httpConfig) sanitize(f *filter.Filter) {
-	f.Add("readTimeout", &h.ReadTimeout, filter.Validator[Duration](durShouldGreatThan0, locales.ShouldGreatThan(0))).
-		Add("writeTimeout", &h.WriteTimeout, filter.Validator[Duration](durShouldGreatThan0, locales.ShouldGreatThan(0))).
-		Add("idleTimeout", &h.IdleTimeout, filter.Validator[Duration](durShouldGreatThan0, locales.ShouldGreatThan(0))).
-		Add("readHeaderTimeout", &h.ReadHeaderTimeout, filter.Validator[Duration](durShouldGreatThan0, locales.ShouldGreatThan(0))).
-		Add("maxHeaderBytes", &h.MaxHeaderBytes, filter.Validator[int](durShouldGreatThan0, locales.ShouldGreatThan(0)))
+	f.ApplyRule("readTimeout", &h.ReadTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
+		ApplyRule("writeTimeout", &h.WriteTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
+		ApplyRule("idleTimeout", &h.IdleTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
+		ApplyRule("readHeaderTimeout", &h.ReadHeaderTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
+		ApplyRule("maxHeaderBytes", &h.MaxHeaderBytes, filter.V2R[int](locales.ShouldGreatThan(0), durShouldGreatThan0))
 	if f.HasError() {
 		return
 	}
@@ -215,7 +215,7 @@ func (h *httpConfig) sanitize(f *filter.Filter) {
 		return
 	}
 
-	f.AddFilter("", h.buildTLSConfig)
+	f.ApplyFilter("", h.buildTLSConfig)
 	if f.HasError() {
 		return
 	}
@@ -274,7 +274,7 @@ func (h *httpConfig) buildTLSConfig(f *filter.Filter) {
 	}
 
 	if h.ACME != nil {
-		f.AddFilter("acme", h.ACME.sanitize)
+		f.ApplyFilter("acme", h.ACME.sanitize)
 		if !f.HasError() {
 			h.tlsConfig = h.ACME.tlsConfig()
 		}
@@ -283,7 +283,7 @@ func (h *httpConfig) buildTLSConfig(f *filter.Filter) {
 
 	tlsConfig := &tls.Config{Certificates: make([]tls.Certificate, 0, len(h.Certificates))}
 	for _, certificate := range h.Certificates {
-		f.AddFilter("certificates", certificate.sanitize)
+		f.ApplyFilter("certificates", certificate.sanitize)
 		if f.HasError() {
 			return
 		}
@@ -309,8 +309,8 @@ func (l *acmeConfig) tlsConfig() *tls.Config {
 }
 
 func (l *acmeConfig) sanitize(f *filter.Filter) {
-	f.Add("cache", &l.Cache, filter.Validator(fileExistsRule, locales.NotFound)).
-		Add("domains", &l.Domains, filter.Validator(func(domains []string) bool { return len(domains) > 0 }, locales.CanNotBeEmpty))
+	f.ApplyRule("cache", &l.Cache, filter.V2R(locales.NotFound, fileExistsRule)).
+		ApplyRule("domains", &l.Domains, filter.V2R(locales.CanNotBeEmpty, func(domains []string) bool { return len(domains) > 0 }))
 }
 
 // Duration 转换为标准库的 [time.Duration]

@@ -37,9 +37,9 @@ func BenchmarkFilter_AddFilter(b *testing.B) {
 	f, _ := newFilter(false)
 
 	for b.Loop() {
-		f.AddFilter("v1.", func(f *Filter) {
+		f.ApplyFilter("v1.", func(f *Filter) {
 			f.AddReason("f1", localeutil.StringPhrase("s1"))
-			f.AddFilter("v2.", func(f *Filter) {
+			f.ApplyFilter("v2.", func(f *Filter) {
 				f.AddError("f2", errors.New("s2"))
 			})
 		})

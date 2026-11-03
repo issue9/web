@@ -17,18 +17,23 @@ type object struct {
 	Age  int
 }
 
+func newFilter(exitOnError bool) (*Filter, Map) {
+	m, c := CreateMapCollector()
+	return New("", exitOnError, c), m
+}
+
 func TestFilter(t *testing.T) {
 	a := assert.New(t, false)
 
-	min2 := Validator(buildMinValidator(-2), localeutil.Phrase("-2"))
-	min3 := Validator(buildMinValidator(-3), localeutil.Phrase("-3"))
-	max50 := Validator(buildMaxValidator(50), localeutil.Phrase("50"))
-	max4 := Validator(buildMaxValidator(-4), localeutil.Phrase("-4"))
+	min2 := V2R(localeutil.Phrase("-2"), buildMinValidator(-2))
+	min3 := V2R(localeutil.Phrase("-3"), buildMinValidator(-3))
+	max50 := V2R(localeutil.Phrase("50"), buildMaxValidator(50))
+	max4 := V2R(localeutil.Phrase("-4"), buildMaxValidator(-4))
 
 	f, c := newFilter(false)
 	n100 := -100
 	p100 := 100
-	f.Add("f1", &n100, min2, min3).Add("f2", &p100, max50, max4)
+	f.ApplyRule("f1", &n100, min2, min3).ApplyRule("f2", &p100, max50, max4)
 	a.Equal(c, map[string][]localeutil.Stringer{
 		"f1": {localeutil.Phrase("-2")},
 		"f2": {localeutil.Phrase("50")},
@@ -37,7 +42,7 @@ func TestFilter(t *testing.T) {
 	f, c = newFilter(true)
 	n100 = -100
 	p100 = 100
-	f.Add("f1", &n100, min2, min3).Add("f2", &p100, max50, max4)
+	f.ApplyRule("f1", &n100, min2, min3).ApplyRule("f2", &p100, max50, max4)
 	a.Equal(c, map[string][]localeutil.Stringer{
 		"f1": {localeutil.Phrase("-2")},
 	})
@@ -51,9 +56,9 @@ func TestFilter_AddFilter(t *testing.T) {
 	a := assert.New(t, false)
 
 	f, c := newFilter(false)
-	f1 := f.AddFilter("v1", func(f *Filter) {
+	f1 := f.ApplyFilter("v1", func(f *Filter) {
 		f.AddReason("f1", localeutil.StringPhrase("s1"))
-		f2 := f.AddFilter("", func(f *Filter) {
+		f2 := f.ApplyFilter("", func(f *Filter) {
 			f.AddError("f2", errors.New("s2"))
 		})
 		a.Equal(f2, f)
@@ -69,14 +74,14 @@ func TestFilter_AddFilter(t *testing.T) {
 func TestFilter_When(t *testing.T) {
 	a := assert.New(t, false)
 
-	min18 := Validator(buildMinValidator(18), localeutil.Phrase("不能小于 18"))
-	notEmpty := Validator(required[string], localeutil.Phrase("不能为空"))
+	min18 := V2R(localeutil.Phrase("不能小于 18"), buildMinValidator(18))
+	notEmpty := V2R(localeutil.Phrase("不能为空"), required[string])
 
 	f, c := newFilter(false)
 	obj := &object{}
-	f.Add("obj/age", &obj.Age, min18).
+	f.ApplyRule("obj/age", &obj.Age, min18).
 		When(func() bool { return obj.Age > 0 }, func(v *Filter) {
-			v.Add("obj/name", &obj.Name, notEmpty)
+			v.ApplyRule("obj/name", &obj.Name, notEmpty)
 		})
 	a.Equal(c, map[string][]localeutil.Stringer{
 		"obj/age": {localeutil.Phrase("不能小于 18")},
@@ -84,9 +89,9 @@ func TestFilter_When(t *testing.T) {
 
 	f, c = newFilter(false)
 	obj = &object{Age: 15}
-	f.Add("obj/age", &obj.Age, min18).
+	f.ApplyRule("obj/age", &obj.Age, min18).
 		When(func() bool { return obj.Age > 0 }, func(v *Filter) {
-			v.Add("obj/name", &obj.Name, notEmpty)
+			v.ApplyRule("obj/name", &obj.Name, notEmpty)
 		})
 	a.Equal(c, map[string][]localeutil.Stringer{
 		"obj/age":  {localeutil.Phrase("不能小于 18")},

@@ -6,6 +6,7 @@
 package locales
 
 import (
+	"cmp"
 	"embed"
 	"io/fs"
 
@@ -42,27 +43,20 @@ const (
 	CanNotBeEmpty           = localeutil.StringPhrase("can not be empty")
 	DuplicateValue          = localeutil.StringPhrase("duplicate value")
 	UniqueIdentityGenerator = localeutil.StringPhrase("unique identity generator")
-	RecycleLocalCache       = localeutil.StringPhrase("recycle local cache")
 )
 
 // ShouldGreatThan 返回必须大于 n 的翻译项
-func ShouldGreatThan[T any](n T) localeutil.Stringer {
-	return localeutil.Phrase("should great than %v", n) // n 可以是时间等类型
+func ShouldGreatThan[T cmp.Ordered](n T) localeutil.Stringer {
+	return localeutil.Phrase("should great than %v", n)
 }
 
 //---------------------------- 以下为本地化的错误实例 -----------------------------
 
 var (
-	errInvalidFormat = localeutil.Error("invalid format")
 	errInvalidValue  = localeutil.Error("invalid value")
 	errCanNotBeEmpty = localeutil.Error("can not be empty")
-	errNotFound      = localeutil.Error("not found")
 )
-
-func ErrInvalidFormat() error { return errInvalidFormat }
 
 func ErrInvalidValue() error { return errInvalidValue }
 
 func ErrCanNotBeEmpty() error { return errCanNotBeEmpty }
-
-func ErrNotFound() error { return errNotFound }

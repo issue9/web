@@ -112,7 +112,7 @@ func (conf *configOf[T]) buildLogs(f *filter.Filter) {
 		conf.Logs = &logsConfig{}
 	}
 
-	if f.AddFilter("", conf.Logs.build); f.HasError() {
+	if f.ApplyFilter("", conf.Logs.build); f.HasError() {
 		return
 	}
 

@@ -217,7 +217,7 @@ func (conf *configOf[T]) filter() filter.Map {
 	e, c := filter.CreateMapCollector()
 	f := filter.New("", true, c)
 
-	f.Add("language", &conf.languageTag, func(name string, value *language.Tag) (string, web.LocaleStringer) {
+	f.ApplyRule("language", &conf.languageTag, func(name string, value *language.Tag) (string, web.LocaleStringer) {
 		if conf.Language == "" {
 			conf.Language = localeutil.DetectUserLanguage()
 		}
@@ -229,19 +229,19 @@ func (conf *configOf[T]) filter() filter.Map {
 
 		*value = tag
 		return "", nil
-	}).AddFilter("cache", conf.buildCache).
-		AddFilter("", conf.buildLogs).
-		AddFilter("", conf.buildTimezone).
-		AddFilter("", conf.buildHTTP).
-		AddFilter("", conf.buildCodec).
-		AddFilter("", conf.buildConfig).
-		AddFilter("", conf.buildMicro)
+	}).ApplyFilter("cache", conf.buildCache).
+		ApplyFilter("", conf.buildLogs).
+		ApplyFilter("", conf.buildTimezone).
+		ApplyFilter("", conf.buildHTTP).
+		ApplyFilter("", conf.buildCodec).
+		ApplyFilter("", conf.buildConfig).
+		ApplyFilter("", conf.buildMicro)
 	conf.buildIDGen()
 
 	var zero T
 	if conf.User != zero {
 		if s, ok := (any)(conf.User).(ConfigFilter); ok {
-			if f.AddFilter("user", s.FilterConfig); f.HasError() {
+			if f.ApplyFilter("user", s.FilterConfig); f.HasError() {
 				return e
 			}
 		}
