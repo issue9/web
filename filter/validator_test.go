@@ -5,20 +5,16 @@
 package filter
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/localeutil"
+
+	"github.com/issue9/web/filter/sanitizers"
+	"github.com/issue9/web/filter/validators"
 )
 
-func buildMinValidator(v int) func(int) bool { return func(a int) bool { return a >= v } }
-
-func buildMaxValidator(v int) func(int) bool { return func(a int) bool { return a < v } }
-
-func zero[T any](v T) bool { return reflect.ValueOf(v).IsZero() }
-
-func required[T any](v T) bool { return !zero(v) }
+func required[T any](v T) bool { return validators.Not[T](validators.Zero)(v) }
 
 func TestV2R(t *testing.T) {
 	a := assert.New(t, false)
@@ -30,7 +26,7 @@ func TestV2R(t *testing.T) {
 
 	id = "X "
 	v, c = newFilter(false)
-	v.ApplyRule("id", &id, S2R(upper), V2R[string](localeutil.StringPhrase("required"), required))
+	v.ApplyRule("id", &id, S2R(sanitizers.Upper), V2R[string](localeutil.StringPhrase("required"), required))
 	a.Empty(c).Equal(id, "X ")
 }
 

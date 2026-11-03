@@ -10,6 +10,8 @@ import (
 
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/localeutil"
+
+	"github.com/issue9/web/filter/validators"
 )
 
 type object struct {
@@ -25,10 +27,10 @@ func newFilter(exitOnError bool) (*Filter, Map) {
 func TestFilter(t *testing.T) {
 	a := assert.New(t, false)
 
-	min2 := V2R(localeutil.Phrase("-2"), buildMinValidator(-2))
-	min3 := V2R(localeutil.Phrase("-3"), buildMinValidator(-3))
-	max50 := V2R(localeutil.Phrase("50"), buildMaxValidator(50))
-	max4 := V2R(localeutil.Phrase("-4"), buildMaxValidator(-4))
+	min2 := V2R(localeutil.Phrase("-2"), validators.GreatEqual(-2))
+	min3 := V2R(localeutil.Phrase("-3"), validators.GreatEqual(-3))
+	max50 := V2R(localeutil.Phrase("50"), validators.Less(50))
+	max4 := V2R(localeutil.Phrase("-4"), validators.Less(-4))
 
 	f, c := newFilter(false)
 	n100 := -100
@@ -74,7 +76,7 @@ func TestFilter_AddFilter(t *testing.T) {
 func TestFilter_When(t *testing.T) {
 	a := assert.New(t, false)
 
-	min18 := V2R(localeutil.Phrase("不能小于 18"), buildMinValidator(18))
+	min18 := V2R(localeutil.Phrase("不能小于 18"), validators.GreatEqual(18))
 	notEmpty := V2R(localeutil.Phrase("不能为空"), required[string])
 
 	f, c := newFilter(false)
