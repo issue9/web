@@ -233,16 +233,16 @@ func (o *CLIOptions[T]) sanitize() error {
 	}
 
 	if o.ID == "" {
-		return web.NewFieldError("ID", locales.ErrCanNotBeEmpty())
+		return locales.NewFieldError("ID", locales.ErrCanNotBeEmpty())
 	}
 	if o.Version == "" {
 		o.Version = web.GetAppVersion("")
 		if o.Version == "" {
-			return web.NewFieldError("Version", locales.ErrCanNotBeEmpty())
+			return locales.NewFieldError("Version", locales.ErrCanNotBeEmpty())
 		}
 	}
 	if o.NewServer == nil {
-		return web.NewFieldError("NewServer", locales.ErrCanNotBeEmpty())
+		return locales.NewFieldError("NewServer", locales.ErrCanNotBeEmpty())
 	}
 
 	if o.ConfigDir == "" {

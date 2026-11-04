@@ -145,7 +145,7 @@ func JSONCMarshal(a any) ([]byte, error) { return json.Marshal(a) }
 // JSONCUnmarshal jsonc 解码函数
 func JSONCUnmarshal(b []byte, a any) error { return jsonc.Unmarshal(b, a) }
 
-func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
+func sanitizeOptions(o *Options, t int) (*Options, error) {
 	if o == nil {
 		o = &Options{}
 	}
@@ -160,7 +160,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 
 		c, err := config.BuildDir(s, DefaultConfigDir)
 		if err != nil {
-			return nil, web.NewFieldError("Config", err)
+			return nil, locales.NewFieldError("Config", err)
 		}
 		o.Config = c
 	}
@@ -188,7 +188,7 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 	if o.Language == language.Und {
 		tag, err := localeutil.DetectUserLanguageTag()
 		if err != nil {
-			return nil, web.NewFieldError("Language", err)
+			return nil, locales.NewFieldError("Language", err)
 		}
 		o.Language = tag
 	}
@@ -209,17 +209,17 @@ func sanitizeOptions(o *Options, t int) (*Options, *web.FieldError) {
 	case typeHTTP: // 不需要处理任何数据
 	case typeGateway:
 		if o.Mapper == nil {
-			return o, web.NewFieldError("Mapper", locales.CanNotBeEmpty)
+			return o, locales.NewFieldError("Mapper", locales.CanNotBeEmpty)
 		}
 		if o.Registry == nil {
-			return o, web.NewFieldError("Registry", locales.CanNotBeEmpty)
+			return o, locales.NewFieldError("Registry", locales.CanNotBeEmpty)
 		}
 	case typeService:
 		if o.Peer == nil {
-			return o, web.NewFieldError("Peer", locales.CanNotBeEmpty)
+			return o, locales.NewFieldError("Peer", locales.CanNotBeEmpty)
 		}
 		if o.Registry == nil {
-			return o, web.NewFieldError("Registry", locales.CanNotBeEmpty)
+			return o, locales.NewFieldError("Registry", locales.CanNotBeEmpty)
 		}
 	default:
 		panic("参数 t 取值错误")

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 caixw
+// SPDX-FileCopyrightText: 2024-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -124,8 +124,9 @@ func WithHeader(global bool, p ...*Parameter) Option {
 				panic("必须存在 ref")
 			}
 
-			if err := pp.valid(false); err != nil {
-				panic(err)
+			m, ff := createFilter()
+			if pp.valid(ff, false); ff.HasError() {
+				panic(m.Error())
 			}
 
 			pp.addToComponents(d.components, InHeader)
@@ -287,8 +288,9 @@ func (d *Document) WithServer(url string, desc web.LocaleStringer, vars ...*Serv
 		Variables:   vars,
 	}
 
-	if err := s.valid(); err != nil {
-		panic(err)
+	m, ff := createFilter()
+	if s.valid(ff); ff.HasError() {
+		panic(m.Error())
 	}
 
 	d.servers = append(d.servers, s)
@@ -344,8 +346,9 @@ func (d *Document) WithSecurityScheme(s *SecurityScheme, scope ...[]string) {
 		panic(fmt.Sprintf("已经存在名称为 %s 的项", s.ID))
 	}
 
-	if err := s.valid(); err != nil {
-		panic(err)
+	m, ff := createFilter()
+	if s.valid(ff); ff.HasError() {
+		panic(m.Error())
 	}
 
 	d.components.securitySchemes[s.ID] = s

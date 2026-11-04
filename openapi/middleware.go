@@ -38,8 +38,10 @@ func (o *Operation) Server(url string, desc web.LocaleStringer, vars ...*ServerV
 		Description: desc,
 		Variables:   vars,
 	}
-	if err := s.valid(); err != nil {
-		panic(err)
+
+	m, f := createFilter()
+	if s.valid(f); f.HasError() {
+		panic(m.Error())
 	}
 
 	o.Servers = append(o.Servers, s)
@@ -57,8 +59,9 @@ func (o *Operation) buildParameter(name, typ string, desc web.LocaleStringer, f 
 		f(p)
 	}
 
-	if err := p.valid(true); err != nil {
-		panic(err)
+	m, ff := createFilter()
+	if p.valid(ff, true); ff.HasError() {
+		panic(m.Error())
 	}
 
 	return p
@@ -170,8 +173,9 @@ func (o *Operation) queryObject(v reflect.Value, f func(*Parameter)) *Operation 
 			if f != nil {
 				f(p)
 			}
-			if err := p.valid(true); err != nil {
-				panic(err)
+			m, ff := createFilter()
+			if p.valid(ff, true); ff.HasError() {
+				panic(m.Error())
 			}
 			o.Queries = append(o.Queries, p)
 		}
@@ -251,8 +255,9 @@ func (o *Operation) Body(body any, ignorable bool, desc web.LocaleStringer, f fu
 		f(req)
 	}
 
-	if err := req.valid(true); err != nil {
-		panic(err)
+	m, ff := createFilter()
+	if req.valid(ff, true); ff.HasError() {
+		panic(m.Error())
 	}
 
 	o.RequestBody = req
@@ -286,8 +291,9 @@ func (o *Operation) Response(status string, resp any, desc web.LocaleStringer, f
 		f(r)
 	}
 
-	if err := r.valid(true); err != nil {
-		panic(err)
+	m, ff := createFilter()
+	if r.valid(ff, true); ff.HasError() {
+		panic(m.Error())
 	}
 
 	o.Responses[status] = r
@@ -372,8 +378,10 @@ func (o *Operation) Callback(name, path, method string, f func(*Operation)) *Ope
 // 如果 s.ID 不存在于 [Document.Components.securitySchemes] 将自动添加；
 func (o *Operation) SecuritySecheme(s *SecurityScheme, scope ...string) *Operation {
 	if _, found := o.Document().components.securitySchemes[s.ID]; !found {
-		if err := s.valid(); err != nil {
-			panic(err)
+
+		m, ff := createFilter()
+		if s.valid(ff); ff.HasError() {
+			panic(m.Error())
 		}
 
 		o.Document().components.securitySchemes[s.ID] = s

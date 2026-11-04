@@ -23,6 +23,9 @@ func Sanitizers[T any](s ...Sanitizer[T]) Sanitizer[T] {
 	}
 }
 
+// None 不作任何修改
+func None[T any](v *T) {}
+
 // Trim 过滤左右空格
 func Trim(v *string) { *v = strings.TrimSpace(*v) }
 

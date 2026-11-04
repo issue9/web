@@ -11,7 +11,7 @@ require (
 	github.com/issue9/assert/v6 v6.0.0
 	github.com/issue9/cache v0.21.0
 	github.com/issue9/cmdopt v0.16.0
-	github.com/issue9/config v0.10.1
+	github.com/issue9/config v0.11.0
 	github.com/issue9/conv v1.4.0
 	github.com/issue9/errwrap v0.4.1
 	github.com/issue9/localeutil v0.35.0

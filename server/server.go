@@ -37,7 +37,7 @@ type (
 func NewHTTP(id, version string, o *Options) (*web.Server, error) {
 	o, err := sanitizeOptions(o, typeHTTP)
 	if err != nil {
-		return nil, err.AddFieldParent("o")
+		return nil, newParamError("o", err)
 	}
 
 	return o.newServer(id, version), nil
@@ -49,7 +49,7 @@ func NewHTTP(id, version string, o *Options) (*web.Server, error) {
 func NewService(id, version string, o *Options) (*web.Server, error) {
 	o, err := sanitizeOptions(o, typeService)
 	if err != nil {
-		return nil, err.AddFieldParent("o")
+		return nil, newParamError("o", err)
 	}
 
 	o.Startup = &serviceStartup{
@@ -77,7 +77,7 @@ func (startup *serviceStartup) Serve(s *web.Server) error {
 func NewGateway(id, version string, o *Options) (*web.Server, error) {
 	o, err := sanitizeOptions(o, typeGateway)
 	if err != nil {
-		return nil, err.AddFieldParent("o")
+		return nil, newParamError("o", err)
 	}
 
 	gs := &gatewayStartup{
@@ -97,4 +97,8 @@ func NewGateway(id, version string, o *Options) (*web.Server, error) {
 	}
 
 	return gateway, nil
+}
+
+func newParamError(arg string, err error) error {
+	return web.NewLocaleError("param %s has error: %s", arg, err)
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/locales"
 )
 
 const Mimetype = header.Javascript
@@ -70,7 +71,7 @@ func Marshal(ctx *web.Context, v any) ([]byte, error) {
 
 	callback := q.String(o.key, "")
 	if callback == "" {
-		return nil, web.NewProblemError(o.unsetProblem, web.NewFieldError(o.key, web.StringPhrase("can not be empty")))
+		return nil, web.NewProblemError(o.unsetProblem, locales.NewFieldError(o.key, web.StringPhrase("can not be empty")))
 	}
 
 	b := errwrap.StringBuilder{}

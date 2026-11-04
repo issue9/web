@@ -10,6 +10,8 @@ import "github.com/issue9/localeutil"
 // Filter 过滤器
 //
 // 包含了数据验证和数据修正功能
+//
+// 过滤器中的各类验证和修改函数都是立即执行的，如果存在依赖关系，需要注意调用顺序。
 type Filter struct {
 	name      string
 	collector Collector

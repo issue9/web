@@ -18,6 +18,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/locales"
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/mimetype/xml"
 	"github.com/issue9/web/selector"
@@ -123,7 +124,7 @@ func TestNewGateway(t *testing.T) {
 
 	// Registry 和 Mapper 是空的
 	g, err := NewGateway("app", "0.1.0", newOptions(a, nil))
-	a.Equal(err.(*web.FieldError).Field, "o.Mapper").Nil(g)
+	a.Equal(err, newParamError("o", locales.NewFieldError("Mapper", locales.CanNotBeEmpty))).Nil(g)
 
 	sg := startuptest.NewServerStartup(a)
 	g, err = NewGateway("app", "0.1.0", newOptions(a, &Options{

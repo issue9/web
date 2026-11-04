@@ -8,8 +8,6 @@
 //go:generate go run ./generate_problems.go
 
 // Package web 通用的 web 开发框架
-//
-// NOTE: 所有以 Internal 开头的函数和对象都是模块内部使用的。
 package web
 
 import (
@@ -17,7 +15,6 @@ import (
 	"runtime/debug"
 
 	"github.com/issue9/cache"
-	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/query/v3"
@@ -35,9 +32,6 @@ type (
 
 	// Cache 缓存内容的访问接口
 	Cache = cache.Cache
-
-	// FieldError 表示配置文件中的字段错误
-	FieldError = config.FieldError
 
 	// QueryUnmarshaler 对查询参数的解析接口
 	QueryUnmarshaler = query.Unmarshaler
@@ -84,13 +78,6 @@ func Phrase(key string, v ...any) LocaleStringer { return localeutil.Phrase(key,
 // 位置从调用 NewStackError 开始。如果 err 为 nil，则返回 nil。
 // 多次调用 NewStackError 包装，则返回第一次包装的返回值。
 func NewStackError(err error) error { return errs.NewDepthStackError(2, err) }
-
-// NewFieldError 返回表示配置文件错误的对象
-//
-// field 表示错误的字段名；
-// msg 表示错误信息，可以是任意类型，如果 msg 是 [FieldError] 类型，
-// 那么此操作相当于调用了 [FieldError.AddFieldParent]；
-func NewFieldError(field string, msg any) *FieldError { return config.NewFieldError(field, msg) }
 
 // NewLocaleError 本地化的错误信息
 func NewLocaleError(format string, v ...any) error { return localeutil.Error(format, v...) }

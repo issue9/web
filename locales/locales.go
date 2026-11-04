@@ -34,7 +34,7 @@ var Locales = []fs.FS{
 	scheduled.Locales,
 }
 
-//---------------------------- 以下为本地化的文本内容 -----------------------------
+//---------------------- 一些多处复用的本地化对象会出现在这里 ---------------------------
 
 const (
 	NotFound                = localeutil.StringPhrase("not found")
@@ -45,12 +45,17 @@ const (
 	UniqueIdentityGenerator = localeutil.StringPhrase("unique identity generator")
 )
 
+// NewFieldError 返回表示配置文件错误的对象
+//
+// field 表示错误的字段名；
+func NewFieldError(field string, msg any) error {
+	return localeutil.Error("field %s has error: %s", field, msg)
+}
+
 // ShouldGreatThan 返回必须大于 n 的翻译项
 func ShouldGreatThan[T cmp.Ordered](n T) localeutil.Stringer {
 	return localeutil.Phrase("should great than %v", n)
 }
-
-//---------------------------- 以下为本地化的错误实例 -----------------------------
 
 var (
 	errInvalidValue  = localeutil.Error("invalid value")
