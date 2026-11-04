@@ -106,5 +106,8 @@ func TestAlpha(t *testing.T) {
 
 	a.False(Alpha("12345")).
 		True(Alpha("abc")).
+		True(Alpha("a")).
+		True(Alpha("ABC")).
+		True(Alpha("A")).
 		False(Alpha("abc12"))
 }

@@ -35,6 +35,10 @@ func New(name string, exitOnError bool, collector Collector) *Filter {
 
 // Reset 重置对象
 func (f *Filter) Reset(name string, exitOnError bool, collector Collector) {
+	if collector == nil {
+		panic("参数 collector 不能为空")
+	}
+
 	f.name = name
 	f.exitOnError = exitOnError
 	f.collector = collector
@@ -62,9 +66,7 @@ func (f *Filter) addReason(name string, reason localeutil.Stringer) *Filter {
 		panic("参数 name 和 reason 不能为空")
 	}
 
-	if name == "" {
-		name = f.name
-	} else if f.name != "" {
+	if f.name != "" {
 		name = f.name + "." + name
 	}
 

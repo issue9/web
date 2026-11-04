@@ -84,7 +84,7 @@ func ASCII(s string) bool {
 // Alpha 全部都是英文字符
 func Alpha(s string) bool {
 	for _, c := range s {
-		if c < 'a' || c > 'z' && (c < 'A' || c > 'Z') {
+		if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') {
 			return false
 		}
 	}
@@ -93,7 +93,7 @@ func Alpha(s string) bool {
 
 // Digit 判断字符串是否都为数字
 func Digit(val string) bool {
-	for _, c := range val[1:] {
+	for _, c := range val {
 		if c < '0' || c > '9' {
 			return false
 		}

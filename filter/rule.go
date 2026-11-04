@@ -15,7 +15,7 @@ import "github.com/issue9/localeutil"
 // Rule 合并了 [SanitizeFunc] 和 [Validator] 两者的功能。
 type Rule[T any] func(name string, value *T) (string, localeutil.Stringer)
 
-// Rule 将多个 [Rule] 合并为单个 [Rule]
+// Rules 将多个 [Rule] 合并为单个 [Rule]
 func Rules[T any](rule ...Rule[T]) Rule[T] {
 	return func(name string, value *T) (string, localeutil.Stringer) {
 		for _, r := range rule {

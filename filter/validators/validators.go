@@ -41,10 +41,22 @@ func Or[T any](v ...Validator[T]) Validator[T] {
 // Not 验证器的取反
 func Not[T any](v Validator[T]) Validator[T] { return func(val T) bool { return !v(val) } }
 
+// ZeroAny 是否为零值
+//
+// 如果是可比较类型，可以直接使用 [Zero] 或是使用 `Equal(0)` 创建一个验证器，
+// 性能上会更好一些。
+func ZeroAny[T any](v T) bool {
+	rv := reflect.ValueOf(v)
+	return !rv.IsValid() || rv.IsZero()
+}
+
 // Zero 是否为零值
 //
-// 采用 [reflect.Value.IsZero] 判断。
-func Zero[T any](v T) bool { return reflect.ValueOf(v).IsZero() }
+// 相对于 [ZeroAny]，此方法性能稍好一些。但是对类型作了约束。
+func Zero[T comparable](v T) bool {
+	var zero T
+	return zero == v
+}
 
 // Equal 生成判断值是否等于 v 的验证器
 func Equal[T comparable](v T) Validator[T] { return func(t T) bool { return t == v } }

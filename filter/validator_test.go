@@ -14,7 +14,7 @@ import (
 	"github.com/issue9/web/filter/validators"
 )
 
-func required[T any](v T) bool { return validators.Not[T](validators.Zero)(v) }
+func required[T any](v T) bool { return validators.Not[T](validators.ZeroAny)(v) }
 
 func TestV2R(t *testing.T) {
 	a := assert.New(t, false)

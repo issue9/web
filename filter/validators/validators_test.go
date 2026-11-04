@@ -13,9 +13,9 @@ import (
 func TestNot(t *testing.T) {
 	a := assert.New(t, false)
 
-	a.True(Zero(0)).False(Zero(1))
+	a.True(ZeroAny(0)).False(ZeroAny(1))
 
-	nz := Not(Zero[int])
+	nz := Not(ZeroAny[int])
 	a.False(nz(0)).True(nz(1))
 }
 
@@ -36,9 +36,9 @@ func TestAnd_Or(t *testing.T) {
 func TestZero(t *testing.T) {
 	a := assert.New(t, false)
 
-	a.True(Zero(0)).
-		True(Zero("")).
-		False(Zero(1))
+	a.True(ZeroAny(0)).
+		True(ZeroAny("")).
+		False(ZeroAny(1))
 }
 
 func TestNil(t *testing.T) {

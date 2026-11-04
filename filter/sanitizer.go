@@ -12,6 +12,10 @@ import (
 
 // S2R 将一组 [sanitizers.Sanitizer] 转换为 [Rule]
 func S2R[T any](s ...sanitizers.Sanitizer[T]) Rule[T] {
+	if len(s) == 0 {
+		panic("未指定参数")
+	}
+
 	var ss sanitizers.Sanitizer[T]
 	if len(s) > 1 {
 		ss = sanitizers.Sanitizers(s...)
@@ -27,6 +31,10 @@ func S2R[T any](s ...sanitizers.Sanitizer[T]) Rule[T] {
 
 // SS2R 将一组用以修正切片元素的 [sanitizers.Sanitizer] 转换为 [Rule]
 func SS2R[S ~[]T, T any](f ...sanitizers.Sanitizer[T]) Rule[S] {
+	if len(f) == 0 {
+		panic("未指定参数")
+	}
+
 	return func(_ string, s *S) (string, localeutil.Stringer) {
 		for _, ff := range f {
 			for index, item := range *s {
@@ -38,8 +46,12 @@ func SS2R[S ~[]T, T any](f ...sanitizers.Sanitizer[T]) Rule[S] {
 	}
 }
 
-// SS2R 将一组用以修正 map 元素的 [sanitizers.Sanitizer] 转换为 [Rule]
+// MS2R 将一组用以修正 map 元素的 [sanitizers.Sanitizer] 转换为 [Rule]
 func MS2R[M ~map[K]V, K comparable, V any](f ...sanitizers.Sanitizer[V]) Rule[M] {
+	if len(f) == 0 {
+		panic("未指定参数")
+	}
+
 	return func(_ string, m *M) (string, localeutil.Stringer) {
 		for _, ff := range f {
 			for key, val := range *m {

@@ -5,6 +5,9 @@
 package filter
 
 import (
+	"maps"
+	"slices"
+
 	"github.com/issue9/errwrap"
 	"github.com/issue9/localeutil"
 )
@@ -40,11 +43,13 @@ func (m Map) LocaleString(p *localeutil.Printer) string {
 		return ""
 	}
 
+	keys := slices.Collect(maps.Keys(m))
+	slices.Sort(keys)
 	sb := errwrap.StringBuilder{}
 
-	for k, v := range m {
+	for _, k := range keys {
 		sb.WString(k).WByte(':')
-		for _, vv := range v {
+		for _, vv := range m[k] {
 			sb.WString(vv.LocaleString(p)).WByte(';')
 		}
 		sb.WByte('\n')
