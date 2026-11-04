@@ -27,11 +27,11 @@ var locales embed.FS
 //	s := server.New(...)
 //	s.Locale().LoadMessages("*.yaml", locales.Locales()...)
 var Locales = []fs.FS{
-	locales,
 	messages.Locales,
 	config.Locales,
 	cache.Locales,
 	scheduled.Locales,
+	locales,
 }
 
 //---------------------- 一些多处复用的本地化对象会出现在这里 ---------------------------
@@ -45,7 +45,7 @@ const (
 	UniqueIdentityGenerator = localeutil.StringPhrase("unique identity generator")
 )
 
-// NewFieldError 返回表示配置文件错误的对象
+// NewFieldError 返回表示对象字段错误的信息
 //
 // field 表示错误的字段名；
 func NewFieldError(field string, msg any) error {

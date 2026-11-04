@@ -34,7 +34,7 @@ func BenchmarkFilter_Reset(b *testing.B) {
 
 func BenchmarkFilter_AddFilter(b *testing.B) {
 	b.ReportAllocs()
-	f, _ := newFilter(false)
+	f, _ := newFilter(false, "")
 
 	for b.Loop() {
 		f.ApplyFilter("v1.", func(f *Filter) {

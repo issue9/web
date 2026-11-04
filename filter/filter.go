@@ -55,21 +55,30 @@ func (f *Filter) ExitOnError() bool { return f.exitOnError }
 func (f *Filter) HasError() bool { return f.hasError }
 
 // AddReason 直接添加一条错误信息
+//
+// name 表示 reason 关联的名称，如果为空，则会使用 [Filter.Name] 代替，否则使用 `Filter.Name() + '.' + name` 组合。
 func (f *Filter) AddReason(name string, reason localeutil.Stringer) *Filter {
 	if f.HasError() && f.ExitOnError() {
 		return f
 	}
-
 	return f.addReason(name, reason)
 }
 
 func (f *Filter) addReason(name string, reason localeutil.Stringer) *Filter {
-	if name == "" || reason == nil {
+	if reason == nil {
 		panic("参数 name 和 reason 不能为空")
 	}
 
 	if f.name != "" {
-		name = f.name + "." + name
+		if name == "" {
+			name = f.name
+		} else {
+			name = f.name + "." + name
+		}
+	}
+
+	if name == "" {
+		panic("参数 name 无法获取正确的值")
 	}
 
 	f.hasError = true
@@ -78,6 +87,8 @@ func (f *Filter) addReason(name string, reason localeutil.Stringer) *Filter {
 }
 
 // AddError 添加一条类型为 err 的错误信息
+//
+// name 表示 err 关联的名称，如果为空，则会使用 [Filter.Name] 代替，否则使用 `Filter.Name() + '.' + name` 组合。
 func (f *Filter) AddError(name string, err error) *Filter {
 	if f.HasError() && f.ExitOnError() {
 		return f
@@ -92,13 +103,19 @@ func (f *Filter) AddError(name string, err error) *Filter {
 // ApplyFilter 执行一个过滤器函数
 //
 // 该过滤器产生的错误信息字段名会以参数 name 作为前缀。
-// 如果 name 为空，那么直接传递当前对象 f 给 fun 函数。
+//
+// name 表示该过滤器函数产生的错误信息关联名称，
+// 如果为空，则会使用 [Filter.Name] 代替，否则使用 `Filter.Name() + '.' + name` 组合。
 func (f *Filter) ApplyFilter(name string, fun func(f *Filter)) *Filter {
 	if f.HasError() && f.ExitOnError() {
 		return f
 	}
 
 	if name == "" {
+		if f.Name() == "" {
+			panic("参数 name 无法获取正确的值")
+		}
+
 		fun(f)
 		return f
 	}
@@ -119,8 +136,8 @@ func (f *Filter) ApplyFilter(name string, fun func(f *Filter)) *Filter {
 
 // When 只有满足 cond 才执行 f 中的验证
 //
-// fun 中的 v 即为当前对象；
-func (f *Filter) When(cond func() bool, fun func(v *Filter)) *Filter {
+// fun 的参数即为当前对象；
+func (f *Filter) When(cond func() bool, fun func(*Filter)) *Filter {
 	if f.HasError() && f.ExitOnError() {
 		return f
 	}

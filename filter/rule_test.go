@@ -16,7 +16,7 @@ func TestRules(t *testing.T) {
 	a := assert.New(t, false)
 
 	id := "x "
-	v, c := newFilter(false)
+	v, c := newFilter(false, "")
 	v.ApplyRule("id", &id, Rules(S2R(sanitizers.TrimRight), S2R(sanitizers.Upper)))
 	a.Length(c, 0).Equal(id, "X")
 }
