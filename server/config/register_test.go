@@ -25,4 +25,8 @@ func TestRegisterFileSerializer(t *testing.T) {
 	RegisterFileSerializer("new", jm, ju, ".js")
 	v, f := fileSerializerFactory.get("new")
 	a.True(f).NotNil(v).Equal(v.exts, []string{".js"})
+
+	a.TB().Cleanup(func() {
+		delete(fileSerializerFactory.items, "new")
+	})
 }

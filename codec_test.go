@@ -187,7 +187,7 @@ func TestCodec_contentType(t *testing.T) {
 
 	// 不存在的 mimetype
 	f, e, err = mt.contentType("not-exists; charset=utf-8")
-	a.Equal(err, NewLocaleError("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
+	a.Equal(err, NewError("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
 
 	// charset=utf-8
 	f, e, err = mt.contentType(qheader.BuildContentType(header.OctetStream, header.UTF8))

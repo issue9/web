@@ -120,7 +120,7 @@ func RegisterMimetype(m web.MarshalFunc, u web.UnmarshalFunc, name string) {
 func RegisterFileSerializer(name string, m config.MarshalFunc, u config.UnmarshalFunc, ext ...string) {
 	for _, e := range ext {
 		for k, s := range fileSerializerFactory.items {
-			if slices.Index(s.exts, e) >= 0 {
+			if slices.Contains(s.exts, e) {
 				panic(fmt.Sprintf("扩展名 %s 已经注册到 %s", e, k))
 			}
 		}

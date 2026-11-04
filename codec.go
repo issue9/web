@@ -193,7 +193,7 @@ func (c *Codec) contentEncoding(name string, r io.Reader) (io.ReadCloser, error)
 	if c, f := sliceutil.At(c.compressions, func(item *compression, _ int) bool { return item.compressor.Name() == name }); f {
 		return c.compressor.NewDecoder(r)
 	}
-	return nil, NewLocaleError("not found compress for %s", name)
+	return nil, NewError("not found compress for %s", name)
 }
 
 // 根据客户端的 Accept-Encoding 报头选择是适合的压缩方法
@@ -298,7 +298,7 @@ func (e *Codec) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) 
 
 	item := e.searchFunc(func(s string) bool { return s == mimetype })
 	if item == nil {
-		return nil, nil, NewLocaleError("not found serialization function for %s", mimetype)
+		return nil, nil, NewError("not found serialization function for %s", mimetype)
 	}
 
 	if charset == "" || charset == header.UTF8 {

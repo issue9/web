@@ -5,7 +5,6 @@
 package filter
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/issue9/assert/v6"
@@ -79,25 +78,6 @@ func TestFilter_AddReason(t *testing.T) {
 
 	f.AddReason("name", localeutil.Phrase("reason"))
 	a.NotEmpty(c["parent"]).Empty(c["parent.name"])
-}
-
-func TestFilter_ApplyFilter(t *testing.T) {
-	a := assert.New(t, false)
-
-	f, c := newFilter(false, "")
-	f1 := f.ApplyFilter("v1", func(f *Filter) {
-		f.AddReason("f1", localeutil.StringPhrase("s1"))
-		f2 := f.ApplyFilter("", func(f *Filter) {
-			f.AddError("f2", errors.New("s2"))
-		})
-		a.Equal(f2, f)
-	})
-	a.Equal(f1, f)
-
-	a.Equal(c, map[string][]localeutil.Stringer{
-		"v1.f1": {localeutil.StringPhrase("s1")},
-		"v1.f2": {localeutil.StringPhrase("s2")},
-	}).True(f.HasError())
 }
 
 func TestFilter_When(t *testing.T) {

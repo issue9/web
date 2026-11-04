@@ -382,7 +382,7 @@ func (ctx *Context) Unmarshal(v any) error {
 	}
 
 	if ctx.inputMimetype == nil { // 客户端未指定 content-type，但是又有内容要输出。
-		return NewLocaleError("the client miss content-type header")
+		return NewError("the client miss content-type header")
 	}
 	return ctx.inputMimetype(ctx.RequestBody(), v)
 }

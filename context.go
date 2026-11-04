@@ -24,7 +24,7 @@ import (
 	"github.com/issue9/web/internal/qheader"
 )
 
-var errExitContext = NewLocaleError("exit context")
+var errExitContext = NewError("exit context")
 
 var contextPool = &sync.Pool{
 	New: func() any {

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-//go:generate gomsgs extract -l=und -m -f=yaml -tag=comment -func=github.com/issue9/localeutil.Phrase,github.com/issue9/localeutil.Error,github.com/issue9/localeutil.StringPhrase,github.com/issue9/web.Phrase,github.com/issue9/web.StringPhrase,github.com/issue9/web.NewLocaleError,github.com/issue9/web.Context.Sprintf,github.com/issue9/web.Locale.Sprintf,github.com/issue9/web/openapi.Document.ParameterizedDoc ./
+//go:generate gomsgs extract -l=und -m -f=yaml -tag=comment -func=github.com/issue9/localeutil.Phrase,github.com/issue9/localeutil.Error,github.com/issue9/localeutil.StringPhrase,github.com/issue9/web.Phrase,github.com/issue9/web.StringPhrase,github.com/issue9/web.NewError,github.com/issue9/web.Context.Sprintf,github.com/issue9/web.Locale.Sprintf,github.com/issue9/web/openapi.Document.ParameterizedDoc ./
 //go:generate gomsgs update -src=./locales/und.yaml -dest=./locales/zh.yaml
 //go:generate go run ./generate_compressors.go
 //go:generate go run ./generate_problems.go
@@ -79,8 +79,8 @@ func Phrase(key string, v ...any) LocaleStringer { return localeutil.Phrase(key,
 // 多次调用 NewStackError 包装，则返回第一次包装的返回值。
 func NewStackError(err error) error { return errs.NewDepthStackError(2, err) }
 
-// NewLocaleError 本地化的错误信息
-func NewLocaleError(format string, v ...any) error { return localeutil.Error(format, v...) }
+// NewError 本地化的错误信息
+func NewError(format string, v ...any) error { return localeutil.Error(format, v...) }
 
 // SprintError 将 err 转换为字符串
 //

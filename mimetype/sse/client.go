@@ -38,7 +38,7 @@ func newEmptyMessage() *Message {
 func (m *Message) append(line string) (err error) {
 	prefix, data, found := strings.Cut(line, ":")
 	if !found {
-		return web.NewLocaleError("invalid sse format %s", line)
+		return web.NewError("invalid sse format %s", line)
 	}
 
 	switch prefix {

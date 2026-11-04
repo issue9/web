@@ -129,10 +129,10 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 		}
 
 		if inputMimetype == nil {
-			return nil, nil, NewLocaleError("not found unmarshaler for the server content-type %s", h)
+			return nil, nil, NewError("not found unmarshaler for the server content-type %s", h)
 		}
 	} else {
-		return nil, nil, NewLocaleError("the server miss content-type header")
+		return nil, nil, NewError("the server miss content-type header")
 	}
 
 	if !qheader.CharsetIsNop(inputCharset) {

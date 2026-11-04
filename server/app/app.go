@@ -155,7 +155,7 @@ func (d *DaemonConfig) toServiceConfig(name string, p *localeutil.Printer) *serv
 // action 可以是 [service.ControlAction] 和 'status' 中的任意元素；
 func (app *app) runDaemon(action string, conf *service.Config) (service.Status, error) {
 	if !isDaemonControl(action) {
-		return service.StatusUnknown, web.NewLocaleError("invalid daemon control action: %s", action)
+		return service.StatusUnknown, web.NewError("invalid daemon control action: %s", action)
 	}
 
 	d, err := service.New(app, conf)

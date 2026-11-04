@@ -100,5 +100,5 @@ func NewGateway(id, version string, o *Options) (*web.Server, error) {
 }
 
 func newParamError(arg string, err error) error {
-	return web.NewLocaleError("param %s has error: %s", arg, err)
+	return web.NewError("param %s has error: %s", arg, err)
 }

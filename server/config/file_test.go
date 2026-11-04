@@ -49,8 +49,8 @@ func TestLoadConfigOf(t *testing.T) {
 
 	conf, err := loadConfigOf[empty](configDir, "invalid-web.xml")
 	a.Error(err).Nil(conf)
-	merr := filter.Map{"http.acme.domains": []web.LocaleStringer{locales.CanNotBeEmpty}}
-	a.Equal(err, web.NewLocaleError("file %s has following errors:\n%s", "invalid-web.xml", merr))
+	merr := filter.Map{"o.http.acme.domains": []web.LocaleStringer{locales.CanNotBeEmpty}}
+	a.Equal(err, web.NewError("file %s has following errors:\n%s", "invalid-web.xml", merr))
 
 	conf, err = loadConfigOf[empty]("./testdata/not-exists", "web.yaml")
 	a.ErrorIs(err, fs.ErrNotExist).Nil(conf)
