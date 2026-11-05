@@ -15,35 +15,11 @@ import (
 
 // V2R 将 [validators.Validator] 转换为 [Rule]
 func V2R[T any](msg localeutil.Stringer, f validators.Validator[T]) Rule[T] {
-	return func(name string, v *T) (string, localeutil.Stringer) {
+	return func(v *T) localeutil.Stringer {
 		if !f(*v) {
-			return name, msg
+			return msg
 		}
-		return "", nil
-	}
-}
-
-// SV2R 将一组用以验证切片元素的 [validators.Validator] 转换为 [Rule]
-func SV2R[S ~[]T, T any](msg localeutil.Stringer, f validators.Validator[T]) Rule[S] {
-	return func(name string, val *S) (string, localeutil.Stringer) {
-		for index, vv := range *val {
-			if !f(vv) {
-				return name + "[" + strconv.Itoa(index) + "]", msg
-			}
-		}
-		return "", nil
-	}
-}
-
-// MV2R 将一组用以验证 map 元素的 [validators.Validator] 转换为 [Rule]
-func MV2R[M ~map[K]V, K comparable, V any](msg localeutil.Stringer, f validators.Validator[V]) Rule[M] {
-	return func(name string, m *M) (string, localeutil.Stringer) {
-		for key, val := range *m {
-			if !f(val) {
-				return fmt.Sprintf("%s[%v]", name, key), msg
-			}
-		}
-		return "", nil
+		return nil
 	}
 }
 
@@ -57,6 +33,44 @@ func (f *Filter) Valid[T any](name string, value T, v validators.Validator[T], m
 
 	if !v(value) {
 		f.addReason(name, msg)
+	}
+
+	return f
+}
+
+// ValidSlice 验证 value 中的每一个元素
+func (f *Filter) ValidSlice[S ~[]T, T any](name string, value S, v validators.Validator[T], msg localeutil.Stringer) *Filter {
+	if f.HasError() && f.ExitOnError() {
+		return f
+	}
+
+	for index, val := range value {
+		if !v(val) {
+			f.addReason(name+"["+strconv.Itoa(index)+"]", msg)
+
+			if f.HasError() && f.ExitOnError() {
+				return f
+			}
+		}
+	}
+
+	return f
+}
+
+// ValidMap 验证 value 中的每一个元素
+func (f *Filter) ValidMap[M ~map[K]V, K comparable, V any](name string, value M, v validators.Validator[V], msg localeutil.Stringer) *Filter {
+	if f.HasError() && f.ExitOnError() {
+		return f
+	}
+
+	for key, val := range value {
+		if !v(val) {
+			f.addReason(fmt.Sprintf("%s[%v]", name, key), msg)
+
+			if f.HasError() && f.ExitOnError() {
+				return f
+			}
+		}
 	}
 
 	return f

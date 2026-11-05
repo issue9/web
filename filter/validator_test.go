@@ -30,32 +30,90 @@ func TestV2R(t *testing.T) {
 	a.Empty(c).Equal(id, "X ")
 }
 
-func TestSV2R(t *testing.T) {
-	a := assert.New(t, false)
+func TestFilter_Valid(t *testing.T) {
+	t.Run("验证通过", func(t *testing.T) {
+		a := assert.New(t, false)
+		f, c := newFilter(false, "parent")
+		f.Valid("age", 20, validators.GreatEqual(18), localeutil.Phrase("too young"))
+		a.Empty(c)
+	})
 
-	vals := []string{"s1 ", "s2"}
-	v, c := newFilter(false, "")
-	v.Apply("vals", &vals, SV2R[[]string](localeutil.StringPhrase("required"), required))
-	a.Empty(c).Equal(vals, []string{"s1 ", "s2"})
+	t.Run("验证失败", func(t *testing.T) {
+		a := assert.New(t, false)
+		f, c := newFilter(false, "parent")
+		f.Valid("age", 16, validators.GreatEqual(18), localeutil.Phrase("too young"))
+		a.Equal(c, map[string][]localeutil.Stringer{
+			"parent.age": {localeutil.Phrase("too young")},
+		})
+	})
 
-	vals = []string{"s1 ", ""}
-	v, c = newFilter(false, "")
-	v.Apply("vals", &vals, SV2R[[]string](localeutil.StringPhrase("required"), required))
-	a.Equal(c["vals[1]"], []localeutil.StringPhrase{localeutil.StringPhrase("required")}).
-		Equal(vals, []string{"s1 ", ""})
+	t.Run("已有错误时提前退出", func(t *testing.T) {
+		a := assert.New(t, false)
+		f, c := newFilter(true, "")
+		f.AddReason("existing", localeutil.Phrase("existing error"))
+		called := false
+		f.Valid("age", 16, func(int) bool {
+			called = true
+			return false
+		}, localeutil.Phrase("too young"))
+		a.False(called).Equal(c, map[string][]localeutil.Stringer{
+			"existing": {localeutil.Phrase("existing error")},
+		})
+	})
 }
 
-func TestMV2R(t *testing.T) {
-	a := assert.New(t, false)
+func TestFilter_ValidSlice(t *testing.T) {
+	t.Run("全部通过", func(t *testing.T) {
+		a := assert.New(t, false)
+		f, c := newFilter(false, "")
+		f.ValidSlice("values", []int{1, 2, 3}, validators.Great(0), localeutil.Phrase("invalid"))
+		a.Empty(c)
+	})
 
-	vals := map[string]string{"s1 ": "s1", "s2": "s2"}
-	v, c := newFilter(false, "")
-	v.Apply("vals", &vals, MV2R[map[string]string](localeutil.StringPhrase("required"), required))
-	a.Empty(c)
+	t.Run("收集所有错误", func(t *testing.T) {
+		a := assert.New(t, false)
+		f, c := newFilter(false, "")
+		f.ValidSlice("values", []int{1, 0, -1}, validators.Great(0), localeutil.Phrase("invalid"))
+		a.Equal(c, map[string][]localeutil.Stringer{
+			"values[1]": {localeutil.Phrase("invalid")},
+			"values[2]": {localeutil.Phrase("invalid")},
+		})
+	})
 
-	vals = map[string]string{"s1 ": "x", "s2": ""}
-	v, c = newFilter(false, "")
-	v.Apply("vals", &vals, MV2R[map[string]string](localeutil.StringPhrase("required"), required))
-	a.Equal(c["vals[s2]"], []localeutil.StringPhrase{localeutil.StringPhrase("required")}).
-		Equal(vals, map[string]string{"s1 ": "x", "s2": ""})
+	t.Run("遇错后停止", func(t *testing.T) {
+		a := assert.New(t, false)
+		f, c := newFilter(true, "")
+		f.ValidSlice("values", []int{0, -1}, validators.Great(0), localeutil.Phrase("invalid"))
+		a.Equal(c, map[string][]localeutil.Stringer{
+			"values[0]": {localeutil.Phrase("invalid")},
+		})
+	})
+}
+
+func TestFilter_ValidMap(t *testing.T) {
+	t.Run("全部通过", func(t *testing.T) {
+		a := assert.New(t, false)
+		f, c := newFilter(false, "")
+		f.ValidMap("values", map[string]int{"first": 1, "second": 2}, validators.Great(0), localeutil.Phrase("invalid"))
+		a.Empty(c)
+	})
+
+	t.Run("收集所有错误", func(t *testing.T) {
+		a := assert.New(t, false)
+		f, c := newFilter(false, "")
+		f.ValidMap("values", map[string]int{"valid": 1, "first": 0, "second": -1}, validators.Great(0), localeutil.Phrase("invalid"))
+		a.Equal(c, map[string][]localeutil.Stringer{
+			"values[first]":  {localeutil.Phrase("invalid")},
+			"values[second]": {localeutil.Phrase("invalid")},
+		})
+	})
+
+	t.Run("遇错后停止", func(t *testing.T) {
+		a := assert.New(t, false)
+		f, c := newFilter(true, "")
+		f.ValidMap("values", map[string]int{"invalid": 0}, validators.Great(0), localeutil.Phrase("invalid"))
+		a.Equal(c, map[string][]localeutil.Stringer{
+			"values[invalid]": {localeutil.Phrase("invalid")},
+		})
+	})
 }

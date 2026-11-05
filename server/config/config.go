@@ -217,18 +217,18 @@ func (conf *configOf[T]) filter() filter.Map {
 	e, c := filter.CreateMapCollector()
 	f := filter.New("o", true, c)
 
-	f.Apply("language", &conf.languageTag, func(name string, value *language.Tag) (string, web.LocaleStringer) {
+	f.Apply("language", &conf.languageTag, func(value *language.Tag) web.LocaleStringer {
 		if conf.Language == "" {
 			conf.Language = localeutil.DetectUserLanguage()
 		}
 
 		tag, err := language.Parse(conf.Language)
 		if err != nil {
-			return "", web.Phrase(err.Error())
+			return web.Phrase(err.Error())
 		}
 
 		*value = tag
-		return "", nil
+		return nil
 	}).ApplyFilter("cache", conf.buildCache).
 		ApplyFilter("", conf.buildLogs).
 		ApplyFilter("", conf.buildTimezone).

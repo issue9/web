@@ -5,6 +5,7 @@
 package filter
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/issue9/assert/v6"
@@ -23,34 +24,23 @@ func newFilter(exitOnError bool, name string) (*Filter, Map) {
 	return New(name, exitOnError, c), m
 }
 
-func TestFilter(t *testing.T) {
+func TestFilter_ApplyFilter(t *testing.T) {
 	a := assert.New(t, false)
 
-	min2 := V2R(localeutil.Phrase("-2"), validators.GreatEqual(-2))
-	min3 := V2R(localeutil.Phrase("-3"), validators.GreatEqual(-3))
-	max50 := V2R(localeutil.Phrase("50"), validators.Less(50))
-	max4 := V2R(localeutil.Phrase("-4"), validators.Less(-4))
-
 	f, c := newFilter(false, "")
-	n100 := -100
-	p100 := 100
-	f.Apply("f1", &n100, min2, min3).Apply("f2", &p100, max50, max4)
-	a.Equal(c, map[string][]localeutil.Stringer{
-		"f1": {localeutil.Phrase("-2")},
-		"f2": {localeutil.Phrase("50")},
+	f1 := f.ApplyFilter("v1", func(f *Filter) {
+		f.AddReason("f1", localeutil.StringPhrase("s1"))
+		f2 := f.ApplyFilter("", func(f *Filter) {
+			f.AddError("f2", errors.New("s2"))
+		})
+		a.Equal(f2, f)
 	})
+	a.Equal(f1, f)
 
-	f, c = newFilter(true, "")
-	n100 = -100
-	p100 = 100
-	f.Apply("f1", &n100, min2, min3).Apply("f2", &p100, max50, max4)
 	a.Equal(c, map[string][]localeutil.Stringer{
-		"f1": {localeutil.Phrase("-2")},
-	})
-
-	_, collector := CreateMapCollector()
-	f.Reset("reset", false, collector)
-	a.Equal(f.Name(), "reset").False(f.ExitOnError())
+		"v1.f1": {localeutil.StringPhrase("s1")},
+		"v1.f2": {localeutil.StringPhrase("s2")},
+	}).True(f.HasError())
 }
 
 func TestFilter_AddReason(t *testing.T) {
