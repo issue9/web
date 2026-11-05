@@ -182,16 +182,16 @@ type number interface{ ~int | ~int64 }
 func durShouldGreatThan0[T number](d T) bool { return d >= 0 }
 
 func (cert *certificateConfig) sanitize(f *filter.Filter) {
-	f.Apply("cert", &cert.Cert, filter.V2R(locales.NotFound, fileExistsRule)).
-		Apply("key", &cert.Key, filter.V2R(locales.NotFound, fileExistsRule))
+	f.Valid("cert", cert.Cert, fileExistsRule, locales.NotFound).
+		Valid("key", cert.Key, fileExistsRule, locales.NotFound)
 }
 
 func (h *httpConfig) sanitize(f *filter.Filter) {
-	f.Apply("readTimeout", &h.ReadTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
-		Apply("writeTimeout", &h.WriteTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
-		Apply("idleTimeout", &h.IdleTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
-		Apply("readHeaderTimeout", &h.ReadHeaderTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
-		Apply("maxHeaderBytes", &h.MaxHeaderBytes, filter.V2R[int](locales.ShouldGreatThan(0), durShouldGreatThan0))
+	f.Valid("readTimeout", h.ReadTimeout, durShouldGreatThan0, locales.ShouldGreatThan(0)).
+		Valid("writeTimeout", h.WriteTimeout, durShouldGreatThan0, locales.ShouldGreatThan(0)).
+		Valid("idleTimeout", h.IdleTimeout, durShouldGreatThan0, locales.ShouldGreatThan(0)).
+		Valid("readHeaderTimeout", h.ReadHeaderTimeout, durShouldGreatThan0, locales.ShouldGreatThan(0)).
+		Valid("maxHeaderBytes", h.MaxHeaderBytes, durShouldGreatThan0, locales.ShouldGreatThan(0))
 	if f.HasError() {
 		return
 	}
@@ -309,8 +309,8 @@ func (l *acmeConfig) tlsConfig() *tls.Config {
 }
 
 func (l *acmeConfig) sanitize(f *filter.Filter) {
-	f.Apply("cache", &l.Cache, filter.V2R(locales.NotFound, fileExistsRule)).
-		Apply("domains", &l.Domains, filter.V2R(locales.CanNotBeEmpty, func(domains []string) bool { return len(domains) > 0 }))
+	f.Valid("cache", l.Cache, fileExistsRule, locales.NotFound).
+		Valid("domains", l.Domains, func(domains []string) bool { return len(domains) > 0 }, locales.CanNotBeEmpty)
 }
 
 // Duration 转换为标准库的 [time.Duration]

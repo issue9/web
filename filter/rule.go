@@ -23,7 +23,9 @@ type Rule[T any] func(value *T) localeutil.Stringer
 
 // Apply 对 value 使用 rule 规则
 //
-// 这是 [Filter] 的主要方法，用于对数据进行修正和验证。
+// name 表示被检测字段的名称，如果为空，则会使用 [Filter.Name] 代替，否则使用 `Filter.Name() + '.' + name` 组合。
+// 如果 name 与 [Filter.Name] 都为空值，将会 panic。
+//
 // 如果只是单纯地修正数据或是验证数据，可以分别使用 [Filter.Sanitize] 和 [Filter.Valid]。
 func (f *Filter) Apply[T any](name string, value *T, rule ...Rule[T]) *Filter {
 	if value == nil {

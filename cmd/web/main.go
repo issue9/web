@@ -20,7 +20,6 @@ import (
 
 	"github.com/issue9/web/cmd/web/enum"
 	"github.com/issue9/web/cmd/web/locales"
-	"github.com/issue9/web/cmd/web/mdoc"
 	"github.com/issue9/web/cmd/web/tpl"
 	"github.com/issue9/web/cmd/web/watch"
 )
@@ -68,7 +67,6 @@ func main() {
 		},
 	})
 
-	mdoc.Init(opt, p)
 	watch.Init(opt, p)
 	enum.Init(opt, p)
 	tpl.Init(opt, p)
