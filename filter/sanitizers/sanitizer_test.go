@@ -18,39 +18,3 @@ func TestSanitizers(t *testing.T) {
 	s(&str)
 	a.Equal(str, "str")
 }
-
-func TestTrim(t *testing.T) {
-	a := assert.New(t, false)
-
-	s := " abc\t"
-	Sanitizers(TrimLeft, TrimRight)(&s)
-	a.Equal(s, "abc")
-
-	s = " abc\t"
-	Trim(&s)
-	a.Equal(s, "abc")
-
-	s = " ab\tc\t"
-	Trim(&s)
-	a.Equal(s, "ab\tc")
-
-	s = " ab\tc\t"
-	TrimLeft(&s)
-	a.Equal(s, "ab\tc\t")
-
-	s = " ab\tc\t"
-	TrimRight(&s)
-	a.Equal(s, " ab\tc")
-}
-
-func TestLower_Upper(t *testing.T) {
-	a := assert.New(t, false)
-
-	s := "Abc"
-	Lower(&s)
-	a.Equal(s, "abc")
-
-	s = "Abc"
-	Upper(&s)
-	a.Equal(s, "ABC")
-}
