@@ -101,6 +101,12 @@ func TestASCII(t *testing.T) {
 		False(ASCII("\u1000"))
 }
 
+func TestDigit(t *testing.T) {
+	a := assert.New(t, false)
+
+	a.True(Digit("12345")).False(Digit("1234a"))
+}
+
 func TestAlpha(t *testing.T) {
 	a := assert.New(t, false)
 
@@ -110,4 +116,16 @@ func TestAlpha(t *testing.T) {
 		True(Alpha("ABC")).
 		True(Alpha("A")).
 		False(Alpha("abc12"))
+}
+
+func TestUpper_Lower(t *testing.T) {
+	a := assert.New(t, false)
+
+	a.True(Upper("ABC")).
+		True(Upper("ABC123")).
+		False(Upper("AbcdefG"))
+
+	a.True(Lower("abc")).
+		True(Lower("abc123")).
+		False(Lower("abCDefg"))
 }

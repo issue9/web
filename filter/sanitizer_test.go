@@ -17,7 +17,7 @@ func TestS2R(t *testing.T) {
 
 	id := "x "
 	v, c := newFilter(false, "")
-	v.ApplyRule("id", &id, S2R(sanitizers.TrimRight), S2R(sanitizers.Upper))
+	v.Apply("id", &id, S2R(sanitizers.TrimRight), S2R(sanitizers.Upper))
 	a.Length(c, 0).Equal(id, "X")
 }
 
@@ -26,7 +26,7 @@ func TestSS2R(t *testing.T) {
 
 	vals := []string{"s1 ", "s2"}
 	v, c := newFilter(false, "")
-	v.ApplyRule("vals", &vals, SS2R[[]string](sanitizers.TrimRight, sanitizers.Upper))
+	v.Apply("vals", &vals, SS2R[[]string](sanitizers.TrimRight, sanitizers.Upper))
 	a.Empty(c).Equal(vals, []string{"S1", "S2"})
 }
 
@@ -35,6 +35,6 @@ func TestMS2R(t *testing.T) {
 
 	vals := map[string]string{"s1 ": "s1 ", "s2": "s2"}
 	v, c := newFilter(false, "")
-	v.ApplyRule("vals", &vals, MS2R[map[string]string](sanitizers.Upper))
+	v.Apply("vals", &vals, MS2R[map[string]string](sanitizers.Upper))
 	a.Empty(c).Equal(vals, map[string]string{"s1 ": "S1 ", "s2": "S2"})
 }

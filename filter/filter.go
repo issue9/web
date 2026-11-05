@@ -36,6 +36,8 @@ func New(name string, exitOnError bool, collector Collector) *Filter {
 }
 
 // Reset 重置对象
+//
+// 这将会使整个对象处于初始状态，除非要复用此对象，否则不应该调用此方法。
 func (f *Filter) Reset(name string, exitOnError bool, collector Collector) {
 	if collector == nil {
 		panic("参数 collector 不能为空")
@@ -57,6 +59,7 @@ func (f *Filter) HasError() bool { return f.hasError }
 // AddReason 直接添加一条错误信息
 //
 // name 表示 reason 关联的名称，如果为空，则会使用 [Filter.Name] 代替，否则使用 `Filter.Name() + '.' + name` 组合。
+// 如果 name 与 [Filter.Name] 都为空值，将会 panic。
 func (f *Filter) AddReason(name string, reason localeutil.Stringer) *Filter {
 	if f.HasError() && f.ExitOnError() {
 		return f
@@ -66,7 +69,7 @@ func (f *Filter) AddReason(name string, reason localeutil.Stringer) *Filter {
 
 func (f *Filter) addReason(name string, reason localeutil.Stringer) *Filter {
 	if reason == nil {
-		panic("参数 name 和 reason 不能为空")
+		panic("参数 reason 不能为空")
 	}
 
 	if f.name != "" {
@@ -89,6 +92,7 @@ func (f *Filter) addReason(name string, reason localeutil.Stringer) *Filter {
 // AddError 添加一条类型为 err 的错误信息
 //
 // name 表示 err 关联的名称，如果为空，则会使用 [Filter.Name] 代替，否则使用 `Filter.Name() + '.' + name` 组合。
+// 如果 name 与 [Filter.Name] 都为空值，将会 panic。
 func (f *Filter) AddError(name string, err error) *Filter {
 	if f.HasError() && f.ExitOnError() {
 		return f
@@ -106,6 +110,7 @@ func (f *Filter) AddError(name string, err error) *Filter {
 //
 // name 表示该过滤器函数产生的错误信息关联名称，
 // 如果为空，则会使用 [Filter.Name] 代替，否则使用 `Filter.Name() + '.' + name` 组合。
+// 如果 name 与 [Filter.Name] 都为空值，将会 panic。
 func (f *Filter) ApplyFilter(name string, fun func(f *Filter)) *Filter {
 	if f.HasError() && f.ExitOnError() {
 		return f
@@ -134,7 +139,7 @@ func (f *Filter) ApplyFilter(name string, fun func(f *Filter)) *Filter {
 	return f
 }
 
-// When 只有满足 cond 才执行 f 中的验证
+// When 只有满足 cond 才执行 fun 中的验证
 //
 // fun 的参数即为当前对象；
 func (f *Filter) When(cond func() bool, fun func(*Filter)) *Filter {

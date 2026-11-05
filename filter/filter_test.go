@@ -34,7 +34,7 @@ func TestFilter(t *testing.T) {
 	f, c := newFilter(false, "")
 	n100 := -100
 	p100 := 100
-	f.ApplyRule("f1", &n100, min2, min3).ApplyRule("f2", &p100, max50, max4)
+	f.Apply("f1", &n100, min2, min3).Apply("f2", &p100, max50, max4)
 	a.Equal(c, map[string][]localeutil.Stringer{
 		"f1": {localeutil.Phrase("-2")},
 		"f2": {localeutil.Phrase("50")},
@@ -43,7 +43,7 @@ func TestFilter(t *testing.T) {
 	f, c = newFilter(true, "")
 	n100 = -100
 	p100 = 100
-	f.ApplyRule("f1", &n100, min2, min3).ApplyRule("f2", &p100, max50, max4)
+	f.Apply("f1", &n100, min2, min3).Apply("f2", &p100, max50, max4)
 	a.Equal(c, map[string][]localeutil.Stringer{
 		"f1": {localeutil.Phrase("-2")},
 	})
@@ -88,9 +88,9 @@ func TestFilter_When(t *testing.T) {
 
 	f, c := newFilter(false, "")
 	obj := &object{}
-	f.ApplyRule("obj/age", &obj.Age, min18).
+	f.Apply("obj/age", &obj.Age, min18).
 		When(func() bool { return obj.Age > 0 }, func(v *Filter) {
-			v.ApplyRule("obj/name", &obj.Name, notEmpty)
+			v.Apply("obj/name", &obj.Name, notEmpty)
 		})
 	a.Equal(c, map[string][]localeutil.Stringer{
 		"obj/age": {localeutil.Phrase("不能小于 18")},
@@ -98,9 +98,9 @@ func TestFilter_When(t *testing.T) {
 
 	f, c = newFilter(false, "")
 	obj = &object{Age: 15}
-	f.ApplyRule("obj/age", &obj.Age, min18).
+	f.Apply("obj/age", &obj.Age, min18).
 		When(func() bool { return obj.Age > 0 }, func(v *Filter) {
-			v.ApplyRule("obj/name", &obj.Name, notEmpty)
+			v.Apply("obj/name", &obj.Name, notEmpty)
 		})
 	a.Equal(c, map[string][]localeutil.Stringer{
 		"obj/age":  {localeutil.Phrase("不能小于 18")},

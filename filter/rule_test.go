@@ -19,7 +19,7 @@ func TestRules(t *testing.T) {
 
 	id := "x "
 	v, c := newFilter(false, "")
-	v.ApplyRule("id", &id, Rules(S2R(sanitizers.TrimRight), S2R(sanitizers.Upper)))
+	v.Apply("id", &id, Rules(S2R(sanitizers.TrimRight), S2R(sanitizers.Upper)))
 	a.Length(c, 0).Equal(id, "X")
 }
 

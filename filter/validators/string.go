@@ -9,6 +9,7 @@ import (
 	"net/netip"
 	"net/url"
 	"strings"
+	"unicode"
 	"uuid"
 )
 
@@ -109,3 +110,23 @@ func UUID(val string) bool {
 
 // Empty 字符串是否为空
 func Empty(val string) bool { return val == "" }
+
+// Upper 判断字符串是否全部为大写
+func Upper(val string) bool {
+	for _, c := range val {
+		if unicode.IsLower(c) {
+			return false
+		}
+	}
+	return true
+}
+
+// Lower 判断字符串是否全部为小写
+func Lower(val string) bool {
+	for _, c := range val {
+		if unicode.IsUpper(c) {
+			return false
+		}
+	}
+	return true
+}

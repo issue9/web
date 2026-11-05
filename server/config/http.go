@@ -182,16 +182,16 @@ type number interface{ ~int | ~int64 }
 func durShouldGreatThan0[T number](d T) bool { return d >= 0 }
 
 func (cert *certificateConfig) sanitize(f *filter.Filter) {
-	f.ApplyRule("cert", &cert.Cert, filter.V2R(locales.NotFound, fileExistsRule)).
-		ApplyRule("key", &cert.Key, filter.V2R(locales.NotFound, fileExistsRule))
+	f.Apply("cert", &cert.Cert, filter.V2R(locales.NotFound, fileExistsRule)).
+		Apply("key", &cert.Key, filter.V2R(locales.NotFound, fileExistsRule))
 }
 
 func (h *httpConfig) sanitize(f *filter.Filter) {
-	f.ApplyRule("readTimeout", &h.ReadTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
-		ApplyRule("writeTimeout", &h.WriteTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
-		ApplyRule("idleTimeout", &h.IdleTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
-		ApplyRule("readHeaderTimeout", &h.ReadHeaderTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
-		ApplyRule("maxHeaderBytes", &h.MaxHeaderBytes, filter.V2R[int](locales.ShouldGreatThan(0), durShouldGreatThan0))
+	f.Apply("readTimeout", &h.ReadTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
+		Apply("writeTimeout", &h.WriteTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
+		Apply("idleTimeout", &h.IdleTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
+		Apply("readHeaderTimeout", &h.ReadHeaderTimeout, filter.V2R[Duration](locales.ShouldGreatThan(0), durShouldGreatThan0)).
+		Apply("maxHeaderBytes", &h.MaxHeaderBytes, filter.V2R[int](locales.ShouldGreatThan(0), durShouldGreatThan0))
 	if f.HasError() {
 		return
 	}
@@ -309,8 +309,8 @@ func (l *acmeConfig) tlsConfig() *tls.Config {
 }
 
 func (l *acmeConfig) sanitize(f *filter.Filter) {
-	f.ApplyRule("cache", &l.Cache, filter.V2R(locales.NotFound, fileExistsRule)).
-		ApplyRule("domains", &l.Domains, filter.V2R(locales.CanNotBeEmpty, func(domains []string) bool { return len(domains) > 0 }))
+	f.Apply("cache", &l.Cache, filter.V2R(locales.NotFound, fileExistsRule)).
+		Apply("domains", &l.Domains, filter.V2R(locales.CanNotBeEmpty, func(domains []string) bool { return len(domains) > 0 }))
 }
 
 // Duration 转换为标准库的 [time.Duration]

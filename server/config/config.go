@@ -217,7 +217,7 @@ func (conf *configOf[T]) filter() filter.Map {
 	e, c := filter.CreateMapCollector()
 	f := filter.New("o", true, c)
 
-	f.ApplyRule("language", &conf.languageTag, func(name string, value *language.Tag) (string, web.LocaleStringer) {
+	f.Apply("language", &conf.languageTag, func(name string, value *language.Tag) (string, web.LocaleStringer) {
 		if conf.Language == "" {
 			conf.Language = localeutil.DetectUserLanguage()
 		}

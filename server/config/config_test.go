@@ -34,7 +34,7 @@ type userData struct {
 }
 
 func (u *userData) FilterConfig(f *filter.Filter) {
-	f.ApplyRule("id", &u.ID, filter.V2R(locales.ShouldGreatThan(0), func(id int) bool { return id > 0 }))
+	f.Apply("id", &u.ID, filter.V2R(locales.ShouldGreatThan(0), func(id int) bool { return id > 0 }))
 }
 
 func buildFilter() (filter.Map, *filter.Filter) {
