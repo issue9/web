@@ -56,7 +56,7 @@ func TestInsertFileHeader(t *testing.T) {
 	wantPyHeaders := "# SPDX-FileCopyrightText: 2025 caixw\n# SPDX-License-Identifier: MIT\n"
 
 	a.NotError(xcopy.Copy("./testdata/template", dir))
-	a.Equal(insertFileHeaders(dir, headers, ".not-exists"), web.NewLocaleError("unsupported file extension '%s'", ".not-exists"))
+	a.Equal(insertFileHeaders(dir, headers, ".not-exists"), web.NewError("unsupported file extension '%s'", ".not-exists"))
 	a.NotError(os.RemoveAll(dir))
 
 	// .go

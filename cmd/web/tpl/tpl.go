@@ -48,7 +48,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 
 		return func(w io.Writer) error {
 			if fs.NArg() != 2 {
-				return web.NewLocaleError("tpl-path or module-path not set")
+				return web.NewError("tpl-path or module-path not set")
 			}
 
 			tplPath := fs.Arg(0) // 模板的获取路径
@@ -65,7 +65,7 @@ func Init(opt *cmdopt.CmdOpt, p *localeutil.Printer) {
 				return err
 			}
 			if len(de) > 0 {
-				return web.NewLocaleError("dest is not empty")
+				return web.NewError("dest is not empty")
 			}
 
 			// 获取内容

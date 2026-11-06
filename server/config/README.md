@@ -1,4 +1,6 @@
-# config
+# 配置对象
+
+包含从配置文件初始化 Server 对象需要的所有配置项
 
 
 ## configOf

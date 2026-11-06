@@ -1,6 +1,18 @@
 languages:
 - und
 messages:
+- key: Only basic type are supported
+  message:
+    msg: Only basic type are supported
+- key: The parameters %s not in path
+  message:
+    msg: The parameters %s not in path
+- key: The size of parameters in the URL not equal the size of variables
+  message:
+    msg: The size of parameters in the URL not equal the size of variables
+- key: The value must be %s
+  message:
+    msg: The value must be %s
 - key: can not be empty
   message:
     msg: can not be empty
@@ -46,6 +58,12 @@ messages:
 - key: exit context
   message:
     msg: exit context
+- key: "field %s has error: %s"
+  message:
+    msg: "field %s has error: %s"
+- key: "file %[1]s has following errors:\\n%[2]s"
+  message:
+    msg: "file %[1]s has following errors:\\n%[2]s"
 - key: "invalid daemon control action: %s"
   message:
     msg: "invalid daemon control action: %s"
@@ -88,6 +106,9 @@ messages:
 - key: not found unmarshaler for the server content-type %s
   message:
     msg: not found unmarshaler for the server content-type %s
+- key: "param %[1]s has error: %[2]s"
+  message:
+    msg: "param %[1]s has error: %[2]s"
 - key: problem detail
   message:
     msg: problem detail
@@ -358,12 +379,9 @@ messages:
 - key: problem.511.detail
   message:
     msg: problem.511.detail
-- key: recycle local cache
+- key: refresh micro service %[1]s for %[2]s
   message:
-    msg: recycle local cache
-- key: refresh micro service %s for %s
-  message:
-    msg: refresh micro service %s for %s
+    msg: refresh micro service %[1]s for %[2]s
 - key: refresh micro services for gateway %s
   message:
     msg: refresh micro services for gateway %s

@@ -25,20 +25,6 @@ messages:
 - key: app args
   message:
     msg: app args
-- key: build enum file
-  message:
-    msg: build enum file
-- key: |-
-    build enum file
-    
-    flags:
-    {{flags}}
-  message:
-    msg: |-
-      build enum file
-      
-      flags:
-      {{flags}}
 - key: command %s not found
   message:
     msg: command %s not found
@@ -64,65 +50,12 @@ messages:
       
       flags:
       {{flags}}
-- key: description
-  message:
-    msg: description
-- key: dest is not empty
-  message:
-    msg: dest is not empty
 - key: dev mode
   message:
     msg: dev mode
 - key: exclude watch files
   message:
     msg: exclude watch files
-- key: export object name
-  message:
-    msg: export object name
-- key: gen filter method
-  message:
-    msg: gen filter method
-- key: gen markdown
-  message:
-    msg: gen markdown
-- key: gen openapi method
-  message:
-    msg: gen openapi method
-- key: gen sql method
-  message:
-    msg: gen sql method
-- key: |
-    markdown usage
-    
-    usage:
-      web mdoc [options]
-    
-      options:
-      {{flags}}
-  message:
-    msg: |
-      markdown usage
-      
-      usage:
-        web mdoc [options]
-      
-        options:
-        {{flags}}
-- key: no input file
-  message:
-    msg: no input file
-- key: not allowed enum type
-  message:
-    msg: not allowed enum type
-- key: not found enum type %s
-  message:
-    msg: not found enum type %s
-- key: not found source in %s
-  message:
-    msg: not found source in %s
-- key: not found type doc
-  message:
-    msg: not found type doc
 - key: not show ignore message
   message:
     msg: not show ignore message
@@ -132,30 +65,6 @@ messages:
 - key: set file header
   message:
     msg: set file header
-- key: set input file
-  message:
-    msg: set input file
-- key: set markdown doc path
-  message:
-    msg: set markdown doc path
-- key: set markdown page description
-  message:
-    msg: set markdown page description
-- key: set markdown page language
-  message:
-    msg: set markdown page language
-- key: set markdown page title
-  message:
-    msg: set markdown page title
-- key: set output file
-  message:
-    msg: set output file
-- key: set source dir
-  message:
-    msg: set source dir
-- key: set the enum type
-  message:
-    msg: set the enum type
 - key: set watch file extension
   message:
     msg: set watch file extension
@@ -168,18 +77,6 @@ messages:
 - key: show version
   message:
     msg: show version
-- key: tpl-path or module-path not set
-  message:
-    msg: tpl-path or module-path not set
-- key: type
-  message:
-    msg: type
-- key: type not set
-  message:
-    msg: type not set
-- key: unsupported file extension '%s'
-  message:
-    msg: unsupported file extension '%s'
 - key: watch and reload
   message:
     msg: watch and reload

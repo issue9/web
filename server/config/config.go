@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-//go:generate gsd -lang=zh-CN -dir=./ -o=./CONFIG.md -object=configOf
+//go:generate gsd -lang=zh-CN -dir=./ -o=./README.md -object=configOf -title=配置对象 "-desc=包含从配置文件初始化 Server 对象需要的所有配置项"
 
 // Package config 从配置文件加载 [server.Options]
 //

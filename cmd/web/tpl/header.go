@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2025 caixw
+// SPDX-FileCopyrightText: 2025-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,7 +24,7 @@ var headerBuilders = map[string]fileHeaderBuildFunc{
 
 	".rs": singleCStyle,
 
-	".cs": singleCStyle,
+	".cs":  singleCStyle,
 	".css": multiCStyle,
 
 	".c":   singleCStyle,
@@ -69,7 +69,7 @@ func insertFileHeaders(dir, header, extsStr string) error {
 
 	for _, ext := range exts {
 		if _, found := headerBuilders[ext]; !found {
-			return web.NewLocaleError("unsupported file extension '%s'", ext)
+			return web.NewError("unsupported file extension '%s'", ext)
 		}
 	}
 

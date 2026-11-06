@@ -50,7 +50,7 @@ func loadConfigOf[T comparable](configDir, filename string) (*configOf[T], error
 	}
 
 	if f := conf.filter(); f != nil {
-		return nil, web.NewError("file %s has following errors:\n%s", filename, f)
+		return nil, web.NewError("file %[1]s has following errors:\n%[2]s", filename, f)
 	}
 	return conf, nil
 }

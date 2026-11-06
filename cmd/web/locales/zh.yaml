@@ -27,20 +27,6 @@ messages:
 - key: app args
   message:
     msg: 传递给应用的参数
-- key: build enum file
-  message:
-    msg: 为类型生成枚举内容
-- key: |-
-    build enum file
-    
-    flags:
-    {{flags}}
-  message:
-    msg: |-
-      为类型生成枚举内容，诸如 Marshal、Unmarshal 和 String 等方法。
-      
-      选项：
-      {{flags}}
 - key: command %s not found
   message:
     msg: |
@@ -70,65 +56,12 @@ messages:
       
       options 可用参数:
       {{flags}}
-- key: description
-  message:
-    msg: 描述
-- key: dest is not empty
-  message:
-    msg: 项目目录已存在
 - key: dev mode
   message:
     msg: 是否启用开发模式，具体可参考 comptime 下的说明。
 - key: exclude watch files
   message:
     msg: 不需要监视的文件，遵循 path.Match 规则。
-- key: export object name
-  message:
-    msg: 被导出的对象名
-- key: gen filter method
-  message:
-    msg: 生成适配 github.com/issue9/web/filter 的相关方法
-- key: gen markdown
-  message:
-    msg: 生成 markdown 文档
-- key: gen openapi method
-  message:
-    msg: 生成适配 github.com/issue9/web/openapi 的相关方法
-- key: gen sql method
-  message:
-    msg: 生成适配 database/sql 的相关方法
-- key: |
-    markdown usage
-    
-    usage:
-      web mdoc [options]
-    
-      options:
-      {{flags}}
-  message:
-    msg: |
-      生成 markdown 文档
-      
-      语法:
-        web mdoc [options]
-      
-        options 可用的参数:
-        {{flags}}
-- key: no input file
-  message:
-    msg: 未指定输入文件
-- key: not allowed enum type
-  message:
-    msg: 不支持为该类型生成内容
-- key: not found enum type %s
-  message:
-    msg: 未找到枚举类型 %s
-- key: not found source in %s
-  message:
-    msg: 在 %s 中未找到符合要求的源码
-- key: not found type doc
-  message:
-    msg: 未找到类型的相关文档
 - key: not show ignore message
   message:
     msg: 不显示可忽略的消息
@@ -138,30 +71,6 @@ messages:
 - key: set file header
   message:
     msg: 指定文件头内容
-- key: set input file
-  message:
-    msg: 指定输入文件
-- key: set markdown doc path
-  message:
-    msg: 指定输出文件
-- key: set markdown page description
-  message:
-    msg: 指定文档的描述，可以是 Markdown 格式
-- key: set markdown page language
-  message:
-    msg: 指定文档的语言
-- key: set markdown page title
-  message:
-    msg: 指定文档的标题
-- key: set output file
-  message:
-    msg: 指定输出文件，如果为空，则会根据输入文件名加上 _enums 作为后缀，比如 input.go 会以 input_enums.go 作为输出文件。
-- key: set source dir
-  message:
-    msg: 设置源码的路径
-- key: set the enum type
-  message:
-    msg: 指定用于生成枚举内容的类型
 - key: set watch file extension
   message:
     msg: 设置监视的文件扩展名
@@ -174,18 +83,6 @@ messages:
 - key: show version
   message:
     msg: 显示版本号
-- key: tpl-path or module-path not set
-  message:
-    msg: 模板或是项目的路径未指定
-- key: type
-  message:
-    msg: 类型
-- key: type not set
-  message:
-    msg: 未指定类型
-- key: unsupported file extension '%s'
-  message:
-    msg: 不支持的文件扩展名 '%s'
 - key: watch and reload
   message:
     msg: 热编译项目

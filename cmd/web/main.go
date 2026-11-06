@@ -18,7 +18,6 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/web"
 
-	"github.com/issue9/web/cmd/web/enum"
 	"github.com/issue9/web/cmd/web/locales"
 	"github.com/issue9/web/cmd/web/tpl"
 	"github.com/issue9/web/cmd/web/watch"
@@ -68,7 +67,6 @@ func main() {
 	})
 
 	watch.Init(opt, p)
-	enum.Init(opt, p)
 	tpl.Init(opt, p)
 	cmdopt.Help(opt, "help", helpTitle.LocaleString(p), helpUsage.LocaleString(p))
 

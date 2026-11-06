@@ -3,6 +3,18 @@ languages:
 - zh-Hans
 - cmn-Hans
 messages:
+- key: Only basic type are supported
+  message:
+    msg: 仅支持基本类型
+- key: The parameters %s not in path
+  message:
+    msg: 路径中未找到参数 %s
+- key: The size of parameters in the URL not equal the size of variables
+  message:
+    msg: 路径中的参数数量与变量的数量不相同
+- key: The value must be %s
+  message:
+    msg: 该值必须为 %s
 - key: can not be empty
   message:
     msg: 不能为空
@@ -62,6 +74,12 @@ messages:
 - key: exit context
   message:
     msg: 已经退出当前的会话环境
+- key: "field %s has error: %s"
+  message:
+    msg: "字段 %s 中包含了错误: %s"
+- key: "file %[1]s has following errors:\\n%[2]s"
+  message:
+    msg: "文件 %[1]s 包含以下错误:\\n%[2]s"
 - key: "invalid daemon control action: %s"
   message:
     msg: 无效的操作：%s
@@ -104,6 +122,9 @@ messages:
 - key: not found unmarshaler for the server content-type %s
   message:
     msg: 未找到服务端 content-type 指定的 %s 序列化函数
+- key: "param %[1]s has error: %[2]s"
+  message:
+    msg: "参数 %[1]s 包含错误: %[2]s"
 - key: problem detail
   message:
     msg: 对于该错误的详细描述
@@ -390,15 +411,12 @@ messages:
 - key: problem.511.detail
   message:
     msg: 指示客户端需要进行身份验证才能获得网络访问权限。
-- key: recycle local cache
+- key: refresh micro service %[1]s for %[2]s
   message:
-    msg: 回收本地缓存
-- key: refresh micro service %s for %s
-  message:
-    msg: refresh micro service %s for %s
+    msg: 为 %[2]s 刷新微服务 %[1]s
 - key: refresh micro services for gateway %s
   message:
-    msg: refresh micro services for gateway %s
+    msg: 为网关 %s 刷新微服务
 - key: scheduler jobs
   message:
     msg: 计划任务

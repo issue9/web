@@ -108,7 +108,7 @@ func (c *cacheRegistry) Discover(name string, s *web.Server) selector.Selector {
 		}
 		return err
 	}
-	s.Services().AddTicker(web.Phrase("refresh micro service %s for %s", name, s.ID()), job, c.freq, true)
+	s.Services().AddTicker(web.Phrase("refresh micro service %[1]s for %[2]s", name, s.ID()), job, c.freq, true)
 
 	return ss
 }
