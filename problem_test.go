@@ -76,7 +76,7 @@ func TestContext_Log(t *testing.T) {
 func TestProblems_Add(t *testing.T) {
 	a := assert.New(t, false)
 
-	ps := newProblems("")
+	ps := newProblems()
 	a.NotNil(ps)
 	l := len(ps.problems)
 
@@ -85,8 +85,8 @@ func TestProblems_Add(t *testing.T) {
 		True(ps.Exists(ProblemNotFound))
 
 	ps.Add(400, []*LocaleProblem{
-		{ID: "40010", Title: Phrase("title"), Detail: Phrase("detail")},
-		{ID: "40011", Title: Phrase("title"), Detail: Phrase("detail")},
+		{Type: "40010", Title: Phrase("title"), Detail: Phrase("detail")},
+		{Type: "40011", Title: Phrase("title"), Detail: Phrase("detail")},
 	}...)
 	a.True(ps.Exists("40010")).
 		True(ps.Exists("40011")).
@@ -94,19 +94,19 @@ func TestProblems_Add(t *testing.T) {
 
 	a.PanicString(func() {
 		ps.Add(400, []*LocaleProblem{
-			{ID: "40010", Title: Phrase("title"), Detail: Phrase("detail")},
+			{Type: "40010", Title: Phrase("title"), Detail: Phrase("detail")},
 		}...)
 	}, "存在相同值的 id 参数")
 
 	a.PanicString(func() {
 		ps.Add(99, []*LocaleProblem{
-			{ID: "40012", Title: Phrase("title"), Detail: Phrase("detail")},
+			{Type: "40012", Title: Phrase("title"), Detail: Phrase("detail")},
 		}...)
 	}, "status 必须是一个有效的状态码")
 
 	a.PanicString(func() {
 		ps.Add(412, []*LocaleProblem{
-			{ID: "40013", Title: nil, Detail: nil},
+			{Type: "40013", Title: nil, Detail: nil},
 		}...)
 	}, "title 不能为空")
 }
@@ -115,27 +115,19 @@ func TestProblems_initProblem(t *testing.T) {
 	a := assert.New(t, false)
 	p := message.NewPrinter(language.SimplifiedChinese)
 
-	ps := newProblems("")
+	ps := newProblems()
 	a.NotNil(ps)
-	ps.Add(400, &LocaleProblem{ID: "40010", Title: Phrase("title"), Detail: Phrase("detail")})
+	ps.Add(400, &LocaleProblem{Type: "40010", Title: Phrase("title"), Detail: Phrase("detail")})
 	pp := &Problem{}
 	ps.initProblem(pp, "40010", p)
 	a.Equal(pp.Type, "40010")
 
-	ps = newProblems("https://example.com/qa#")
+	ps = newProblems()
 	a.NotNil(ps)
-	ps.Add(400, &LocaleProblem{ID: "40011", Title: Phrase("title"), Detail: Phrase("detail")})
+	ps.Add(400, &LocaleProblem{Type: "https://example.com/qa#40011", Title: Phrase("title"), Detail: Phrase("detail")})
 	pp = &Problem{}
-	ps.initProblem(pp, "40011", p)
-	a.Equal(pp.Type, "https://example.com/qa#40011").
-		Equal(ps.Prefix(), "https://example.com/qa#")
-
-	ps = newProblems(ProblemAboutBlank)
-	a.NotNil(ps)
-	ps.Add(400, &LocaleProblem{ID: "40012", Title: Phrase("title"), Detail: Phrase("detail")})
-	pp = &Problem{}
-	ps.initProblem(pp, "40012", p)
-	a.Equal(pp.Type, ProblemAboutBlank)
+	ps.initProblem(pp, "https://example.com/qa#40011", p)
+	a.Equal(pp.Type, "https://example.com/qa#40011")
 
 	a.PanicString(func() {
 		ps.initProblem(pp, "not-exists", p)

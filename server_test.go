@@ -80,13 +80,13 @@ func newTestServer(a *assert.Assertion, sec bool) *testServer {
 	}
 	startup := NewHTTPServerStartup(hs)
 
-	srv.Server = NewServer("test", "1.0.0", conf, startup, time.Local, language.SimplifiedChinese, log, u.String, cc, newCodec(a), header.XRequestID, "")
+	srv.Server = NewServer("test", "1.0.0", conf, startup, time.Local, language.SimplifiedChinese, log, u.String, cc, newCodec(a), header.XRequestID)
 	srv.Services().Add(Phrase("unique"), u.Serve)
 
 	a.NotError(srv.Locale().SetString(language.SimplifiedChinese, "lang", "cn")).
 		NotError(srv.Locale().SetString(language.TraditionalChinese, "lang", "tw"))
 
-	srv.Problems().Add(411, &LocaleProblem{ID: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
+	srv.Problems().Add(411, &LocaleProblem{Type: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
 
 	return srv
 }

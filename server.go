@@ -77,7 +77,6 @@ func NewServer(
 	cache cache.Driver,
 	codec *Codec,
 	requestIDKey string,
-	problemTypePrefix string,
 	o ...RouterOption,
 ) *Server {
 	srv := &Server{
@@ -94,7 +93,7 @@ func NewServer(
 		config:       conf,
 		requestIDKey: requestIDKey,
 		codec:        codec,
-		problems:     newProblems(problemTypePrefix),
+		problems:     newProblems(),
 		vars:         &sync.Map{},
 		idgen:        idgen,
 		logs:         logs,

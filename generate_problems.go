@@ -76,7 +76,7 @@ func makeInitProblems(buf *errwrap.Buffer, kvs []status.Pair) {
 		title = "StringPhrase(\"" + title + "\")"
 		detail = "StringPhrase(\"" + detail + "\")"
 
-		buf.Printf(`p.Add(%s,&LocaleProblem{ID:%s,Title:%s,Detail:%s})`, status, item.ID(), title, detail).WByte('\n')
+		buf.Printf(`p.Add(%s,&LocaleProblem{Type:%s,Title:%s,Detail:%s})`, status, item.ID(), title, detail).WByte('\n')
 	}
 	buf.WString("}\n\n")
 }

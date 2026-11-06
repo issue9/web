@@ -41,7 +41,7 @@ func newServer(a *assert.Assertion, ts Startup) *web.Server {
 		return json.Unmarshal(data, ref)
 	}, "", true, true)
 
-	s := web.NewServer("id", "1.0.0", conf, ts, time.Local, language.SimplifiedChinese, logs.New(logs.NewNopHandler()), u.String, cc, codec, header.XRequestID, "")
+	s := web.NewServer("id", "1.0.0", conf, ts, time.Local, language.SimplifiedChinese, logs.New(logs.NewNopHandler()), u.String, cc, codec, header.XRequestID)
 	a.NotNil(s)
 	s.Services().Add(locales.UniqueIdentityGenerator, u.Serve)
 
