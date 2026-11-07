@@ -6,6 +6,7 @@ package openapi
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -94,4 +95,20 @@ func TestMarkdownGoObject(t *testing.T) {
 	a.Equal(MarkdownGoObject(&object4{}, m).LocaleString(p), "```go\ntype object4 struct {\n\tT\tstring\t`json:\"t\"`\n\tInt\tint\n}\n```\n")
 	a.Equal(MarkdownGoObject(&object5{}, m).LocaleString(p), "```go\ntype object5 struct {\n\tT\tstring\t`json:\"t\"`\n\tInt\tint\n\tStr\tstring\t`comment:\"C\"`\t// C\n}\n```\n")
 	a.Equal(MarkdownGoObject(object6{}, m).LocaleString(p), "```go\ntype object6 struct {\n\tXMLName\tstruct {}\t`json:\"root\"`\n\tStr\t[]*struct {\n\t\tT\tstring\t`json:\"t\"`\n\t}\n}\n```\n")
+}
+
+func TestMarkdownProblems(t *testing.T) {
+	a := assert.New(t, false)
+	ss := newServer(a)
+	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
+
+	txt := MarkdownProblems(ss, 2)
+	lines := strings.Split(txt.LocaleString(p), "\n\n")
+	a.Equal(lines[0], "## 400 Bad Request").
+		Equal(lines[2], "## 401 Unauthorized")
+
+	txt = MarkdownProblems(ss, 0)
+	lines = strings.Split(txt.LocaleString(p), "\n\n")
+	a.Equal(lines[0], "- 400: Bad Request").
+		Equal(lines[1], "- 401: Unauthorized")
 }

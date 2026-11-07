@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -73,4 +73,4 @@ type Pair struct {
 	Value int
 }
 
-func (p Pair) ID() string { return "Problem" + p.Name[6:] }
+func (p Pair) ID() string { return p.Name[6:] }

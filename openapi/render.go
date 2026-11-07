@@ -16,6 +16,7 @@ import (
 	"github.com/issue9/web/mimetype/html"
 	"github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/mimetype/yaml"
+	"github.com/issue9/web/problems"
 )
 
 // 渲染对象
@@ -72,7 +73,7 @@ func (d *Document) Handler(tag ...string) web.HandlerFunc {
 
 		if m := ctx.Mimetype(false); (m != json.Mimetype && m != yaml.Mimetype && m != html.Mimetype) ||
 			(m == html.Mimetype && d.templateName == "") {
-			return ctx.Problem(web.ProblemNotAcceptable)
+			return ctx.Problem(problems.NotAcceptable)
 		}
 
 		return web.NotModified(func() (string, bool) {

@@ -13,9 +13,11 @@ import (
 
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v10"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/problems"
 	"github.com/issue9/web/selector"
 )
 
@@ -52,7 +54,7 @@ type (
 		requestIDKey string
 		codec        *Codec
 		services     *Services
-		problems     *Problems
+		problems     *ppp
 		routers      *Routers
 		vars         *sync.Map
 		idgen        func() string
@@ -93,7 +95,14 @@ func NewServer(
 		config:       conf,
 		requestIDKey: requestIDKey,
 		codec:        codec,
-		problems:     newProblems(),
+		problems: problems.New(func(lp *problems.Item, printer *localeutil.Printer, p *Problem) {
+			p.Type = lp.Type
+			p.Title = lp.Title.LocaleString(printer)
+			p.Status = lp.Status
+			if lp.Detail != nil {
+				p.Detail = lp.Detail.LocaleString(printer)
+			}
+		}),
 		vars:         &sync.Map{},
 		idgen:        idgen,
 		logs:         logs,

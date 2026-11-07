@@ -12,6 +12,8 @@ import (
 
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/mux/v10/header"
+
+	"github.com/issue9/web/problems"
 )
 
 func TestRouters(t *testing.T) {
@@ -42,7 +44,7 @@ func TestRouters_Handle(t *testing.T) {
 		return OK("ok")
 	})
 	router.Get("/panic-new-problem-error", func(ctx *Context) Responser {
-		panic(NewProblemError(ProblemServiceUnavailable, errors.New("ProblemServiceUnavailable")))
+		panic(NewProblemError(problems.ServiceUnavailable, errors.New("ProblemServiceUnavailable")))
 	})
 	router.Get("/panic-error", func(ctx *Context) Responser {
 		panic(errors.New("panic"))
@@ -61,15 +63,15 @@ func TestRouters_Handle(t *testing.T) {
 	s.logBuf.Reset()
 	s.Get("/panic-new-problem-error").Header(header.AcceptEncoding, "").Do().
 		Status(http.StatusServiceUnavailable)
-	a.Contains(s.logBuf.String(), "router_test.go:45")
+	a.Contains(s.logBuf.String(), "router_test.go:47")
 
 	s.logBuf.Reset()
 	s.Get("/panic-error").Header(header.AcceptEncoding, "").Do().
 		Status(http.StatusInternalServerError)
-	a.Contains(s.logBuf.String(), "router_test.go:48")
+	a.Contains(s.logBuf.String(), "router_test.go:50")
 
 	s.logBuf.Reset()
 	s.Get("/panic-string").Header(header.AcceptEncoding, "").Do().
 		Status(http.StatusInternalServerError)
-	a.Contains(s.logBuf.String(), "router_test.go:51")
+	a.Contains(s.logBuf.String(), "router_test.go:53")
 }

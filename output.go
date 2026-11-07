@@ -15,6 +15,7 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/qheader"
+	"github.com/issue9/web/problems"
 )
 
 // Responser 向客户端输出对象需要实现的接口
@@ -69,7 +70,7 @@ func (ctx *Context) Render(status int, body any) {
 		ctx.Header().Add(header.Vary, header.AcceptLanguage)
 	}
 
-	isProblem := IsProblem(status)
+	isProblem := problems.IsProblem(status)
 	data, err := ctx.Marshal(body)
 	if err != nil {
 		ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(true), ctx.Charset()))
@@ -80,7 +81,7 @@ func (ctx *Context) Render(status int, body any) {
 			return
 		}
 
-		problem := ctx.Log(err, ProblemInternalServerError) // 根据 err 创建 Problem
+		problem := ctx.Log(err, problems.InternalServerError) // 根据 err 创建 Problem
 		status = problem.Status
 		if data, err = ctx.Marshal(problem); err != nil {
 			ctx.Logs().ERROR().Error(err)
@@ -204,7 +205,7 @@ func NotModified(etag func() (string, bool), body func() (any, error)) Responser
 
 		b, err := body()
 		if err != nil {
-			ctx.Log(err, ProblemInternalServerError).Apply(ctx)
+			ctx.Log(err, problems.InternalServerError).Apply(ctx)
 			return
 		}
 

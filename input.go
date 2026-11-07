@@ -15,6 +15,7 @@ import (
 
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/problems"
 )
 
 var pathPool = &sync.Pool{New: func() any { return &Paths{} }}
@@ -393,7 +394,7 @@ func (ctx *Context) Unmarshal(v any) error {
 // 如果验证失败，会返回以 id 作为错误代码的 [Problem] 对象。
 func (ctx *Context) Read(exitAtError bool, v any, id string) Responser {
 	if err := ctx.Unmarshal(v); err != nil {
-		return ctx.Log(err, ProblemUnprocessableEntity)
+		return ctx.Log(err, problems.UnprocessableEntity)
 	}
 
 	p := newProblem()

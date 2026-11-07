@@ -122,7 +122,7 @@ func withRecovery(s *Server) RouterOption {
 		}
 
 		p := newProblem()
-		s.Problems().initProblem(p, he.id, s.Locale().Printer())
+		s.Problems().Init(he.id, s.Locale().Printer(), p)
 
 		http.Error(w, http.StatusText(p.Status), p.Status)
 		s.Logs().ERROR().String(source.Stack(4, true, err))
