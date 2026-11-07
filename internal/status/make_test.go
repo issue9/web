@@ -15,7 +15,6 @@ func TestGetStatuses(t *testing.T) {
 
 	status, err := Get()
 	a.NotError(err).NotEmpty(status).
-		True(status[0].Value > 399)
-
-	a.Equal(status[0].ID(), "BadRequest")
+		Equal(status[0].Value, "400").
+		Equal(status[0].ID(), "BadRequest")
 }

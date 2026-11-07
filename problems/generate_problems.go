@@ -7,8 +7,10 @@
 package main
 
 import (
+	"encoding/csv"
 	"io/fs"
-	"strconv"
+	"net/http"
+	"strings"
 
 	"github.com/issue9/errwrap"
 	"github.com/issue9/source/codegen"
@@ -22,19 +24,47 @@ const (
 )
 
 func main() {
+	resp, err := http.Get("https://www.iana.org/assignments/http-problem-types/http-problem-type-uris.csv")
+	if err != nil {
+		panic(err)
+	}
+	ianaReader := csv.NewReader(resp.Body)
+	ianaRecords, err := ianaReader.ReadAll()
+	if err != nil {
+		panic(err)
+	}
+
 	buf := &errwrap.Buffer{}
 	buf.WString(status.FileHeader).
 		WString("package ").WString(pkgName).WString("\n\n").
-		WString("import \"net/http\"\n\n").
-		WString("import \"github.com/issue9/localeutil\"\n\n")
+		WString("import (\n").
+		WString(" \"net/http\"\n\n").
+		WString(" \"github.com/issue9/localeutil\"\n").
+		WString(" )\n\n")
 
 	kvs, err := status.Get()
 	if err != nil {
 		panic(err)
 	}
 
-	makeID(buf, kvs)
-	makeInitProblems(buf, kvs)
+	ianaSize := 0
+
+	// 将 iana 中的 ID 加入到 kvs
+	for index := 2; index < len(ianaRecords); index++ {
+		ianaSize++
+		record := ianaRecords[index]
+		index := strings.LastIndexByte(record[0], '#')
+		id := record[0][index+1:]
+
+		kvs = append(kvs, status.Status{
+			Name:    toCamel(id),
+			Value:   id,
+			Comment: record[3][1 : len(record[3])-1],
+		})
+	}
+
+	makeID(buf, kvs, ianaSize)
+	makeInitProblems(buf, kvs, ianaRecords, ianaSize)
 
 	if buf.Err != nil {
 		panic(buf.Err)
@@ -45,26 +75,60 @@ func main() {
 	}
 }
 
-func makeID(buf *errwrap.Buffer, kvs []status.Pair) {
+// 输出变量名以及对应的值
+func makeID(buf *errwrap.Buffer, kvs []status.Status, ianaSize int) {
 	buf.WString("const(\n")
 
 	buf.WString(`AboutBlank = "about:blank"`).WString("\n\n")
-	for _, item := range kvs {
-		buf.Printf("%s=\"%s\"\n", item.ID(), strconv.Itoa(item.Value))
+
+	for _, item := range kvs[:len(kvs)-ianaSize] {
+		buf.Printf("%s=\"%s\" // %s\n", item.ID(), item.Value, item.Comment)
+	}
+	buf.WByte('\n')
+
+	for _, item := range kvs[len(kvs)-ianaSize:] {
+		buf.Printf("%s=\"%s\" // %s\n", item.Name, item.Value, item.Comment)
 	}
 
 	buf.WString(")\n\n")
 }
 
-func makeInitProblems(buf *errwrap.Buffer, kvs []status.Pair) {
+func makeInitProblems(buf *errwrap.Buffer, kvs []status.Status, ianaRecords [][]string, ianaSize int) {
 	buf.WString("func(p*Problems[T]) initProblems(){")
 
-	for _, item := range kvs {
+	// 标准状态码对应的 problem
+	for _, item := range kvs[:len(kvs)-ianaSize] {
 		status := "http." + item.Name
-		title := "problem." + strconv.Itoa(item.Value)
+		title := "problem." + item.Value
 		title = "localeutil.StringPhrase(\"" + title + "\")"
 
-		buf.Printf(`p.add(&Item{Type:"about:blank",ID:%s,Title:%s,Status:%s})`, item.ID(), title, status).WByte('\n')
+		buf.Printf(`p.add(&Item{Type:AboutBlank,ID:%s,Title:%s,Status:%s})`, item.ID(), title, status).WByte('\n')
 	}
+
+	buf.WByte('\n')
+
+	// iana 的 problem
+	for index := 2; index < len(ianaRecords); index++ {
+		record := ianaRecords[index]
+
+		index := strings.LastIndexByte(record[0], '#')
+		id := record[0][index+1:]
+
+		title := "localeutil.StringPhrase(\"" + record[1] + "\")"
+
+		buf.Printf(`p.add(&Item{Type: "%s",ID:%s,Title:%s,Status:%s})`, record[0], toCamel(id), title, record[2]).WByte('\n')
+	}
+
 	buf.WString("}\n\n")
+}
+
+func toCamel(s string) string {
+	parts := strings.Split(s, "-")
+	for i := range parts {
+		if parts[i] == "" {
+			continue
+		}
+		parts[i] = strings.ToUpper(parts[i][:1]) + parts[i][1:]
+	}
+	return strings.Join(parts, "")
 }

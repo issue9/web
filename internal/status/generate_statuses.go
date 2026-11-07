@@ -42,7 +42,7 @@ func main() {
 	}
 }
 
-func makeStatuses(buf *errwrap.Buffer, kvs []status.Pair) {
+func makeStatuses(buf *errwrap.Buffer, kvs []status.Status) {
 	buf.WString("var problemStatuses=map[int]struct{}{\n")
 
 	for _, item := range kvs {

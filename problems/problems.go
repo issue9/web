@@ -115,6 +115,7 @@ func (ps *Problems[T]) All() iter.Seq[*Item] {
 	}
 }
 
+// Init 对 p 进行初始化
 func (ps *Problems[T]) Init(id string, printer *localeutil.Printer, p *T) {
 	if i := slices.IndexFunc(ps.problems, func(lp *Item) bool { return lp.ID == id }); i > -1 {
 		lp := ps.problems[i]

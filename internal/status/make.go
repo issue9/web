@@ -18,15 +18,15 @@ import (
 const FileHeader = "// 此文件由工具产生，请勿手动修改！\n\n"
 
 // Get 从 net/http/status.go 获取所有的状态码
-func Get() ([]Pair, error) {
+func Get() ([]Status, error) {
 	path := filepath.Join(build.Default.GOROOT, "src", "net", "http", "status.go")
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, path, nil, parser.AllErrors)
+	f, err := parser.ParseFile(fset, path, nil, parser.AllErrors|parser.ParseComments)
 	if err != nil {
 		return nil, err
 	}
 
-	pairs := make([]Pair, 0, 100)
+	pairs := make([]Status, 0, 100)
 
 LOOP:
 	for _, decl := range f.Decls {
@@ -61,16 +61,18 @@ LOOP:
 				continue
 			}
 
-			pairs = append(pairs, Pair{Name: name, Value: v})
+			pairs = append(pairs, Status{Name: name, Value: strconv.Itoa(v), Comment: strings.TrimSpace(vs.Comment.Text())})
 		}
 	}
 
 	return pairs, nil
 }
 
-type Pair struct {
-	Name  string
-	Value int
+// Status 状态的相关信息
+type Status struct {
+	Name    string // 状态名称
+	Value   string // 对应的值
+	Comment string // 状态的描述信息
 }
 
-func (p Pair) ID() string { return p.Name[6:] }
+func (p Status) ID() string { return p.Name[6:] }
