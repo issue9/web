@@ -67,7 +67,7 @@ func MarkdownProblems(s *web.Server, titleLevel int) web.LocaleStringer {
 func markdownProblemsWithoutDetail(s *web.Server) web.LocaleStringer {
 	buf := &errwrap.Buffer{}
 	args := make([]any, 0, 30)
-	for _, p := range s.Problems().Problems() {
+	for p := range s.Problems().All() {
 		buf.Printf("- %s", p.Type).WString(": %s\n\n")
 		args = append(args, p.Title)
 	}
@@ -79,7 +79,7 @@ func markdownProblemsWithDetail(s *web.Server, titleLevel int) web.LocaleStringe
 
 	buf := &errwrap.Buffer{}
 	args := make([]any, 0, 30)
-	for _, p := range s.Problems().Problems() {
+	for p := range s.Problems().All() {
 		buf.Printf("%s %s ", ss, p.Type).
 			WString("%s\n\n").
 			WString("%s\n\n")

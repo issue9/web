@@ -86,7 +86,7 @@ func newTestServer(a *assert.Assertion, sec bool) *testServer {
 	a.NotError(srv.Locale().SetString(language.SimplifiedChinese, "lang", "cn")).
 		NotError(srv.Locale().SetString(language.TraditionalChinese, "lang", "tw"))
 
-	srv.Problems().Add(411, &LocaleProblem{Type: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
+	srv.Problems().Add("", &LocaleProblem{Status: 411, ID: "41110", Type: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
 
 	return srv
 }
@@ -291,14 +291,14 @@ func TestHTTPServer_NewClient(t *testing.T) {
 	a.NotError(err).
 		Zero(resp).
 		NotNil(p).
-		Equal(p.Type, ProblemMethodNotAllowed).
+		Equal(p.Type, aboutBlank).
 		Equal(p.Status, http.StatusMethodNotAllowed)
 
 	resp, p, err = c.Post[object, *object]("/post", nil)
 	a.NotError(err).
 		Zero(resp).
 		NotNil(p).
-		Equal(p.Type, ProblemBadRequest).
+		Equal(p.Type, aboutBlank).
 		Equal(p.Extensions, &object{Name: "name"})
 
 	resp, p, err = c.Post[object, any]("/post", &object{Age: 1, Name: "name"})
@@ -310,7 +310,7 @@ func TestHTTPServer_NewClient(t *testing.T) {
 	a.NotError(err).
 		Zero(resp).
 		NotNil(p).
-		Equal(p.Type, ProblemNotFound)
+		Equal(p.Type, aboutBlank)
 }
 
 func TestHTTPServer_NewContext(t *testing.T) {

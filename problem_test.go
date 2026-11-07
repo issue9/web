@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 
 	"github.com/issue9/assert/v6"
@@ -32,7 +33,7 @@ func TestContext_Log(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx := srv.NewContext(w, r, types.NewRoute())
 		ctx.Log(errors.New("log1 log2"), "").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:34"). // NOTE: 此测试依赖上一行的行号
+		a.Contains(srv.logBuf.String(), "problem_test.go:35"). // NOTE: 此测试依赖上一行的行号
 									Contains(srv.logBuf.String(), "log1 log2").
 									Contains(srv.logBuf.String(), header.XRequestID). // 包含 x-request-id 值
 									Equal(w.Code, http.StatusInternalServerError)
@@ -44,7 +45,7 @@ func TestContext_Log(t *testing.T) {
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx = srv.NewContext(w, r, types.NewRoute())
 		ctx.Log(NewProblemError(ProblemBadRequest, errors.New("log1 log2")), "").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:46"). // NOTE: 此测试依赖上一行的行号
+		a.Contains(srv.logBuf.String(), "problem_test.go:47"). // NOTE: 此测试依赖上一行的行号
 									Contains(srv.logBuf.String(), "log1 log2").
 									Contains(srv.logBuf.String(), header.XRequestID). // 包含 x-request-id 值
 									Equal(w.Code, http.StatusBadRequest)
@@ -57,7 +58,7 @@ func TestContext_Log(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx := srv.NewContext(w, r, types.NewRoute())
 		ctx.Log(errors.New("log1 log2"), "41110").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:59"). // NOTE: 此测试依赖上一行的行号
+		a.Contains(srv.logBuf.String(), "problem_test.go:60"). // NOTE: 此测试依赖上一行的行号
 									Contains(srv.logBuf.String(), "log1 log2").
 									Contains(srv.logBuf.String(), header.XRequestID). // 包含 x-request-id 值
 									Equal(w.Code, 411)
@@ -69,7 +70,7 @@ func TestContext_Log(t *testing.T) {
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx = srv.NewContext(w, r, types.NewRoute())
 		ctx.Log(NewProblemError(ProblemBadRequest, errors.New("log1 log2")), "41110").Apply(ctx)
-		a.Contains(srv.logBuf.String(), "problem_test.go:71") // NOTE: 此测试依赖上一行的行号
+		a.Contains(srv.logBuf.String(), "problem_test.go:72") // NOTE: 此测试依赖上一行的行号
 	})
 }
 
@@ -84,29 +85,30 @@ func TestProblems_Add(t *testing.T) {
 		False(ps.Exists("40011")).
 		True(ps.Exists(ProblemNotFound))
 
-	ps.Add(400, []*LocaleProblem{
-		{Type: "40010", Title: Phrase("title"), Detail: Phrase("detail")},
-		{Type: "40011", Title: Phrase("title"), Detail: Phrase("detail")},
+	ps.Add("", []*LocaleProblem{
+		{Status: 400, ID: "40010", Title: Phrase("title"), Detail: Phrase("detail")},
+		{Status: 400, ID: "40011", Title: Phrase("title"), Detail: Phrase("detail")},
 	}...)
 	a.True(ps.Exists("40010")).
 		True(ps.Exists("40011")).
-		Equal(l+2, len(ps.problems))
+		Equal(l+2, len(ps.problems)).
+		Length(slices.Collect(ps.All()), l+2)
 
 	a.PanicString(func() {
-		ps.Add(400, []*LocaleProblem{
-			{Type: "40010", Title: Phrase("title"), Detail: Phrase("detail")},
+		ps.Add("", []*LocaleProblem{
+			{Status: 400, ID: "40010", Title: Phrase("title"), Detail: Phrase("detail")},
 		}...)
-	}, "存在相同值的 id 参数")
+	}, "该 ID 值 40010 已经存在")
 
 	a.PanicString(func() {
-		ps.Add(99, []*LocaleProblem{
-			{Type: "40012", Title: Phrase("title"), Detail: Phrase("detail")},
+		ps.Add("", []*LocaleProblem{
+			{Status: 99, ID: "40012", Title: Phrase("title"), Detail: Phrase("detail")},
 		}...)
 	}, "status 必须是一个有效的状态码")
 
 	a.PanicString(func() {
-		ps.Add(412, []*LocaleProblem{
-			{Type: "40013", Title: nil, Detail: nil},
+		ps.Add("", []*LocaleProblem{
+			{Status: 400, ID: "40013", Title: nil, Detail: nil},
 		}...)
 	}, "title 不能为空")
 }
@@ -117,17 +119,21 @@ func TestProblems_initProblem(t *testing.T) {
 
 	ps := newProblems()
 	a.NotNil(ps)
-	ps.Add(400, &LocaleProblem{Type: "40010", Title: Phrase("title"), Detail: Phrase("detail")})
+	ps.Add("", &LocaleProblem{Status: 400, ID: "40010", Title: Phrase("title"), Detail: Phrase("detail")})
 	pp := &Problem{}
 	ps.initProblem(pp, "40010", p)
-	a.Equal(pp.Type, "40010")
+	a.Equal(pp.Type, aboutBlank)
 
 	ps = newProblems()
 	a.NotNil(ps)
-	ps.Add(400, &LocaleProblem{Type: "https://example.com/qa#40011", Title: Phrase("title"), Detail: Phrase("detail")})
+	ps.Add("", &LocaleProblem{Status: 400, ID: "40011", Type: "https://example.com/qa#40011", Title: Phrase("title"), Detail: Phrase("detail")})
+	ps.Add("https://example.com/qa#", &LocaleProblem{Status: 400, ID: "40012", Type: "40012", Title: Phrase("title"), Detail: Phrase("detail")})
 	pp = &Problem{}
-	ps.initProblem(pp, "https://example.com/qa#40011", p)
+	ps.initProblem(pp, "40011", p)
 	a.Equal(pp.Type, "https://example.com/qa#40011")
+	pp = &Problem{}
+	ps.initProblem(pp, "40012", p)
+	a.Equal(pp.Type, "https://example.com/qa#40012")
 
 	a.PanicString(func() {
 		ps.initProblem(pp, "not-exists", p)

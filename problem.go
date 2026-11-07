@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"iter"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/issue9/localeutil"
@@ -29,6 +30,8 @@ type (
 		XMLName struct{} `xml:"urn:ietf:rfc:7807 problem" form:"-" cbor:"-" json:"-" html:"-" yaml:"-"`
 
 		// 错误 ID
+		//
+		// 如果该值为 about:blank，则表示 HTTP 状态码本身语义已经可以表达此错误。
 		Type string `json:"type" xml:"type" form:"type" cbor:"type" yaml:"type" comment:"problem type"`
 
 		// 对错误的简要描述
@@ -63,10 +66,15 @@ type (
 	}
 
 	LocaleProblem struct {
+		// ID 唯一 ID
+		//
+		// 与 Type 的区别在于 ID 用于查找，需要唯一性。
+		// 而 Type 可能是 'about:blank' 或是不同的 URI。
+		ID string
+
 		Type          string
 		Title, Detail LocaleStringer
-
-		status int
+		Status        int
 	}
 
 	problemError struct {
@@ -126,15 +134,6 @@ func (p *Problem) WithInstance(instance string) *Problem {
 // Problem 返回指定 id 的 [Problem]
 func (ctx *Context) Problem(id string) *Problem { return ctx.initProblem(newProblem(), id) }
 
-// ProblemFromStatus 从 HTTP 状态码生成 [Problem]
-func (ctx *Context) ProblemFromStatus(status int) *Problem {
-	if id, found := problemsID[status]; found {
-		return ctx.Problem(id)
-	}
-
-	return ctx.Log(NewError("Not found problem from status %d", status), ProblemInternalServerError)
-}
-
 func (ctx *Context) initProblem(pp *Problem, id string) *Problem {
 	ctx.Server().Problems().initProblem(pp, id, ctx.LocalePrinter())
 	return pp.WithInstance(ctx.ID())
@@ -156,15 +155,15 @@ func (ctx *Context) Log(err error, problemID string) *Problem {
 		}
 	}
 
-	perr := ctx.Problem(problemID)
+	p := ctx.Problem(problemID)
 
-	if perr.Status < 500 {
+	if p.Status < 500 {
 		ctx.Logs().WARN().Handler().Handle(ctx.Logs().NewRecord().DepthError(3, err))
 	} else {
 		ctx.Logs().ERROR().Handler().Handle(ctx.Logs().NewRecord().DepthError(3, err))
 	}
 
-	return perr
+	return p
 }
 
 func (ctx *Context) NotFound() *Problem { return ctx.Problem(ProblemNotFound) }
@@ -183,58 +182,79 @@ func newProblems() *Problems {
 // Problems 提供 [Problem] 管理
 func (s *Server) Problems() *Problems { return s.problems }
 
-// Add 添加新项
+// Add 添加一组新项
+//
+// 在 p.Type 不是绝对 URL 的情况下，typePrefix 会自动加在其前部.做为前缀。
 //
 // NOTE: 已添加的内容无法修改，如果确实有需求，只能通过修改翻译项的方式间接进行修改。
-func (ps *Problems) Add(s int, p ...*LocaleProblem) *Problems {
-	if !status.IsProblemStatus(s) { // 只需验证大于 400 的状态码。
+func (ps *Problems) Add(typePrefix string, p ...*LocaleProblem) *Problems {
+	for _, pp := range p {
+		if pp.Type != aboutBlank && typePrefix != "" &&
+			!strings.HasPrefix(pp.Type, "https://") && !strings.HasPrefix(pp.Type, "http://") {
+			pp.Type = typePrefix + pp.Type
+		}
+
+		ps.add(pp)
+	}
+	return ps
+}
+
+func (ps *Problems) add(p *LocaleProblem) *Problems {
+	if !status.IsProblemStatus(p.Status) { // 只需验证大于 400 的状态码。
 		panic("status 必须是一个有效的状态码")
 	}
 
-	for _, pp := range p {
-		if ps.Exists(pp.Type) {
-			panic(fmt.Sprintf("存在相同值的 Type 参数 %s", pp.Type))
-		}
-
-		if pp.Title == nil {
-			panic("title 不能为空")
-		}
-
-		if pp.Detail == nil {
-			panic("detail 不能为空")
-		}
-
-		pp.status = s
-
-		ps.problems = append(ps.problems, pp)
+	if p.ID == "" {
+		panic("p.ID 不能为空")
 	}
+
+	if ps.Exists(p.ID) {
+		panic(fmt.Sprintf("该 ID 值 %s 已经存在", p.ID))
+	}
+
+	if p.Type == "" {
+		p.Type = aboutBlank
+	}
+	if p.Type != aboutBlank {
+		if slices.ContainsFunc(ps.problems, func(pp *LocaleProblem) bool { return pp.Type == p.Type }) {
+			panic(fmt.Sprintf("该 Type 值 %s 已经存在", p.Type))
+		}
+	}
+
+	if p.Title == nil {
+		panic("title 不能为空")
+	}
+
+	ps.problems = append(ps.problems, p)
 
 	return ps
 }
 
 // Exists 查看指定 id 是否已经存在
 func (ps *Problems) Exists(id string) bool {
-	return slices.IndexFunc(ps.problems, func(p *LocaleProblem) bool { return p.Type == id }) > -1
+	return slices.IndexFunc(ps.problems, func(p *LocaleProblem) bool { return p.ID == id }) > -1
 }
 
-// Problems 所有已注册的错误代码
-func (ps *Problems) Problems() iter.Seq2[int, *LocaleProblem] {
-	return func(yield func(int, *LocaleProblem) bool) {
-		for _, s := range ps.problems {
-			if !yield(s.status, s) {
+// All 所有已注册的错误代码
+func (ps *Problems) All() iter.Seq[*LocaleProblem] {
+	return func(yield func(*LocaleProblem) bool) {
+		for _, p := range ps.problems {
+			if !yield(p) {
 				break
 			}
 		}
 	}
 }
 
-func (ps *Problems) initProblem(pp *Problem, id string, p *localeutil.Printer) {
-	if i := slices.IndexFunc(ps.problems, func(p *LocaleProblem) bool { return p.Type == id }); i > -1 {
-		sp := ps.problems[i]
-		pp.Type = sp.Type
-		pp.Title = sp.Title.LocaleString(p)
-		pp.Detail = sp.Detail.LocaleString(p)
-		pp.Status = sp.status
+func (ps *Problems) initProblem(p *Problem, id string, printer *localeutil.Printer) {
+	if i := slices.IndexFunc(ps.problems, func(lp *LocaleProblem) bool { return lp.ID == id }); i > -1 {
+		lp := ps.problems[i]
+		p.Type = lp.Type
+		p.Title = lp.Title.LocaleString(printer)
+		p.Status = lp.Status
+		if lp.Detail != nil {
+			p.Detail = lp.Detail.LocaleString(printer)
+		}
 		return
 	}
 	panic(fmt.Sprintf("未找到有关 %s 的定义", id)) // 初始化时没有给定相关的定义，所以直接 panic。
@@ -255,16 +275,6 @@ func NewProblemError(problemID string, err error) error {
 	}
 
 	return &problemError{id: problemID, err: err}
-}
-
-func NewProblemErrorFromStatus(status int, err error) error {
-	if id, found := problemsID[status]; found {
-		return NewProblemError(id, err)
-	}
-
-	// 将 err 用 problemError 包裹的目的主要是为显示一个特定的状态码，
-	// 如果找不到，仅对客户端的状态码有影响，但是 err 本身没有问题。
-	return err
 }
 
 func (err *problemError) Unwrap() error { return err.err }

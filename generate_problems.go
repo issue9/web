@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -48,7 +48,7 @@ func main() {
 func makeID(buf *errwrap.Buffer, kvs []status.Pair) {
 	buf.WString("const(\n")
 
-	buf.WString(`ProblemAboutBlank = "about:blank"`).WString("\n\n")
+	buf.WString(`aboutBlank = "about:blank"`).WString("\n\n")
 	for _, item := range kvs {
 		buf.Printf("%s=\"%s\"\n", item.ID(), strconv.Itoa(item.Value))
 	}
@@ -72,11 +72,9 @@ func makeInitProblems(buf *errwrap.Buffer, kvs []status.Pair) {
 	for _, item := range kvs {
 		status := "http." + item.Name
 		title := "problem." + strconv.Itoa(item.Value)
-		detail := title + ".detail"
 		title = "StringPhrase(\"" + title + "\")"
-		detail = "StringPhrase(\"" + detail + "\")"
 
-		buf.Printf(`p.Add(%s,&LocaleProblem{Type:%s,Title:%s,Detail:%s})`, status, item.ID(), title, detail).WByte('\n')
+		buf.Printf(`p.add(&LocaleProblem{Type:"about:blank",ID:%s,Title:%s,Status:%s})`, item.ID(), title, status).WByte('\n')
 	}
 	buf.WString("}\n\n")
 }
