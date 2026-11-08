@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+// Package status 从标准库中获取状态码的相关信息
 package status
 
 import (

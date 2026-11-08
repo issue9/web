@@ -10,6 +10,7 @@ import (
 	"encoding/csv"
 	"io/fs"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/issue9/errwrap"
@@ -64,7 +65,10 @@ func main() {
 	}
 
 	makeID(buf, kvs, ianaSize)
-	makeInitProblems(buf, kvs, ianaRecords, ianaSize)
+	if err := makeInitProblems(buf, kvs, ianaRecords, ianaSize); err != nil {
+		panic(err)
+	}
+	makeStatuses(buf, kvs, ianaSize)
 
 	if buf.Err != nil {
 		panic(buf.Err)
@@ -93,14 +97,20 @@ func makeID(buf *errwrap.Buffer, kvs []status.Status, ianaSize int) {
 	buf.WString(")\n\n")
 }
 
-func makeInitProblems(buf *errwrap.Buffer, kvs []status.Status, ianaRecords [][]string, ianaSize int) {
+// 生成 initProblems 方法
+func makeInitProblems(buf *errwrap.Buffer, kvs []status.Status, ianaRecords [][]string, ianaSize int) error {
 	buf.WString("func(p*Problems[T]) initProblems(){")
 
 	// 标准状态码对应的 problem
 	for _, item := range kvs[:len(kvs)-ianaSize] {
 		status := "http." + item.Name
-		title := "problem." + item.Value
-		title = "localeutil.StringPhrase(\"" + title + "\")"
+
+		s, err := strconv.Atoi(item.Value)
+		if err != nil {
+			return err
+		}
+
+		title := "localeutil.StringPhrase(\"" + http.StatusText(s) + "\")"
 
 		buf.Printf(`p.add(&Item{Type:AboutBlank,ID:%s,Title:%s,Status:%s})`, item.ID(), title, status).WByte('\n')
 	}
@@ -117,6 +127,19 @@ func makeInitProblems(buf *errwrap.Buffer, kvs []status.Status, ianaRecords [][]
 		title := "localeutil.StringPhrase(\"" + record[1] + "\")"
 
 		buf.Printf(`p.add(&Item{Type: "%s",ID:%s,Title:%s,Status:%s})`, record[0], toCamel(id), title, record[2]).WByte('\n')
+	}
+
+	buf.WString("}\n\n")
+
+	return nil
+}
+
+// 生成 problemStatuses 变量
+func makeStatuses(buf *errwrap.Buffer, kvs []status.Status, ianaSize int) {
+	buf.WString("var problemStatuses=map[int]struct{}{\n")
+
+	for _, item := range kvs[:len(kvs)-ianaSize] {
+		buf.Printf("%s:{},\n", "http."+item.Name)
 	}
 
 	buf.WString("}\n\n")

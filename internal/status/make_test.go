@@ -10,7 +10,7 @@ import (
 	"github.com/issue9/assert/v6"
 )
 
-func TestGetStatuses(t *testing.T) {
+func TestGet(t *testing.T) {
 	a := assert.New(t, false)
 
 	status, err := Get()

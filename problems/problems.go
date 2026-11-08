@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+//go:generate go run ./generate_problems.go
+
 // Package problems 提供对  [RFC7807] 和 [RFC9457] 管理
 //
 // [RFC7807]: https://www.rfc-editor.org/info/rfc7807
@@ -15,8 +17,6 @@ import (
 	"strings"
 
 	"github.com/issue9/localeutil"
-
-	"github.com/issue9/web/internal/status"
 )
 
 type Builder[T any] func(*Item, *localeutil.Printer, *T)
@@ -31,7 +31,7 @@ type Item struct {
 	// ID 唯一 ID
 	//
 	// 与 Type 的区别在于 ID 用于查找，需要唯一性。
-	// 而 Type 可能是 'about:blank' 或是不同的 URI。
+	// 而 Type 可能是 [AboutBlank] 或是不同的 URI。
 	ID string
 
 	Type          string
@@ -69,7 +69,7 @@ func (ps *Problems[T]) Add(typePrefix string, p ...*Item) *Problems[T] {
 }
 
 func (ps *Problems[T]) add(p *Item) *Problems[T] {
-	if !status.IsProblemStatus(p.Status) { // 只需验证大于 400 的状态码。
+	if !IsProblem(p.Status) { // 只需验证大于 400 的状态码。
 		panic("status 必须是一个有效的状态码")
 	}
 
@@ -126,4 +126,7 @@ func (ps *Problems[T]) Init(id string, printer *localeutil.Printer, p *T) {
 }
 
 // IsProblem 这是表示错误的状态码
-func IsProblem(s int) bool { return status.IsProblemStatus(s) }
+func IsProblem(s int) bool {
+	_, found := problemStatuses[s]
+	return found
+}

@@ -5,7 +5,6 @@
 //go:generate gomsgs extract -l=und -m -f=yaml -tag=comment -func=github.com/issue9/localeutil.Phrase,github.com/issue9/localeutil.Error,github.com/issue9/localeutil.StringPhrase,github.com/issue9/web.Phrase,github.com/issue9/web.StringPhrase,github.com/issue9/web.NewError,github.com/issue9/web.Context.Sprintf,github.com/issue9/web.Locale.Sprintf,github.com/issue9/web/openapi.Document.ParameterizedDoc ./
 //go:generate gomsgs update -src=./locales/und.yaml -dest=./locales/zh.yaml
 //go:generate go run ./generate_compressors.go
-//go:generate go run ./generate_problems.go
 
 // Package web 通用的 web 开发框架
 package web
