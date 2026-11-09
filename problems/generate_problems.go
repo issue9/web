@@ -39,7 +39,8 @@ func main() {
 	buf.WString(status.FileHeader).
 		WString("package ").WString(pkgName).WString("\n\n").
 		WString("import (\n").
-		WString(" \"net/http\"\n\n").
+		WString(" \"net/http\"\n").
+		WString(" \"unique\"\n\n").
 		WString(" \"github.com/issue9/localeutil\"\n").
 		WString(" )\n\n")
 
@@ -81,17 +82,18 @@ func main() {
 
 // 输出变量名以及对应的值
 func makeID(buf *errwrap.Buffer, kvs []status.Status, ianaSize int) {
-	buf.WString("const(\n")
+	buf.WString(`const AboutBlank = "about:blank"`).WString("\n\n")
 
-	buf.WString(`AboutBlank = "about:blank"`).WString("\n\n")
+	buf.WString("var(\n")
+	buf.WString(`Empty = unique.Make("")`).WString("\n\n")
 
 	for _, item := range kvs[:len(kvs)-ianaSize] {
-		buf.Printf("%s=\"%s\" // %s\n", item.ID(), item.Value, item.Comment)
+		buf.Printf("%s=unique.Make(\"%s\") // %s\n", item.ID(), item.Value, item.Comment)
 	}
 	buf.WByte('\n')
 
 	for _, item := range kvs[len(kvs)-ianaSize:] {
-		buf.Printf("%s=\"%s\" // %s\n", item.Name, item.Value, item.Comment)
+		buf.Printf("%s=unique.Make(\"%s\") // %s\n", item.Name, item.Value, item.Comment)
 	}
 
 	buf.WString(")\n\n")
@@ -136,10 +138,10 @@ func makeInitProblems(buf *errwrap.Buffer, kvs []status.Status, ianaRecords [][]
 
 // 生成 problemStatuses 变量
 func makeStatuses(buf *errwrap.Buffer, kvs []status.Status, ianaSize int) {
-	buf.WString("var problemStatuses=map[int]struct{}{\n")
+	buf.WString("var problemStatuses=map[int]unique.Handle[string]{\n")
 
 	for _, item := range kvs[:len(kvs)-ianaSize] {
-		buf.Printf("%s:{},\n", "http."+item.Name)
+		buf.Printf("%s:%s,\n", "http."+item.Name, item.ID())
 	}
 
 	buf.WString("}\n\n")

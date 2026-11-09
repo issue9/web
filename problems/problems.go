@@ -15,6 +15,7 @@ import (
 	"iter"
 	"slices"
 	"strings"
+	"unique"
 
 	"github.com/issue9/localeutil"
 )
@@ -32,7 +33,7 @@ type Item struct {
 	//
 	// 与 Type 的区别在于 ID 用于查找，需要唯一性。
 	// 而 Type 可能是 [AboutBlank] 或是不同的 URI。
-	ID string
+	ID unique.Handle[string]
 
 	Type          string
 	Title, Detail localeutil.Stringer
@@ -73,12 +74,12 @@ func (ps *Problems[T]) add(p *Item) *Problems[T] {
 		panic("status 必须是一个有效的状态码")
 	}
 
-	if p.ID == "" {
+	if p.ID == Empty {
 		panic("p.ID 不能为空")
 	}
 
 	if ps.Exists(p.ID) {
-		panic(fmt.Sprintf("该 ID 值 %s 已经存在", p.ID))
+		panic(fmt.Sprintf("该 ID 值 %s 已经存在", p.ID.Value()))
 	}
 
 	if p.Type == "" {
@@ -100,8 +101,8 @@ func (ps *Problems[T]) add(p *Item) *Problems[T] {
 }
 
 // Exists 查看指定 id 是否已经存在
-func (ps *Problems[T]) Exists(id string) bool {
-	return slices.IndexFunc(ps.problems, func(p *Item) bool { return p.ID == id }) > -1
+func (ps *Problems[T]) Exists(id unique.Handle[string]) bool {
+	return slices.ContainsFunc(ps.problems, func(p *Item) bool { return p.ID == id })
 }
 
 // All 所有已注册的错误代码
@@ -116,17 +117,25 @@ func (ps *Problems[T]) All() iter.Seq[*Item] {
 }
 
 // Init 对 p 进行初始化
-func (ps *Problems[T]) Init(id string, printer *localeutil.Printer, p *T) {
+//
+// 如果找不到 id 对应的项会 panic
+func (ps *Problems[T]) Init(id unique.Handle[string], printer *localeutil.Printer, p *T) {
 	if i := slices.IndexFunc(ps.problems, func(lp *Item) bool { return lp.ID == id }); i > -1 {
 		lp := ps.problems[i]
 		ps.build(lp, printer, p)
 		return
 	}
-	panic(fmt.Sprintf("未找到有关 %s 的定义", id)) // 初始化时没有给定相关的定义，所以直接 panic。
+	panic(fmt.Sprintf("未找到有关 %s 的定义", id.Value()))
 }
 
 // IsProblem 这是表示错误的状态码
-func IsProblem(s int) bool {
-	_, found := problemStatuses[s]
+func IsProblem(status int) bool {
+	_, found := problemStatuses[status]
 	return found
+}
+
+// FromStatus 将一个 HTTP 状态码转换为 Problem 的 ID
+func FromStatus(status int) (unique.Handle[string], bool) {
+	v, f := problemStatuses[status]
+	return v, f
 }

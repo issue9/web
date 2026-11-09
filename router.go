@@ -8,12 +8,13 @@ import (
 	"errors"
 	"iter"
 	"net/http"
-	"strconv"
 
 	"github.com/issue9/mux/v10"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/mux/v10/types"
 	"github.com/issue9/source"
+
+	"github.com/issue9/web/problems"
 )
 
 type (
@@ -63,7 +64,8 @@ func buildNodeHandle(status int) types.BuildNodeHandler[HandlerFunc] {
 					ctx.WriteHeader(http.StatusOK)
 				})
 			}
-			return ctx.Problem(strconv.Itoa(status))
+			pid, _ := problems.FromStatus(status) // ctx.Problem 中会处理找不到 status 的情况
+			return ctx.Problem(pid)
 		}
 	}
 }
@@ -103,28 +105,18 @@ func (r *Routers) Use(m ...Middleware) { r.g.Use(m...) }
 
 // 相对于 [mux.withRecovery]，提供了对 [NewProblemError] 错误的处理。
 func withRecovery(s *Server) RouterOption {
-	// 即使失败了，再次触发 panic，还有 http.Server 兜底。
-	// 所以此方法的对错误的处理，依然还是尽量输出符合要求的 Problem 对象。
-
-	const status = http.StatusInternalServerError
-
 	return mux.WithRecovery(func(w http.ResponseWriter, msg any) {
+		status := http.StatusInternalServerError
 		err, ok := msg.(error)
-		if !ok {
-			http.Error(w, http.StatusText(status), status)
-			s.Logs().ERROR().String(source.Stack(4, true, err))
-			return
+		if ok {
+			if pe, ok := errors.AsType[*problemError](err); ok {
+				p := newProblem()
+				s.Problems().Init(pe.id, s.Locale().Printer(), p)
+				status = p.Status
+			}
 		}
 
-		he, ok := errors.AsType[*problemError](err)
-		if !ok {
-			he = &problemError{id: strconv.Itoa(status), err: err}
-		}
-
-		p := newProblem()
-		s.Problems().Init(he.id, s.Locale().Printer(), p)
-
-		http.Error(w, http.StatusText(p.Status), p.Status)
+		http.Error(w, http.StatusText(status), status)
 		s.Logs().ERROR().String(source.Stack(4, true, err))
 	})
 }

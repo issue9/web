@@ -16,6 +16,7 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+	"unique"
 
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/assert/v6/rest"
@@ -23,7 +24,7 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v10/header"
-	"github.com/issue9/unique/v2"
+	xu "github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/servertest"
@@ -70,7 +71,7 @@ func newTestServer(a *assert.Assertion, sec bool) *testServer {
 	}
 
 	cc := memory.New()
-	u := unique.NewNumber(100)
+	u := xu.NewNumber(100)
 	hs := &http.Server{Addr: srv.st.Port}
 	if sec {
 		cert, err := tls.LoadX509KeyPair("./server/config/testdata/cert.pem", "./server/config/testdata/key.pem")
@@ -87,7 +88,7 @@ func newTestServer(a *assert.Assertion, sec bool) *testServer {
 	a.NotError(srv.Locale().SetString(language.SimplifiedChinese, "lang", "cn")).
 		NotError(srv.Locale().SetString(language.TraditionalChinese, "lang", "tw"))
 
-	srv.Problems().Add("", &problems.Item{Status: 411, ID: "41110", Type: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
+	srv.Problems().Add("", &problems.Item{Status: 411, ID: unique.Make("41110"), Type: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
 
 	return srv
 }

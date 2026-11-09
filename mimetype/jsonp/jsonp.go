@@ -9,12 +9,14 @@ import (
 	"encoding/json/v2"
 	"io"
 	"sync"
+	"unique"
 
 	"github.com/issue9/errwrap"
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/problems"
 )
 
 const Mimetype = header.Javascript
@@ -23,7 +25,7 @@ type contextKeyType int
 
 type options struct {
 	key          string
-	unsetProblem string
+	unsetProblem unique.Handle[string]
 }
 
 const contextKey contextKeyType = 1
@@ -34,12 +36,12 @@ var once = &sync.Once{}
 //
 // key 用于指定回函数名称的查询参数名称；
 // unsetProblem 表示查询参数中没有 key 指定的参数或是参数值为空时的应该返回的 [web.Problem]
-func Install(s *web.Server, key, unsetProblem string) {
+func Install(s *web.Server, key string, unsetProblem unique.Handle[string]) {
 	if key == "" {
 		panic("key 不能为空")
 	}
 
-	if unsetProblem == "" {
+	if unsetProblem == problems.Empty {
 		panic("unsetProblem 不能为空")
 	}
 

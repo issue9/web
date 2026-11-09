@@ -8,6 +8,7 @@ import (
 	"errors"
 	"slices"
 	"sync"
+	"unique"
 
 	"github.com/issue9/web/problems"
 )
@@ -60,7 +61,7 @@ type (
 
 	problemError struct {
 		err error
-		id  string
+		id  unique.Handle[string]
 	}
 )
 
@@ -113,9 +114,11 @@ func (p *Problem) WithInstance(instance string) *Problem {
 }
 
 // Problem 返回指定 id 的 [Problem]
-func (ctx *Context) Problem(id string) *Problem { return ctx.initProblem(newProblem(), id) }
+func (ctx *Context) Problem(id unique.Handle[string]) *Problem {
+	return ctx.initProblem(newProblem(), id)
+}
 
-func (ctx *Context) initProblem(pp *Problem, id string) *Problem {
+func (ctx *Context) initProblem(pp *Problem, id unique.Handle[string]) *Problem {
 	ctx.Server().Problems().Init(id, ctx.LocalePrinter(), pp)
 	return pp.WithInstance(ctx.ID())
 }
@@ -126,11 +129,11 @@ func (ctx *Context) initProblem(pp *Problem, id string) *Problem {
 // 那么将忽略 problemID 值，若是两者都不满足，则将 problemID 设置为 [ProblemInternalServerError]。
 //
 // problemID 同时也是日志分类的依据，比如所有 4xx 的日志会写入 WARN，其它的才会写入 ERROR。
-func (ctx *Context) Log(err error, problemID string) *Problem {
+func (ctx *Context) Log(err error, problemID unique.Handle[string]) *Problem {
 	if pe, ok := errors.AsType[*problemError](err); ok {
 		problemID = pe.id
 	} else {
-		if problemID == "" {
+		if problemID == problems.Empty {
 			problemID = problems.InternalServerError
 		}
 	}
@@ -156,7 +159,7 @@ func (s *Server) Problems() *ppp { return s.problems }
 // NewProblemError 将 err 以指定的 problemID 进行包装
 //
 // 当前框架在处理此类错误时，在记录错误的同时，会将 problemID 值反馈给客户端。
-func NewProblemError(problemID string, err error) error {
+func NewProblemError(problemID unique.Handle[string], err error) error {
 	if err == nil {
 		panic("参数 err 不能为空")
 	}

@@ -104,11 +104,11 @@ func TestMarkdownProblems(t *testing.T) {
 
 	txt := MarkdownProblems(ss, 2)
 	lines := strings.Split(txt.LocaleString(p), "\n\n")
-	a.Equal(lines[0], "## 400 Bad Request").
-		Equal(lines[2], "## 401 Unauthorized")
+	a.Equal(lines[0], "## 400 错误的请求体").
+		Equal(lines[2], "## 401 需要身份验证")
 
 	txt = MarkdownProblems(ss, 0)
 	lines = strings.Split(txt.LocaleString(p), "\n\n")
-	a.Equal(lines[0], "- 400: Bad Request").
-		Equal(lines[1], "- 401: Unauthorized")
+	a.Equal(lines[0], "- 400: 错误的请求体").
+		Equal(lines[1], "- 401: 需要身份验证")
 }
