@@ -10,6 +10,8 @@ import (
 	"sync"
 	"unique"
 
+	"github.com/issue9/localeutil"
+
 	"github.com/issue9/web/problems"
 )
 
@@ -51,8 +53,6 @@ type (
 		Extensions any `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty" cbor:"extensions,omitempty" yaml:"extensions,omitempty" comment:"problem extensions"`
 	}
 
-	ppp = problems.Problems[Problem]
-
 	// ProblemParam 单个错误字段的描述
 	ProblemParam struct {
 		Name   string `json:"name" xml:"name" form:"name" cbor:"name" yaml:"name"`           // 出错字段的名称
@@ -73,7 +73,7 @@ func newProblem() *Problem {
 	p.Extensions = nil
 	p.Instance = ""
 	return p
-	// 其它的基本字段在 [Problems.initProblem] 中初始化
+	// 其它的基本字段在 [Context.initProblem] 中初始化
 }
 
 // MarshalHTML 实现 [mimetype/html.Marshaler] 接口
@@ -118,15 +118,25 @@ func (ctx *Context) Problem(id unique.Handle[string]) *Problem {
 	return ctx.initProblem(newProblem(), id)
 }
 
-func (ctx *Context) initProblem(pp *Problem, id unique.Handle[string]) *Problem {
-	ctx.Server().Problems().Init(id, ctx.LocalePrinter(), pp)
-	return pp.WithInstance(ctx.ID())
+func (ctx *Context) initProblem(p *Problem, id unique.Handle[string]) *Problem {
+	initProblem(ctx.Server().Problems().Get(id), p, ctx.LocalePrinter())
+	return p.WithInstance(ctx.ID())
+}
+
+func initProblem(item *problems.Item, p *Problem, printer *localeutil.Printer) {
+	p.Type = item.Type
+	p.Title = item.Title.LocaleString(printer)
+	p.Status = item.Status
+	if item.Detail != nil {
+		p.Detail = item.Detail.LocaleString(printer)
+	}
 }
 
 // Log 记录日志并根据情况生成对应的 [Problem] 对象
 //
-// problemID 表示生成的 [Problem] 对象的 Type 值，如果 err 本身就是 [Problem] 类型，
-// 那么将忽略 problemID 值，若是两者都不满足，则将 problemID 设置为 [ProblemInternalServerError]。
+// 如果 err 本身就是由 [NewProblemError] 创建的类型，
+// 那么将忽略 problemID 值，直接使用 [NewProblemError] 中的 id。
+// 若 problemID 为空则使用默认值 [problems.ProblemInternalServerError]。
 //
 // problemID 同时也是日志分类的依据，比如所有 4xx 的日志会写入 WARN，其它的才会写入 ERROR。
 func (ctx *Context) Log(err error, problemID unique.Handle[string]) *Problem {
@@ -154,7 +164,7 @@ func (ctx *Context) NotFound() *Problem { return ctx.Problem(problems.NotFound) 
 func (ctx *Context) NotImplemented() *Problem { return ctx.Problem(problems.NotImplemented) }
 
 // Problems 提供 [Problem] 管理
-func (s *Server) Problems() *ppp { return s.problems }
+func (s *Server) Problems() *problems.Problems { return s.problems }
 
 // NewProblemError 将 err 以指定的 problemID 进行包装
 //

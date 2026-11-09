@@ -62,7 +62,7 @@ var (
 	DigestMismatchedValues      = unique.Make("digest-mismatched-values")      // RFC-ietf-httpapi-digest-fields-problem-types-06, Section 3.3
 )
 
-func (p *Problems[T]) initProblems() {
+func (p *Problems) initProblems() {
 	p.add(&Item{Type: AboutBlank, ID: BadRequest, Title: localeutil.StringPhrase("Bad Request"), Status: http.StatusBadRequest})
 	p.add(&Item{Type: AboutBlank, ID: Unauthorized, Title: localeutil.StringPhrase("Unauthorized"), Status: http.StatusUnauthorized})
 	p.add(&Item{Type: AboutBlank, ID: PaymentRequired, Title: localeutil.StringPhrase("Payment Required"), Status: http.StatusPaymentRequired})

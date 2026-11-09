@@ -5,19 +5,18 @@
 package problems
 
 import (
-	"slices"
 	"testing"
 
 	"github.com/issue9/assert/v6"
 )
 
-func BenchmarkGet(b *testing.B) {
+func BenchmarkProblems_Get(b *testing.B) {
 	a := assert.New(b, false)
-	ps := New(builder)
+	ps := New()
 
-	var i int
+	var item *Item
 	for b.Loop() {
-		i = slices.IndexFunc(ps.problems, func(item *Item) bool { return item.ID == BadGateway })
+		item = ps.Get(BadGateway)
 	}
-	a.True(i > -1)
+	a.NotNil(item)
 }

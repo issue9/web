@@ -20,33 +20,27 @@ import (
 	"github.com/issue9/localeutil"
 )
 
-type Builder[T any] func(*Item, *localeutil.Printer, *T)
-
 // Problems 管理 Problem 对象
-type Problems[T any] struct {
+type Problems struct {
 	problems []*Item // 需保证元素的顺序相同
-	build    Builder[T]
 }
 
 type Item struct {
-	// ID 唯一 ID
-	//
-	// 与 Type 的区别在于 ID 用于查找，需要唯一性。
-	// 而 Type 可能是 [AboutBlank] 或是不同的 URI。
-	ID unique.Handle[string]
+	ID unique.Handle[string] // 用于查找的唯一 ID
 
 	Type          string
 	Title, Detail localeutil.Stringer
 	Status        int
+
+	// TODO: 对于常用的 Item 对象，其中的 Title 和 Detail 的本地化可以做一个 ttc 缓存？
 }
 
 // New 新建 [Problems] 对象
 //
 // build 提供构建 problem 对象的方法
-func New[T any](build Builder[T]) *Problems[T] {
-	ps := &Problems[T]{
+func New() *Problems {
+	ps := &Problems{
 		problems: make([]*Item, 0, 100),
-		build:    build,
 	}
 	ps.initProblems()
 	return ps
@@ -57,7 +51,7 @@ func New[T any](build Builder[T]) *Problems[T] {
 // 在 p.Type 不是绝对 URL 的情况下，typePrefix 会自动加在其前部.做为前缀。
 //
 // NOTE: 已添加的内容无法修改，如果确实有需求，只能通过修改翻译项的方式间接进行修改。
-func (ps *Problems[T]) Add(typePrefix string, p ...*Item) *Problems[T] {
+func (ps *Problems) Add(typePrefix string, p ...*Item) *Problems {
 	for _, pp := range p {
 		if pp.Type != AboutBlank && typePrefix != "" &&
 			!strings.HasPrefix(pp.Type, "https://") && !strings.HasPrefix(pp.Type, "http://") {
@@ -69,7 +63,7 @@ func (ps *Problems[T]) Add(typePrefix string, p ...*Item) *Problems[T] {
 	return ps
 }
 
-func (ps *Problems[T]) add(p *Item) *Problems[T] {
+func (ps *Problems) add(p *Item) {
 	if !IsProblem(p.Status) { // 只需验证大于 400 的状态码。
 		panic("status 必须是一个有效的状态码")
 	}
@@ -96,17 +90,15 @@ func (ps *Problems[T]) add(p *Item) *Problems[T] {
 	}
 
 	ps.problems = append(ps.problems, p)
-
-	return ps
 }
 
 // Exists 查看指定 id 是否已经存在
-func (ps *Problems[T]) Exists(id unique.Handle[string]) bool {
+func (ps *Problems) Exists(id unique.Handle[string]) bool {
 	return slices.ContainsFunc(ps.problems, func(p *Item) bool { return p.ID == id })
 }
 
 // All 所有已注册的错误代码
-func (ps *Problems[T]) All() iter.Seq[*Item] {
+func (ps *Problems) All() iter.Seq[*Item] {
 	return func(yield func(*Item) bool) {
 		for _, p := range ps.problems {
 			if !yield(p) {
@@ -116,14 +108,12 @@ func (ps *Problems[T]) All() iter.Seq[*Item] {
 	}
 }
 
-// Init 对 p 进行初始化
+// Get 查找 id 对应的 [Item] 对象
 //
 // 如果找不到 id 对应的项会 panic
-func (ps *Problems[T]) Init(id unique.Handle[string], printer *localeutil.Printer, p *T) {
+func (ps *Problems) Get(id unique.Handle[string]) *Item {
 	if i := slices.IndexFunc(ps.problems, func(lp *Item) bool { return lp.ID == id }); i > -1 {
-		lp := ps.problems[i]
-		ps.build(lp, printer, p)
-		return
+		return ps.problems[i]
 	}
 	panic(fmt.Sprintf("未找到有关 %s 的定义", id.Value()))
 }

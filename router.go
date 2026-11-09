@@ -110,9 +110,7 @@ func withRecovery(s *Server) RouterOption {
 		err, ok := msg.(error)
 		if ok {
 			if pe, ok := errors.AsType[*problemError](err); ok {
-				p := newProblem()
-				s.Problems().Init(pe.id, s.Locale().Printer(), p)
-				status = p.Status
+				status = s.Problems().Get(pe.id).Status
 			}
 		}
 

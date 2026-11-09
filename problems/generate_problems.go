@@ -101,7 +101,7 @@ func makeID(buf *errwrap.Buffer, kvs []status.Status, ianaSize int) {
 
 // 生成 initProblems 方法
 func makeInitProblems(buf *errwrap.Buffer, kvs []status.Status, ianaRecords [][]string, ianaSize int) error {
-	buf.WString("func(p*Problems[T]) initProblems(){")
+	buf.WString("func(p*Problems) initProblems(){")
 
 	// 标准状态码对应的 problem
 	for _, item := range kvs[:len(kvs)-ianaSize] {
