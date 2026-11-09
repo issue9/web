@@ -7,7 +7,6 @@ package config
 import (
 	"io/fs"
 	"testing"
-	"time"
 
 	"github.com/issue9/assert/v6"
 
@@ -22,7 +21,6 @@ func TestLoadConfigOf(t *testing.T) {
 
 	valid := func(conf *configOf[empty]) {
 		a.Equal(conf.HTTP.Port, ":8082").
-			Equal(conf.HTTP.ReadTimeout, 3*time.Second).
 			Equal(conf.Timezone, "Africa/Addis_Ababa").
 			Length(conf.Mimetypes, 3)
 	}

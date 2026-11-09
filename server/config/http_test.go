@@ -5,13 +5,8 @@
 package config
 
 import (
-	"encoding"
-	"encoding/json/v2"
-	"encoding/xml"
 	"testing"
-	"time"
 
-	"github.com/goccy/go-yaml"
 	"github.com/issue9/assert/v6"
 )
 
@@ -32,28 +27,6 @@ func TestCertificate_sanitize(t *testing.T) {
 	cert.Key = "./testdata/key.pem"
 	cert.sanitize(f)
 	a.False(f.HasError())
-}
-
-func TestHTTP_sanitize(t *testing.T) {
-	a := assert.New(t, false)
-	e, f := buildFilter()
-
-	http := &httpConfig{}
-	http.ReadTimeout = -1
-	http.sanitize(f)
-	a.NotEmpty(e["readTimeout"])
-
-	e, f = buildFilter()
-	http.ReadTimeout = 0
-	http.IdleTimeout = -1
-	http.sanitize(f)
-	a.NotEmpty(e["idleTimeout"])
-
-	e, f = buildFilter()
-	http.IdleTimeout = 0
-	http.ReadHeaderTimeout = -1
-	http.sanitize(f)
-	a.NotEmpty(e["readHeaderTimeout"])
 }
 
 func TestHTTP_buildTLSConfig(t *testing.T) {
@@ -123,88 +96,4 @@ func TestACME_sanitize(t *testing.T) {
 	l = &acmeConfig{Cache: "./", Domains: []string{"example.com"}}
 	l.sanitize(f)
 	a.False(f.HasError()).Empty(e)
-}
-
-var (
-	dur time.Duration
-
-	_ encoding.TextMarshaler   = Duration(1)
-	_ encoding.TextUnmarshaler = (*Duration)(&dur)
-)
-
-type testDuration struct {
-	Duration Duration `xml:"dur" json:"dur" yaml:"dur"`
-}
-
-func TestDuration_Duration(t *testing.T) {
-	a := assert.New(t, false)
-
-	dur := time.Second * 2
-
-	a.Equal(dur, Duration(dur).Duration())
-}
-
-func TestDuration_YAML(t *testing.T) {
-	a := assert.New(t, false)
-
-	m := &testDuration{
-		Duration: Duration(time.Nanosecond * 5),
-	}
-
-	bs, err := yaml.Marshal(m)
-	a.NotError(err).NotNil(bs)
-	a.Equal(string(bs), `dur: 5ns
-`)
-
-	rm := &testDuration{}
-	a.NotError(yaml.Unmarshal(bs, rm))
-	a.Equal(rm, m)
-}
-
-func TestDuration_XML(t *testing.T) {
-	a := assert.New(t, false)
-
-	m := &testDuration{
-		Duration: Duration(time.Nanosecond * 5),
-	}
-
-	bs, err := xml.MarshalIndent(m, "", "  ")
-	a.NotError(err).NotNil(bs).
-		Equal(string(bs), `<testDuration>
-  <dur>5ns</dur>
-</testDuration>`)
-
-	rm := &testDuration{}
-	a.NotError(xml.Unmarshal(bs, rm)).Equal(rm, m)
-}
-
-func TestDuration_XMLAttr(t *testing.T) {
-	a := assert.New(t, false)
-
-	type obj struct {
-		D Duration `xml:"d,attr"`
-	}
-	m := &obj{
-		D: Duration(time.Nanosecond * 5),
-	}
-
-	bs, err := xml.MarshalIndent(m, "", "  ")
-	a.NotError(err).NotNil(bs).Equal(string(bs), `<obj d="5ns"></obj>`)
-
-	rm := &obj{}
-	a.NotError(xml.Unmarshal(bs, rm)).Equal(rm, m)
-}
-
-func TestDuration_JSON(t *testing.T) {
-	a := assert.New(t, false)
-
-	m := &testDuration{
-		Duration: Duration(time.Nanosecond * 5),
-	}
-
-	bs, err := json.Marshal(m)
-	a.NotError(err).NotNil(bs).Equal(string(bs), `{"dur":"5ns"}`)
-
-	rm := &testDuration{}
-	a.NotError(json.Unmarshal(bs, rm)).Equal(rm, m)
 }

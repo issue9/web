@@ -140,6 +140,8 @@ type configOf[T comparable] struct {
 	mapper  map[string]mux.Matcher
 
 	// 用户自定义的配置项
+	//
+	// 如果 T 实现了 [ConfigFilter]，那么会调用该类型的方法对数据进行验证。
 	User T `yaml:"user,omitempty" json:"user,omitempty" xml:"user,omitempty" toml:"user,omitempty"`
 
 	// 由其它选项生成的初始化方法

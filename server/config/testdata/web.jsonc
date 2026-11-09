@@ -2,7 +2,6 @@
 {
     "http": {
         "port": ":8082",
-        "readTimeout": "3s",
         "headers": [
             {
                 "key": "H1",

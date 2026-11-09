@@ -1,7 +1,7 @@
 <!-- web.xml 的测试文件，需要与其它内容数值相同 -->
 
 <web>
-    <http readTimeout="3s" port=":8082">
+    <http port=":8082">
         <headers>
             <header key="H1">v1</header>
             <header key="h2">v2</header>

@@ -52,21 +52,6 @@ type (
 
 		tlsConfig *tls.Config
 
-		// ReadTimeout 对应 [http.Server.ReadTimeout] 字段
-		ReadTimeout Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" xml:"readTimeout,attr,omitempty" toml:"readTimeout,omitempty"`
-
-		// WriteTimeout 对应 [http.Server.WriteTimeout] 字段
-		WriteTimeout Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" xml:"writeTimeout,attr,omitempty" toml:"writeTimeout,omitempty"`
-
-		// IdleTimeout 对应 [http.Server.IdleTimeout] 字段
-		IdleTimeout Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" xml:"idleTimeout,attr,omitempty" toml:"idleTimeout,omitempty"`
-
-		// ReadHeaderTimeout 对应 [http.Server.ReadHeaderTimeout] 字段
-		ReadHeaderTimeout Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" xml:"readHeaderTimeout,attr,omitempty" toml:"readHeaderTimeout,omitempty"`
-
-		// MaxHeaderBytes 对应 [http.Server.MaxHeaderBytes] 字段
-		MaxHeaderBytes int `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" xml:"maxHeaderBytes,attr,omitempty" toml:"maxHeaderBytes,omitempty"`
-
 		// 自定义报头功能
 		//
 		// 报头会输出到包括 404 在内的所有请求返回。可以为空。
@@ -98,11 +83,6 @@ type (
 		init       func(*server.Options)
 		httpServer *http.Server
 	}
-
-	// Duration 表示时间段
-	//
-	// 封装 [time.Duration] 以实现对 JSON、XML、TOML 和 YAML 的解析
-	Duration time.Duration
 
 	headerConfig struct {
 		// 报头名称
@@ -187,15 +167,6 @@ func (cert *certificateConfig) sanitize(f *filter.Filter) {
 }
 
 func (h *httpConfig) sanitize(f *filter.Filter) {
-	f.Valid("readTimeout", h.ReadTimeout, durShouldGreatThan0, locales.ShouldGreatThan(0)).
-		Valid("writeTimeout", h.WriteTimeout, durShouldGreatThan0, locales.ShouldGreatThan(0)).
-		Valid("idleTimeout", h.IdleTimeout, durShouldGreatThan0, locales.ShouldGreatThan(0)).
-		Valid("readHeaderTimeout", h.ReadHeaderTimeout, durShouldGreatThan0, locales.ShouldGreatThan(0)).
-		Valid("maxHeaderBytes", h.MaxHeaderBytes, durShouldGreatThan0, locales.ShouldGreatThan(0))
-	if f.HasError() {
-		return
-	}
-
 	if h.RequestID == "" {
 		h.RequestID = header.XRequestID
 	}
@@ -226,13 +197,8 @@ func (h *httpConfig) sanitize(f *filter.Filter) {
 
 func (h *httpConfig) buildHTTPServer() {
 	h.httpServer = &http.Server{
-		Addr:              h.Port,
-		ReadTimeout:       h.ReadTimeout.Duration(),
-		ReadHeaderTimeout: h.ReadHeaderTimeout.Duration(),
-		WriteTimeout:      h.WriteTimeout.Duration(),
-		IdleTimeout:       h.IdleTimeout.Duration(),
-		MaxHeaderBytes:    h.MaxHeaderBytes,
-		TLSConfig:         h.tlsConfig,
+		Addr:      h.Port,
+		TLSConfig: h.tlsConfig,
 	}
 }
 
@@ -311,17 +277,4 @@ func (l *acmeConfig) tlsConfig() *tls.Config {
 func (l *acmeConfig) sanitize(f *filter.Filter) {
 	f.Valid("cache", l.Cache, fileExistsRule, locales.NotFound).
 		Valid("domains", l.Domains, func(domains []string) bool { return len(domains) > 0 }, locales.CanNotBeEmpty)
-}
-
-// Duration 转换为标准库的 [time.Duration]
-func (d Duration) Duration() time.Duration { return time.Duration(d) }
-
-func (d Duration) MarshalText() ([]byte, error) { return []byte(time.Duration(d).String()), nil }
-
-func (d *Duration) UnmarshalText(b []byte) error {
-	v, err := time.ParseDuration(string(b))
-	if err == nil {
-		*d = Duration(v)
-	}
-	return err
 }
