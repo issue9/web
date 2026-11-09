@@ -6,6 +6,7 @@ package jsonp
 
 import (
 	"net/http"
+	"sync"
 	"testing"
 
 	"github.com/issue9/assert/v6"
@@ -18,6 +19,8 @@ import (
 )
 
 func TestJSONP(t *testing.T) {
+	once = &sync.Once{} // 防止 go test 在 -count 大于 1 的情况下失败
+
 	a := assert.New(t, false)
 	ts := startuptest.NewTestServerStartup(a)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{

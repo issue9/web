@@ -4,13 +4,13 @@ go 1.27.0
 
 require (
 	github.com/BurntSushi/toml v1.6.0
-	github.com/andybalholm/brotli v1.2.7
+	github.com/andybalholm/brotli v1.2.8
 	github.com/fpatron/jsonc/v2 v2.0.0-20260301162213-8bd9fe9747dd
 	github.com/fxamacker/cbor/v2 v2.10.0
 	github.com/goccy/go-yaml v1.19.2
 	github.com/issue9/assert/v6 v6.0.0
-	github.com/issue9/cache v0.21.0
-	github.com/issue9/cmdopt v0.16.0
+	github.com/issue9/cache v0.21.1
+	github.com/issue9/cmdopt v0.16.1
 	github.com/issue9/config v0.11.0
 	github.com/issue9/conv v1.4.0
 	github.com/issue9/errwrap v0.4.1
@@ -34,13 +34,13 @@ require (
 )
 
 require (
-	github.com/agnivade/levenshtein v1.2.1 // indirect
+	github.com/agnivade/levenshtein v1.2.2 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20260422231931-4d751bb6e37c // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/issue9/rands/v3 v3.3.0 // indirect
-	github.com/redis/go-redis/v9 v9.22.0 // indirect
+	github.com/redis/go-redis/v9 v9.23.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
+	go.uber.org/atomic v1.12.0 // indirect
 	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
