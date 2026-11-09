@@ -10,12 +10,11 @@ import (
 	"github.com/issue9/assert/v6"
 )
 
-func TestGetStatuses(t *testing.T) {
+func TestGet(t *testing.T) {
 	a := assert.New(t, false)
 
 	status, err := Get()
 	a.NotError(err).NotEmpty(status).
-		True(status[0].Value > 399)
-
-	a.Equal(status[0].ID(), "ProblemBadRequest")
+		Equal(status[0].Value, "400").
+		Equal(status[0].ID(), "BadRequest")
 }

@@ -5,7 +5,6 @@
 //go:generate gomsgs extract -l=und -m -f=yaml -tag=comment -func=github.com/issue9/localeutil.Phrase,github.com/issue9/localeutil.Error,github.com/issue9/localeutil.StringPhrase,github.com/issue9/web.Phrase,github.com/issue9/web.StringPhrase,github.com/issue9/web.NewError,github.com/issue9/web.Context.Sprintf,github.com/issue9/web.Locale.Sprintf,github.com/issue9/web/openapi.Document.ParameterizedDoc ./
 //go:generate gomsgs update -src=./locales/und.yaml -dest=./locales/zh.yaml
 //go:generate go run ./generate_compressors.go
-//go:generate go run ./generate_problems.go
 
 // Package web 通用的 web 开发框架
 package web
@@ -42,8 +41,6 @@ type (
 	StringPhrase = localeutil.StringPhrase
 
 	// MarshalFunc 序列化函数原型
-	//
-	// NOTE: MarshalFunc 可根据需求自行决定 [Problem] 和 [server.RenderResponse] 的输出格式。
 	//
 	// NOTE: MarshalFunc 的作用是输出内容，所以在实现中不能调用 [Context.Render] 等输出方法。
 	//

@@ -188,18 +188,17 @@ func Load[T comparable](configDir, filename string) (*server.Options, T, error) 
 	}
 
 	o := &server.Options{
-		Config:            conf.config,
-		Location:          conf.location,
-		Cache:             conf.cache,
-		Startup:           web.NewHTTPServerStartup(conf.HTTP.httpServer),
-		Logs:              conf.Logs.logs,
-		Language:          conf.languageTag,
-		RoutersOptions:    make([]web.RouterOption, 0, 5),
-		IDGenerator:       conf.idGenerator,
-		RequestIDKey:      conf.HTTP.RequestID,
-		Codec:             conf.codec,
-		ProblemTypePrefix: conf.ProblemTypePrefix,
-		Plugins:           make([]web.Plugin, 0, 5),
+		Config:         conf.config,
+		Location:       conf.location,
+		Cache:          conf.cache,
+		Startup:        web.NewHTTPServerStartup(conf.HTTP.httpServer),
+		Logs:           conf.Logs.logs,
+		Language:       conf.languageTag,
+		RoutersOptions: make([]web.RouterOption, 0, 5),
+		IDGenerator:    conf.idGenerator,
+		RequestIDKey:   conf.HTTP.RequestID,
+		Codec:          conf.codec,
+		Plugins:        make([]web.Plugin, 0, 5),
 	}
 
 	for _, i := range conf.init {

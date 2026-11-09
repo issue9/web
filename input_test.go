@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"unique"
 
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/mux/v10/header"
@@ -61,7 +62,7 @@ func TestPaths(t *testing.T) {
 		ctx := s.NewContext(w, r, types.NewRoute())
 		ps := ctx.Paths(false)
 		a.Equal(ps.Int64("id1"), 0).
-			NotNil(ps.Problem("41110"))
+			NotNil(ps.Problem(unique.Make("41110")))
 	})
 
 	t.Run("ID", func(*testing.T) {
@@ -138,10 +139,10 @@ func TestContext_PathID(t *testing.T) {
 
 	ctx := s.NewContext(w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"))
 
-	i1, resp := ctx.PathID("i1", "41110")
+	i1, resp := ctx.PathID("i1", unique.Make("41110"))
 	a.Nil(resp).Equal(i1, 1)
 
-	i2, resp := ctx.PathID("i2", "41110")
+	i2, resp := ctx.PathID("i2", unique.Make("41110"))
 	a.NotNil(resp).Equal(i2, 0)
 }
 
@@ -153,13 +154,13 @@ func TestContext_PathInt64(t *testing.T) {
 
 	ctx := s.NewContext(w, r, newPathContext("i1", "1", "i2", "-2", "str", "str"))
 
-	i1, resp := ctx.PathInt64("i1", "41110")
+	i1, resp := ctx.PathInt64("i1", unique.Make("41110"))
 	a.Nil(resp).Equal(i1, 1)
 
-	i2, resp := ctx.PathInt64("i2", "41110")
+	i2, resp := ctx.PathInt64("i2", unique.Make("41110"))
 	a.Nil(resp).Equal(i2, -2)
 
-	i3, resp := ctx.PathInt64("i3", "41110")
+	i3, resp := ctx.PathInt64("i3", unique.Make("41110"))
 	a.NotNil(resp).Equal(i3, 0)
 }
 
@@ -192,7 +193,7 @@ func TestQueries(t *testing.T) {
 
 		// 无法转换，会返回默认值，且添加错误信息
 		a.Equal(q.Int64("str", 3), 3).
-			NotNil(q.Problem("41110"))
+			NotNil(q.Problem(unique.Make("41110")))
 	})
 
 	t.Run("String", func(*testing.T) {
@@ -215,7 +216,7 @@ func TestQueries(t *testing.T) {
 			False(q.Bool("b3", false))
 
 		// 无法转换，会返回默认值，且添加错误信息
-		a.False(q.Bool("str", false)).NotNil(q.Problem("41110"))
+		a.False(q.Bool("str", false)).NotNil(q.Problem(unique.Make("41110")))
 	})
 
 	t.Run("Float", func(*testing.T) {
@@ -228,7 +229,7 @@ func TestQueries(t *testing.T) {
 			Equal(q.Float64("i3", 9.9), 9.9)
 
 		// 无法转换，会返回默认值，且添加错误信息
-		a.Equal(q.Float64("str", 3), 3).NotNil(q.Problem("41110"))
+		a.Equal(q.Float64("str", 3), 3).NotNil(q.Problem(unique.Make("41110")))
 	})
 }
 
@@ -243,7 +244,7 @@ func TestContext_Object(t *testing.T) {
 		I2  int     `query:"i2"`
 		Str string  `query:"str"`
 	}{}
-	resp := ctx.QueryObject(false, &o, "41110")
+	resp := ctx.QueryObject(false, &o, unique.Make("41110"))
 	a.Nil(resp).
 		Equal(w.Code, http.StatusOK)
 	a.Equal(o.I1, float32(1.1)).
@@ -255,7 +256,7 @@ func TestContext_Object(t *testing.T) {
 		I2  int     `query:"i2"`
 		Str int     `query:"str"`
 	}{}
-	resp = ctx.QueryObject(false, &o2, "41110")
+	resp = ctx.QueryObject(false, &o2, unique.Make("41110"))
 	a.NotNil(resp)
 	resp.Apply(ctx)
 	a.Equal(w.Code, 411)
@@ -309,7 +310,7 @@ func TestContext_Read(t *testing.T) {
 	ctx := s.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 	obj := &object{}
-	a.Nil(ctx.Read(false, obj, "41110"))
+	a.Nil(ctx.Read(false, obj, unique.Make("41110")))
 	a.Equal(obj, objectInst)
 
 	w = httptest.NewRecorder()
@@ -317,7 +318,7 @@ func TestContext_Read(t *testing.T) {
 	r.Header.Set(header.ContentType, header.JSON)
 	ctx = s.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
-	resp := ctx.Read(false, ``, "41110")
+	resp := ctx.Read(false, ``, unique.Make("41110"))
 	a.NotNil(resp)
 	resp.Apply(ctx)
 	a.Equal(w.Code, 422)

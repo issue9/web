@@ -16,6 +16,7 @@ import (
 	"github.com/issue9/mux/v10"
 	"golang.org/x/text/language"
 
+	"github.com/issue9/web/problems"
 	"github.com/issue9/web/selector"
 )
 
@@ -52,7 +53,7 @@ type (
 		requestIDKey string
 		codec        *Codec
 		services     *Services
-		problems     *Problems
+		problems     *problems.Problems
 		routers      *Routers
 		vars         *sync.Map
 		idgen        func() string
@@ -77,7 +78,6 @@ func NewServer(
 	cache cache.Driver,
 	codec *Codec,
 	requestIDKey string,
-	problemTypePrefix string,
 	o ...RouterOption,
 ) *Server {
 	srv := &Server{
@@ -94,7 +94,7 @@ func NewServer(
 		config:       conf,
 		requestIDKey: requestIDKey,
 		codec:        codec,
-		problems:     newProblems(problemTypePrefix),
+		problems:     problems.New(),
 		vars:         &sync.Map{},
 		idgen:        idgen,
 		logs:         logs,

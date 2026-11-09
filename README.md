@@ -96,22 +96,6 @@ router.Get("/openapi", doc.Handler()) // 将文档以接口的形式输出
 
 - <https://github.com/issue9/webuse> 提供了中间件、插件、过滤器等常用的功能。
 
-## 工具
-
-<https://github.com/issue9/web/releases> 提供了一个简易的辅助工具。可以帮助用户完成以下工作：
-
-- 热编译项目；
-- 为枚举类型生成常用接口；
-- 根据对象的注释生成 markdown 文档；
-- 根据模板生成项目；
-
-macOS 和 linux 用户可以直接使用 brew 进行安装：
-
-```shell
-brew tap caixw/brew
-brew install caixw/brew/web
-```
-
 ## 版权
 
 本项目采用 [MIT](https://opensource.org/licenses/MIT) 开源授权许可证，完整的授权说明可在 [LICENSE](LICENSE) 文件中找到。

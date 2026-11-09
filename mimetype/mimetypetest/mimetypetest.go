@@ -8,8 +8,10 @@ package mimetypetest
 import (
 	"bytes"
 	"net/http"
+	"net/http/httptest"
 
 	"github.com/issue9/assert/v6"
+	"github.com/issue9/mux/v10/types"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
@@ -33,18 +35,14 @@ func Test(a *assert.Assertion, m web.MarshalFunc, u web.UnmarshalFunc) {
 	})
 	a.NotError(err).NotNil(s)
 
-	s.Routers().New("main", nil).Get("/path", func(ctx *web.Context) web.Responser {
-		data, err := m(ctx, inst)
-		a.NotError(err).NotNil(data)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/path", nil)
+	ctx := s.NewContext(w, r, types.NewRoute())
 
-		inst2 := &web.Problem{}
-		a.NotError(u(bytes.NewBuffer(data), inst2))
-		a.Equal(inst, inst2)
+	data, err := m(ctx, inst)
+	a.NotError(err).NotNil(data)
 
-		return web.OK(nil)
-	})
-
-	ts.Get("/path").
-		Do().
-		Status(http.StatusOK)
+	inst2 := &web.Problem{}
+	a.NotError(u(bytes.NewBuffer(data), inst2))
+	a.Equal(inst, inst2)
 }

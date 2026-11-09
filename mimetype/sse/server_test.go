@@ -18,6 +18,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/mimetype/json"
+	"github.com/issue9/web/problems"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
 )
@@ -34,7 +35,7 @@ func TestServer(t *testing.T) {
 	e := NewServer[int64](s, 50*time.Millisecond, 5*time.Second, 10, web.StringPhrase("sse"))
 	a.NotNil(e)
 	s.Routers().New("default", nil).Get("/event/{id}", func(ctx *web.Context) web.Responser {
-		id, resp := ctx.PathInt64("id", web.ProblemBadRequest)
+		id, resp := ctx.PathInt64("id", problems.BadRequest)
 		if resp != nil {
 			return resp
 		}

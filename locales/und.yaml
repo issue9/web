@@ -1,9 +1,117 @@
 languages:
 - und
 messages:
+- key: Bad Gateway
+  message:
+    msg: Bad Gateway
+- key: Bad Request
+  message:
+    msg: Bad Request
+- key: Conflict
+  message:
+    msg: Conflict
+- key: Date Not Acceptable
+  message:
+    msg: Date Not Acceptable
+- key: Expectation Failed
+  message:
+    msg: Expectation Failed
+- key: Failed Dependency
+  message:
+    msg: Failed Dependency
+- key: Forbidden
+  message:
+    msg: Forbidden
+- key: Gateway Timeout
+  message:
+    msg: Gateway Timeout
+- key: Gone
+  message:
+    msg: Gone
+- key: HTTP Version Not Supported
+  message:
+    msg: HTTP Version Not Supported
+- key: I'm a teapot
+  message:
+    msg: I'm a teapot
+- key: Insufficient Storage
+  message:
+    msg: Insufficient Storage
+- key: Internal Server Error
+  message:
+    msg: Internal Server Error
+- key: Invalid Digest Values
+  message:
+    msg: Invalid Digest Values
+- key: Length Required
+  message:
+    msg: Length Required
+- key: Locked
+  message:
+    msg: Locked
+- key: Loop Detected
+  message:
+    msg: Loop Detected
+- key: Method Not Allowed
+  message:
+    msg: Method Not Allowed
+- key: Misdirected Request
+  message:
+    msg: Misdirected Request
+- key: Mismatched Digest Values
+  message:
+    msg: Mismatched Digest Values
+- key: Network Authentication Required
+  message:
+    msg: Network Authentication Required
+- key: Not Acceptable
+  message:
+    msg: Not Acceptable
+- key: Not Extended
+  message:
+    msg: Not Extended
+- key: Not Found
+  message:
+    msg: Not Found
+- key: Not Implemented
+  message:
+    msg: Not Implemented
+- key: Oblivious HTTP key configuration not acceptable
+  message:
+    msg: Oblivious HTTP key configuration not acceptable
 - key: Only basic type are supported
   message:
     msg: Only basic type are supported
+- key: Payment Required
+  message:
+    msg: Payment Required
+- key: Precondition Failed
+  message:
+    msg: Precondition Failed
+- key: Precondition Required
+  message:
+    msg: Precondition Required
+- key: Proxy Authentication Required
+  message:
+    msg: Proxy Authentication Required
+- key: Request Entity Too Large
+  message:
+    msg: Request Entity Too Large
+- key: Request Header Fields Too Large
+  message:
+    msg: Request Header Fields Too Large
+- key: Request Timeout
+  message:
+    msg: Request Timeout
+- key: Request URI Too Long
+  message:
+    msg: Request URI Too Long
+- key: Requested Range Not Satisfiable
+  message:
+    msg: Requested Range Not Satisfiable
+- key: Service Unavailable
+  message:
+    msg: Service Unavailable
 - key: The parameters %s not in path
   message:
     msg: The parameters %s not in path
@@ -13,6 +121,33 @@ messages:
 - key: The value must be %s
   message:
     msg: The value must be %s
+- key: Too Early
+  message:
+    msg: Too Early
+- key: Too Many Requests
+  message:
+    msg: Too Many Requests
+- key: Unauthorized
+  message:
+    msg: Unauthorized
+- key: Unavailable For Legal Reasons
+  message:
+    msg: Unavailable For Legal Reasons
+- key: Unprocessable Entity
+  message:
+    msg: Unprocessable Entity
+- key: Unsupported Hashing Algorithms
+  message:
+    msg: Unsupported Hashing Algorithms
+- key: Unsupported Media Type
+  message:
+    msg: Unsupported Media Type
+- key: Upgrade Required
+  message:
+    msg: Upgrade Required
+- key: Variant Also Negotiates
+  message:
+    msg: Variant Also Negotiates
 - key: can not be empty
   message:
     msg: can not be empty
@@ -139,246 +274,6 @@ messages:
 - key: problem type
   message:
     msg: problem type
-- key: problem.400
-  message:
-    msg: problem.400
-- key: problem.400.detail
-  message:
-    msg: problem.400.detail
-- key: problem.401
-  message:
-    msg: problem.401
-- key: problem.401.detail
-  message:
-    msg: problem.401.detail
-- key: problem.402
-  message:
-    msg: problem.402
-- key: problem.402.detail
-  message:
-    msg: problem.402.detail
-- key: problem.403
-  message:
-    msg: problem.403
-- key: problem.403.detail
-  message:
-    msg: problem.403.detail
-- key: problem.404
-  message:
-    msg: problem.404
-- key: problem.404.detail
-  message:
-    msg: problem.404.detail
-- key: problem.405
-  message:
-    msg: problem.405
-- key: problem.405.detail
-  message:
-    msg: problem.405.detail
-- key: problem.406
-  message:
-    msg: problem.406
-- key: problem.406.detail
-  message:
-    msg: problem.406.detail
-- key: problem.407
-  message:
-    msg: problem.407
-- key: problem.407.detail
-  message:
-    msg: problem.407.detail
-- key: problem.408
-  message:
-    msg: problem.408
-- key: problem.408.detail
-  message:
-    msg: problem.408.detail
-- key: problem.409
-  message:
-    msg: problem.409
-- key: problem.409.detail
-  message:
-    msg: problem.409.detail
-- key: problem.410
-  message:
-    msg: problem.410
-- key: problem.410.detail
-  message:
-    msg: problem.410.detail
-- key: problem.411
-  message:
-    msg: problem.411
-- key: problem.411.detail
-  message:
-    msg: problem.411.detail
-- key: problem.412
-  message:
-    msg: problem.412
-- key: problem.412.detail
-  message:
-    msg: problem.412.detail
-- key: problem.413
-  message:
-    msg: problem.413
-- key: problem.413.detail
-  message:
-    msg: problem.413.detail
-- key: problem.414
-  message:
-    msg: problem.414
-- key: problem.414.detail
-  message:
-    msg: problem.414.detail
-- key: problem.415
-  message:
-    msg: problem.415
-- key: problem.415.detail
-  message:
-    msg: problem.415.detail
-- key: problem.416
-  message:
-    msg: problem.416
-- key: problem.416.detail
-  message:
-    msg: problem.416.detail
-- key: problem.417
-  message:
-    msg: problem.417
-- key: problem.417.detail
-  message:
-    msg: problem.417.detail
-- key: problem.418
-  message:
-    msg: problem.418
-- key: problem.418.detail
-  message:
-    msg: problem.418.detail
-- key: problem.421
-  message:
-    msg: problem.421
-- key: problem.421.detail
-  message:
-    msg: problem.421.detail
-- key: problem.422
-  message:
-    msg: problem.422
-- key: problem.422.detail
-  message:
-    msg: problem.422.detail
-- key: problem.423
-  message:
-    msg: problem.423
-- key: problem.423.detail
-  message:
-    msg: problem.423.detail
-- key: problem.424
-  message:
-    msg: problem.424
-- key: problem.424.detail
-  message:
-    msg: problem.424.detail
-- key: problem.425
-  message:
-    msg: problem.425
-- key: problem.425.detail
-  message:
-    msg: problem.425.detail
-- key: problem.426
-  message:
-    msg: problem.426
-- key: problem.426.detail
-  message:
-    msg: problem.426.detail
-- key: problem.428
-  message:
-    msg: problem.428
-- key: problem.428.detail
-  message:
-    msg: problem.428.detail
-- key: problem.429
-  message:
-    msg: problem.429
-- key: problem.429.detail
-  message:
-    msg: problem.429.detail
-- key: problem.431
-  message:
-    msg: problem.431
-- key: problem.431.detail
-  message:
-    msg: problem.431.detail
-- key: problem.451
-  message:
-    msg: problem.451
-- key: problem.451.detail
-  message:
-    msg: problem.451.detail
-- key: problem.500
-  message:
-    msg: problem.500
-- key: problem.500.detail
-  message:
-    msg: problem.500.detail
-- key: problem.501
-  message:
-    msg: problem.501
-- key: problem.501.detail
-  message:
-    msg: problem.501.detail
-- key: problem.502
-  message:
-    msg: problem.502
-- key: problem.502.detail
-  message:
-    msg: problem.502.detail
-- key: problem.503
-  message:
-    msg: problem.503
-- key: problem.503.detail
-  message:
-    msg: problem.503.detail
-- key: problem.504
-  message:
-    msg: problem.504
-- key: problem.504.detail
-  message:
-    msg: problem.504.detail
-- key: problem.505
-  message:
-    msg: problem.505
-- key: problem.505.detail
-  message:
-    msg: problem.505.detail
-- key: problem.506
-  message:
-    msg: problem.506
-- key: problem.506.detail
-  message:
-    msg: problem.506.detail
-- key: problem.507
-  message:
-    msg: problem.507
-- key: problem.507.detail
-  message:
-    msg: problem.507.detail
-- key: problem.508
-  message:
-    msg: problem.508
-- key: problem.508.detail
-  message:
-    msg: problem.508.detail
-- key: problem.510
-  message:
-    msg: problem.510
-- key: problem.510.detail
-  message:
-    msg: problem.510.detail
-- key: problem.511
-  message:
-    msg: problem.511
-- key: problem.511.detail
-  message:
-    msg: problem.511.detail
 - key: refresh micro service %[1]s for %[2]s
   message:
     msg: refresh micro service %[1]s for %[2]s

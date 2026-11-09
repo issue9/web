@@ -12,6 +12,7 @@ import (
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/problems"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
 )
@@ -24,7 +25,7 @@ func TestJSONP(t *testing.T) {
 		Startup: ts,
 	})
 	a.NotError(err).NotNil(s)
-	Install(s, "callback", web.ProblemBadRequest)
+	Install(s, "callback", problems.BadRequest)
 
 	s.Routers().New("def", nil).Get("/jsonp", func(ctx *web.Context) web.Responser {
 		return web.OK("jsonp")

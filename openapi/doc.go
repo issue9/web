@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/issue9/errwrap"
+	"github.com/issue9/web/problems"
 	"golang.org/x/text/message"
 
 	"github.com/issue9/web"
@@ -67,8 +68,13 @@ func MarkdownProblems(s *web.Server, titleLevel int) web.LocaleStringer {
 func markdownProblemsWithoutDetail(s *web.Server) web.LocaleStringer {
 	buf := &errwrap.Buffer{}
 	args := make([]any, 0, 30)
-	for _, p := range s.Problems().Problems() {
-		buf.Printf("- %s", p.Type()).WString(": %s\n\n")
+	for p := range s.Problems().All() {
+		title := p.Type
+		if p.Type == problems.AboutBlank {
+			title = strconv.Itoa(p.Status)
+		}
+
+		buf.Printf("- %s", title).WString(": %s\n\n")
 		args = append(args, p.Title)
 	}
 	return web.Phrase(buf.String(), args...)
@@ -79,8 +85,13 @@ func markdownProblemsWithDetail(s *web.Server, titleLevel int) web.LocaleStringe
 
 	buf := &errwrap.Buffer{}
 	args := make([]any, 0, 30)
-	for _, p := range s.Problems().Problems() {
-		buf.Printf("%s %s ", ss, p.Type()).
+	for p := range s.Problems().All() {
+		title := p.Type
+		if p.Type == problems.AboutBlank {
+			title = strconv.Itoa(p.Status)
+		}
+
+		buf.Printf("%s %s ", ss, title).
 			WString("%s\n\n").
 			WString("%s\n\n")
 		args = append(args, p.Title, p.Detail)

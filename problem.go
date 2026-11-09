@@ -6,28 +6,30 @@ package web
 
 import (
 	"errors"
-	"fmt"
-	"iter"
 	"slices"
 	"sync"
+	"unique"
 
 	"github.com/issue9/localeutil"
 
-	"github.com/issue9/web/internal/status"
+	"github.com/issue9/web/problems"
 )
 
 var problemPool = &sync.Pool{New: func() any { return &Problem{} }}
 
 type (
-	// Problem 基于 [RFC7807] 用于描述错误信息的对象
+	// Problem 基于 [RFC7807] 和 [RFC9457] 用于描述错误信息的对象
 	//
 	// 这是一个提供给客户端的信息，不能将敏感信息放于其中。
 	//
-	// [RFC7807]: https://datatracker.ietf.org/doc/html/rfc7807
+	// [RFC7807]: https://www.rfc-editor.org/info/rfc7807
+	// [RFC9457]: https://www.rfc-editor.org/info/rfc9457
 	Problem struct {
-		XMLName struct{} `xml:"problem" form:"-" cbor:"-" json:"-" html:"-" yaml:"-"`
+		XMLName struct{} `xml:"urn:ietf:rfc:7807 problem" form:"-" cbor:"-" json:"-" html:"-" yaml:"-"`
 
 		// 错误 ID
+		//
+		// 如果该值为 about:blank，则表示 HTTP 状态码本身语义已经可以表达此错误。
 		Type string `json:"type" xml:"type" form:"type" cbor:"type" yaml:"type" comment:"problem type"`
 
 		// 对错误的简要描述
@@ -40,7 +42,9 @@ type (
 		Instance string `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty" cbor:"instance,omitempty" yaml:"instance,omitempty" comment:"problem instance"`
 
 		// 原始的错误状态码
-		Status int `json:"status" xml:"status" form:"status" cbor:"status,omitempty" yaml:"status,omitempty" comment:"problem status"`
+		//
+		// 根据定义此值是可选的字段，但是服务端发放的是始终有此值的。
+		Status int `json:"status,omitempty" xml:"status,omitempty" form:"status,omitempty" cbor:"status,omitempty" yaml:"status,omitempty" comment:"problem status"`
 
 		// 用户提交对象各个字段的错误信息
 		Params []ProblemParam `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty" cbor:"params,omitempty" yaml:"params,omitempty" comment:"problem params"`
@@ -55,27 +59,11 @@ type (
 		Reason string `json:"reason" xml:"reason" form:"reason" cbor:"reason" yaml:"reason"` // 出错信息
 	}
 
-	Problems struct {
-		prefix   string
-		problems []*LocaleProblem // 需保证元素的顺序相同
-	}
-
-	LocaleProblem struct {
-		ID            string
-		Title, Detail LocaleStringer
-
-		status int
-		typ    string // 带前缀的 ID 值
-	}
-
 	problemError struct {
 		err error
-		id  string
+		id  unique.Handle[string]
 	}
 )
-
-// Type 相当于 RFC7807 的 type 属性
-func (p *LocaleProblem) Type() string { return p.typ }
 
 func newProblem() *Problem {
 	p := problemPool.Get().(*Problem)
@@ -85,7 +73,7 @@ func newProblem() *Problem {
 	p.Extensions = nil
 	p.Instance = ""
 	return p
-	// 其它的基本字段在 [Problems.initProblem] 中初始化
+	// 其它的基本字段在 [Context.initProblem] 中初始化
 }
 
 // MarshalHTML 实现 [mimetype/html.Marshaler] 接口
@@ -126,136 +114,62 @@ func (p *Problem) WithInstance(instance string) *Problem {
 }
 
 // Problem 返回指定 id 的 [Problem]
-func (ctx *Context) Problem(id string) *Problem { return ctx.initProblem(newProblem(), id) }
+func (ctx *Context) Problem(id unique.Handle[string]) *Problem {
+	return ctx.initProblem(newProblem(), id)
+}
 
-func (ctx *Context) initProblem(pp *Problem, id string) *Problem {
-	ctx.Server().Problems().initProblem(pp, id, ctx.LocalePrinter())
-	return pp.WithInstance(ctx.ID())
+func (ctx *Context) initProblem(p *Problem, id unique.Handle[string]) *Problem {
+	initProblem(ctx.Server().Problems().Get(id), p, ctx.LocalePrinter())
+	return p.WithInstance(ctx.ID())
+}
+
+func initProblem(item *problems.Item, p *Problem, printer *localeutil.Printer) {
+	p.Type = item.Type
+	p.Title = item.Title.LocaleString(printer)
+	p.Status = item.Status
+	if item.Detail != nil {
+		p.Detail = item.Detail.LocaleString(printer)
+	}
 }
 
 // Log 记录日志并根据情况生成对应的 [Problem] 对象
 //
-// problemID 表示生成的 [Problem] 对象的 Type 值，如果 err 本身就是 [Problem] 类型，
-// 那么将忽略 problemID 值，若是两者都不满足，则将 problemID 设置为 [ProblemInternalServerError]。
+// 如果 err 本身就是由 [NewProblemError] 创建的类型，
+// 那么将忽略 problemID 值，直接使用 [NewProblemError] 中的 id。
+// 若 problemID 为空则使用默认值 [problems.ProblemInternalServerError]。
 //
 // problemID 同时也是日志分类的依据，比如所有 4xx 的日志会写入 WARN，其它的才会写入 ERROR。
-func (ctx *Context) Log(err error, problemID string) *Problem {
-	pe, ok := errors.AsType[*problemError](err)
-	if ok {
+func (ctx *Context) Log(err error, problemID unique.Handle[string]) *Problem {
+	if pe, ok := errors.AsType[*problemError](err); ok {
 		problemID = pe.id
 	} else {
-		if problemID == "" {
-			problemID = ProblemInternalServerError
+		if problemID == problems.Empty {
+			problemID = problems.InternalServerError
 		}
 	}
 
-	perr := ctx.Problem(problemID)
+	p := ctx.Problem(problemID)
 
-	if perr.Status < 500 {
+	if p.Status < 500 {
 		ctx.Logs().WARN().Handler().Handle(ctx.Logs().NewRecord().DepthError(3, err))
 	} else {
 		ctx.Logs().ERROR().Handler().Handle(ctx.Logs().NewRecord().DepthError(3, err))
 	}
 
-	return perr
+	return p
 }
 
-func (ctx *Context) NotFound() *Problem { return ctx.Problem(ProblemNotFound) }
+func (ctx *Context) NotFound() *Problem { return ctx.Problem(problems.NotFound) }
 
-func (ctx *Context) NotImplemented() *Problem { return ctx.Problem(ProblemNotImplemented) }
-
-// newProblems 创建用于管理 [Problem] 的对象
-//
-// 可通过 prefix 参数为所有 [Problem.Type] 提供统一的前缀。
-// 如果该值为 [ProblemAboutBlank] 表示输出到客户端的 [Problem.Type] 值固定为 "about:blank"。
-func newProblems(prefix string) *Problems {
-	ps := &Problems{
-		prefix:   prefix,
-		problems: make([]*LocaleProblem, 0, 100),
-	}
-	initProblems(ps)
-	return ps
-}
+func (ctx *Context) NotImplemented() *Problem { return ctx.Problem(problems.NotImplemented) }
 
 // Problems 提供 [Problem] 管理
-func (s *Server) Problems() *Problems { return s.problems }
-
-// Prefix 所有 ID 的统一前缀
-func (ps *Problems) Prefix() string { return ps.prefix }
-
-// Add 添加新项
-//
-// NOTE: 已添加的内容无法修改，如果确实有需求，只能通过修改翻译项的方式间接进行修改。
-func (ps *Problems) Add(s int, p ...*LocaleProblem) *Problems {
-	if !status.IsProblemStatus(s) { // 只需验证大于 400 的状态码。
-		panic("status 必须是一个有效的状态码")
-	}
-
-	for _, pp := range p {
-		if ps.Exists(pp.ID) {
-			panic(fmt.Sprintf("存在相同值的 id 参数 %s", pp.ID))
-		}
-
-		if pp.Title == nil {
-			panic("title 不能为空")
-		}
-
-		if pp.Detail == nil {
-			panic("detail 不能为空")
-		}
-
-		if ps.Prefix() == ProblemAboutBlank {
-			pp.typ = ProblemAboutBlank
-		} else {
-			pp.typ = ps.Prefix() + pp.ID
-		}
-
-		pp.status = s
-
-		ps.problems = append(ps.problems, pp)
-	}
-
-	return ps
-}
-
-// Exists 查看指定 id 是否已经存在
-func (ps *Problems) Exists(id string) bool {
-	return slices.IndexFunc(ps.problems, func(p *LocaleProblem) bool { return p.ID == id }) > -1
-}
-
-// Problems 所有已注册的错误代码
-func (ps *Problems) Problems() iter.Seq2[int, *LocaleProblem] {
-	return func(yield func(int, *LocaleProblem) bool) {
-		for _, s := range ps.problems {
-			if !yield(s.status, s) {
-				break
-			}
-		}
-	}
-}
-
-func (ps *Problems) initProblem(pp *Problem, id string, p *localeutil.Printer) {
-	if i := slices.IndexFunc(ps.problems, func(p *LocaleProblem) bool { return p.ID == id }); i > -1 {
-		sp := ps.problems[i]
-		pp.Type = sp.Type()
-		pp.Title = sp.Title.LocaleString(p)
-		pp.Detail = sp.Detail.LocaleString(p)
-		pp.Status = sp.status
-		return
-	}
-	panic(fmt.Sprintf("未找到有关 %s 的定义", id)) // 初始化时没有给定相关的定义，所以直接 panic。
-}
-
-// IsProblem 这是表示错误的状态码
-func IsProblem(status int) bool {
-	_, f := problemsID[status]
-	return f
-}
+func (s *Server) Problems() *problems.Problems { return s.problems }
 
 // NewProblemError 将 err 以指定的 problemID 进行包装
 //
 // 当前框架在处理此类错误时，在记录错误的同时，会将 problemID 值反馈给客户端。
-func NewProblemError(problemID string, err error) error {
+func NewProblemError(problemID unique.Handle[string], err error) error {
 	if err == nil {
 		panic("参数 err 不能为空")
 	}

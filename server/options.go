@@ -105,12 +105,6 @@ type (
 		// 如果为空，即 [language.Und]，则会尝试读取当前系统的本地化信息。
 		Language language.Tag
 
-		// 所有 [web.Problem.Type] 字段的前缀
-		//
-		// 如果该值为 [web.ProblemAboutBlank]，将不输出 ID 值；其它值则作为前缀添加。
-		// 空值是合法的值，表示不需要添加前缀。
-		ProblemTypePrefix string
-
 		// 指定对 [web.Server] 进行初始化的插件
 		//
 		// 这些插件会在 [web.Server.Serve] 运行之前被调用。
@@ -231,8 +225,7 @@ func sanitizeOptions(o *Options, t int) (*Options, error) {
 func (o *Options) newServer(id, version string) *web.Server {
 	srv := web.NewServer(id, version, o.Config, o.Startup,
 		o.Location, o.Language, o.Logs, o.IDGenerator,
-		o.Cache, o.Codec, o.RequestIDKey, o.ProblemTypePrefix,
-		o.RoutersOptions...)
+		o.Cache, o.Codec, o.RequestIDKey, o.RoutersOptions...)
 
 	for _, plugin := range o.Plugins { // NOTE: 需要保证在最后
 		plugin.Plugin(srv)

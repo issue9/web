@@ -16,6 +16,7 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+	"unique"
 
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/assert/v6/rest"
@@ -23,10 +24,11 @@ import (
 	"github.com/issue9/config"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v10/header"
-	"github.com/issue9/unique/v2"
+	xu "github.com/issue9/unique/v2"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/servertest"
+	"github.com/issue9/web/problems"
 	"github.com/issue9/web/selector"
 )
 
@@ -69,7 +71,7 @@ func newTestServer(a *assert.Assertion, sec bool) *testServer {
 	}
 
 	cc := memory.New()
-	u := unique.NewNumber(100)
+	u := xu.NewNumber(100)
 	hs := &http.Server{Addr: srv.st.Port}
 	if sec {
 		cert, err := tls.LoadX509KeyPair("./server/config/testdata/cert.pem", "./server/config/testdata/key.pem")
@@ -80,13 +82,13 @@ func newTestServer(a *assert.Assertion, sec bool) *testServer {
 	}
 	startup := NewHTTPServerStartup(hs)
 
-	srv.Server = NewServer("test", "1.0.0", conf, startup, time.Local, language.SimplifiedChinese, log, u.String, cc, newCodec(a), header.XRequestID, "")
+	srv.Server = NewServer("test", "1.0.0", conf, startup, time.Local, language.SimplifiedChinese, log, u.String, cc, newCodec(a), header.XRequestID)
 	srv.Services().Add(Phrase("unique"), u.Serve)
 
 	a.NotError(srv.Locale().SetString(language.SimplifiedChinese, "lang", "cn")).
 		NotError(srv.Locale().SetString(language.TraditionalChinese, "lang", "tw"))
 
-	srv.Problems().Add(411, &LocaleProblem{ID: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
+	srv.Problems().Add("", &problems.Item{Status: 411, ID: unique.Make("41110"), Type: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
 
 	return srv
 }
@@ -268,11 +270,11 @@ func TestHTTPServer_NewClient(t *testing.T) {
 		return OK(&object{Name: "name"})
 	}).Post("/post", func(ctx *Context) Responser {
 		obj := &object{}
-		if resp := ctx.Read(true, obj, ProblemBadRequest); resp != nil {
+		if resp := ctx.Read(true, obj, problems.BadRequest); resp != nil {
 			return resp
 		}
 		if obj.Name != "name" {
-			return ctx.Problem(ProblemBadRequest).WithExtensions(&object{Name: "name"})
+			return ctx.Problem(problems.BadRequest).WithExtensions(&object{Name: "name"})
 		}
 		return OK(obj)
 	})
@@ -291,14 +293,14 @@ func TestHTTPServer_NewClient(t *testing.T) {
 	a.NotError(err).
 		Zero(resp).
 		NotNil(p).
-		Equal(p.Type, ProblemMethodNotAllowed).
+		Equal(p.Type, problems.AboutBlank).
 		Equal(p.Status, http.StatusMethodNotAllowed)
 
 	resp, p, err = c.Post[object, *object]("/post", nil)
 	a.NotError(err).
 		Zero(resp).
 		NotNil(p).
-		Equal(p.Type, ProblemBadRequest).
+		Equal(p.Type, problems.AboutBlank).
 		Equal(p.Extensions, &object{Name: "name"})
 
 	resp, p, err = c.Post[object, any]("/post", &object{Age: 1, Name: "name"})
@@ -310,7 +312,7 @@ func TestHTTPServer_NewClient(t *testing.T) {
 	a.NotError(err).
 		Zero(resp).
 		NotNil(p).
-		Equal(p.Type, ProblemNotFound)
+		Equal(p.Type, problems.AboutBlank)
 }
 
 func TestHTTPServer_NewContext(t *testing.T) {

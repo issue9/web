@@ -14,7 +14,7 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/qheader"
-	"github.com/issue9/web/internal/status"
+	"github.com/issue9/web/problems"
 	"github.com/issue9/web/selector"
 )
 
@@ -139,7 +139,7 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 		reader = transform.NewReader(reader, inputCharset.NewDecoder())
 	}
 
-	if status.IsProblemStatus(rsp.StatusCode) {
+	if problems.IsProblem(rsp.StatusCode) {
 		var e E
 		p := problemPool.Get().(*Problem)
 		p.Extensions = e
