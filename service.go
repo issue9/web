@@ -19,9 +19,10 @@ import (
 
 // 服务的几种状态
 const (
-	Stopped State = scheduled.Stopped // 停止状态，默认状态
-	Running State = scheduled.Running // 正在运行
-	Failed  State = scheduled.Failed  // 出错，不再执行后续操作
+	Stopped   State = scheduled.Stopped   // 停止状态，默认状态
+	Running   State = scheduled.Running   // 正在运行
+	Failed    State = scheduled.Failed    // 出错，不再执行后续操作
+	Cancelled State = scheduled.Cancelled // 由用户取消，该值只在 [Service] 上使用，[Server.State] 未使用。
 )
 
 type (

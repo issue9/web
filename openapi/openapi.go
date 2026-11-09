@@ -32,7 +32,7 @@
 //		s.Enum = []string {"stopped", "running" }
 //	}
 //
-// 以上代码，会在解析 State 始终采用 [OpenAPISchema] 修改。
+// 以上代码，会在解析 State 时始终采用 [OpenAPISchema] 修改。
 //
 // 结构体标签的优先级要高于 [OpenAPISchema] 接口。
 //
