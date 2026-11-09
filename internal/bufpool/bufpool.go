@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,8 +20,7 @@ func New() *bytes.Buffer {
 }
 
 func Put(p *bytes.Buffer) {
-	const bufMaxSize = 1024
-	if p.Cap() < bufMaxSize {
+	if p.Cap() < 1024 {
 		bufPool.Put(p)
 	}
 }

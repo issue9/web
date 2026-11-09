@@ -56,12 +56,3 @@ func NewFieldError(field string, msg any) error {
 func ShouldGreatThan[T cmp.Ordered](n T) localeutil.Stringer {
 	return localeutil.Phrase("should great than %v", n)
 }
-
-var (
-	errInvalidValue  = localeutil.Error("invalid value")
-	errCanNotBeEmpty = localeutil.Error("can not be empty")
-)
-
-func ErrInvalidValue() error { return errInvalidValue }
-
-func ErrCanNotBeEmpty() error { return errCanNotBeEmpty }
