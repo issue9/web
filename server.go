@@ -173,6 +173,7 @@ func (s *Server) UniqueID() string { return s.idgen() }
 // OnClose 注册关闭服务时需要执行的函数
 //
 // 如果参数 f 支持 [context.Context]，可以直接使用 [context.WithCancel] 直接从 Server 订阅关闭事件。
+// 而不用通过 OnClose 添加。
 //
 // NOTE: 按注册的相反顺序执行。
 func (s *Server) OnClose(f ...func() error) { s.closes = append(s.closes, f...) }
@@ -208,6 +209,8 @@ func (s *Server) Use(p ...Plugin) {
 }
 
 // State 获取当前的状态
+//
+// 默认状态为 [Stopped]，运行之后为 [Running]，如果由 [Server.Close] 关闭则变为 [Cancelled]
 func (s *Server) State() State { return State(s.state.Load()) }
 
 func (s *Server) setState(v State) { s.state.Store(int32(v)) }
@@ -218,10 +221,8 @@ func (s *Server) setState(v State) { s.state.Store(int32(v)) }
 // 始终返回非空的错误对象，如果是由 [Server.Close] 关闭的，将返回 [http.ErrServerClosed]。
 func (s *Server) Serve() (err error) {
 	if !s.state.CompareAndSwap(int32(Stopped), int32(Running)) {
-		panic("当前已经处于运行状态")
+		panic("当前状态无法运行")
 	}
-
-	defer func() { s.setState(Stopped) }()
 
 	err = s.startup.Serve(s)
 
@@ -237,6 +238,7 @@ func (s *Server) Serve() (err error) {
 		<-s.Done()
 	} else {
 		s.closeDone()
+		s.setState(Failed) // 不是由 Close 关闭，表示出错了，使用 Failed
 	}
 
 	s.services.waitExit() // 这个要等待 done 才能触发

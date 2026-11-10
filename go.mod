@@ -19,7 +19,7 @@ require (
 	github.com/issue9/messages v0.1.0
 	github.com/issue9/mux/v10 v10.0.0-beta.3
 	github.com/issue9/query/v3 v3.2.0
-	github.com/issue9/scheduled v0.24.0
+	github.com/issue9/scheduled v0.25.0
 	github.com/issue9/sliceutil v0.19.0
 	github.com/issue9/source v0.13.1
 	github.com/issue9/term/v3 v3.5.1

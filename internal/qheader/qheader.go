@@ -67,7 +67,7 @@ func ParseQHeader(header string, any string) (items []*Item, err error) {
 		}
 
 		// 如果是 *;q=0 这样特殊的项需要保留
-		if q == 0 && v != any {
+		if q <= 0 && v != any {
 			continue
 		}
 
@@ -99,7 +99,7 @@ func sortItems(items []*Item, any string) {
 		case j.hasWildcard():
 			return -1
 		default:
-			return 1
+			return 0
 		}
 	})
 }

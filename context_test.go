@@ -204,8 +204,7 @@ func TestContext_SetEncoding(t *testing.T) {
 		ctx := srv.NewContext(w, r, types.NewRoute())
 
 		ctx.SetEncoding("gzip")
-		a.Equal(w.Header().Get(header.ContentEncoding), "gzip").
-			Equal(ctx.Encoding(), "gzip")
+		a.Equal(ctx.Encoding(), "gzip")
 		_, err := ctx.Write([]byte("plain"))
 		a.NotError(err)
 		ctx.freeContext()

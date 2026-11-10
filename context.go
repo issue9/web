@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unique"
 
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v10/header"
@@ -22,6 +23,7 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/qheader"
+	"github.com/issue9/web/problems"
 )
 
 var errExitContext = NewError("exit context")
@@ -83,6 +85,14 @@ func parseHeaderErr(h string, err error) LocaleStringer {
 	return Phrase("parse %[1]s error %[2]s", h, err.Error())
 }
 
+// 输出降级的错误页面
+// 在 Context 未初始化成功时，可以使用此方法
+func (s *Server) errorPage(w http.ResponseWriter, id unique.Handle[string]) {
+	item := s.Problems().Get(id)
+	txt := item.Title.LocaleString(s.Locale().Printer())
+	http.Error(w, txt, item.Status)
+}
+
 // NewContext 将 w 和 r 包装为 [Context] 对象
 //
 // 这适合从标准库的请求中创建 [Context] 对象。
@@ -104,12 +114,12 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	mt, err := s.codec.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
 	if err != nil {
 		warn().LocaleString(parseHeaderErr(header.Accept, err))
-		w.WriteHeader(http.StatusNotAcceptable)
+		s.errorPage(w, problems.NotAcceptable)
 		return nil
 	}
 	if mt == nil {
 		warn().LocaleString(Phrase("not found serialization for %s", h))
-		w.WriteHeader(http.StatusNotAcceptable)
+		s.errorPage(w, problems.NotAcceptable)
 		return nil
 	}
 
@@ -117,12 +127,12 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	outputCharsetName, outputCharset, err := qheader.ParseAcceptCharset(h)
 	if err != nil {
 		warn().LocaleString(parseHeaderErr(header.AcceptCharset, err))
-		w.WriteHeader(http.StatusNotAcceptable)
+		s.errorPage(w, problems.NotAcceptable)
 		return nil
 	}
 	if outputCharsetName == "" {
 		warn().LocaleString(Phrase("not found charset for %s", h))
-		w.WriteHeader(http.StatusNotAcceptable)
+		s.errorPage(w, problems.NotAcceptable)
 		return nil
 	}
 
@@ -130,7 +140,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	if s.codec.CanCompress() {
 		if outputCompressor, err = s.codec.acceptEncoding(mt.name(false), r.Header.Get(header.AcceptEncoding)); err != nil {
 			warn().LocaleString(parseHeaderErr(header.AcceptEncoding, err))
-			w.WriteHeader(http.StatusNotAcceptable)
+			s.errorPage(w, problems.NotAcceptable)
 			return nil
 		}
 	}
@@ -142,7 +152,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 		var inputCharset encoding.Encoding
 		if inputMimetype, inputCharset, err = s.codec.contentType(h); err != nil {
 			warn().Error(err)
-			w.WriteHeader(http.StatusUnsupportedMediaType)
+			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
 		}
 		if !qheader.CharsetIsNop(inputCharset) {
@@ -183,9 +193,6 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	ctx.outputMimetype = mt
 	ctx.status = 0
 	ctx.wrote = false
-	if ctx.outputCompressor != nil {
-		ctx.Header().Set(header.ContentEncoding, ctx.outputCompressor.Name())
-	}
 
 	ctx.inputMimetype = inputMimetype
 	ctx.requestBody = inputReader
@@ -307,11 +314,6 @@ func (ctx *Context) SetEncoding(enc string) {
 		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
 	}
 	ctx.outputCompressor = c
-	if c == nil {
-		ctx.Header().Del(header.ContentEncoding)
-	} else {
-		ctx.Header().Set(header.ContentEncoding, c.Name())
-	}
 }
 
 // Encoding 输出的压缩编码名称
@@ -342,6 +344,7 @@ func (ctx *Context) freeContext() {
 	for _, exit := range ctx.exits {
 		exit(ctx, ctx.status)
 	}
+	clear(ctx.exits) // 释放引用
 
 	for _, f := range ctx.s.exitContexts {
 		f(ctx, ctx.status)
@@ -374,7 +377,7 @@ func acceptLanguage(s *Server, h string) language.Tag {
 // 获取顺序如下：
 //   - X-Forwarded-For 的第一个元素
 //   - Remote-Addr 报头
-//   - X-Read-IP 报头
+//   - X-Real-IP 报头
 func (ctx *Context) ClientIP() string { return qheader.ClientIP(ctx.Request()) }
 
 // Logs 返回日志操作对象

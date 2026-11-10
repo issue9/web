@@ -69,6 +69,13 @@ func (ctx *Context) Render(status int, body any) {
 		ctx.Header().Set(header.ContentLanguage, id)
 		ctx.Header().Add(header.Vary, header.AcceptLanguage)
 	}
+	if ctx.outputCompressor != nil {
+		ctx.Header().Set(header.ContentEncoding, ctx.outputCompressor.Name())
+		ctx.Header().Add(header.Vary, header.AcceptEncoding)
+	}
+	if ctx.outputCharset != nil {
+		ctx.Header().Add(header.Vary, header.AcceptCharset)
+	}
 
 	isProblem := problems.IsProblem(status)
 	data, err := ctx.Marshal(body)
@@ -114,17 +121,16 @@ func (ctx *Context) Sprintf(key string, v ...any) string {
 // Write 向客户端输出内容
 //
 // NOTE: 如非必要，应该采用 [Context.Render] 输出。
+// 需要自己解决报头的输出问题。
 func (ctx *Context) Write(bs []byte) (n int, err error) {
 	if len(bs) == 0 {
 		return 0, nil
 	}
 
 	if !ctx.Wrote() { // 在第一次有内容输出时，才决定构建 Compress 和 Charset 的 io.Writer
-		ctx.wrote = true
 		closes := make([]io.Closer, 0, 2)
 
 		if ctx.outputCompressor != nil {
-			ctx.Header().Add(header.Vary, header.AcceptEncoding)
 			w, err := ctx.outputCompressor.NewEncoder(ctx.writer)
 			if err != nil {
 				return 0, err
@@ -134,7 +140,6 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 		}
 
 		if !qheader.CharsetIsNop(ctx.outputCharset) {
-			ctx.Header().Add(header.Vary, header.AcceptCharset)
 			w := transform.NewWriter(ctx.writer, ctx.outputCharset.NewEncoder())
 			ctx.writer = w
 			closes = append(closes, w)
@@ -154,6 +159,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 	if ctx.status < http.StatusOK { // 1xx 可能还会改变状态码，比如 103
 		ctx.WriteHeader(http.StatusOK)
 	}
+	ctx.wrote = true
 	return ctx.writer.Write(bs)
 }
 

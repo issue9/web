@@ -152,7 +152,7 @@ func TestHTTPServer_Serve(t *testing.T) {
 
 	a.PanicString(func() { // 多次调用 srv.Serve
 		a.NotError(srv.Serve())
-	}, "当前已经处于运行状态")
+	}, "当前状态无法运行")
 
 	srv.Get("/m1/test").Do().Status(http.StatusAccepted)
 	srv.Get("/m2/test").Do().Status(http.StatusAccepted)

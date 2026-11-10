@@ -143,7 +143,7 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 
 	if problems.IsProblem(rsp.StatusCode) {
 		var e E
-		p := problemPool.Get().(*Problem)
+		p := newProblem()
 		p.Extensions = e
 		if err := inputMimetype(reader, p); err != nil {
 			return nil, nil, err
@@ -174,8 +174,10 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 		return nil, err
 	}
 
+	bodyIsEmpty := false
 	var r *http.Request
 	if len(data) == 0 {
+		bodyIsEmpty = true
 		r, err = http.NewRequest(method, path, nil)
 	} else {
 		r, err = http.NewRequest(method, path, bytes.NewBuffer(data))
@@ -183,7 +185,11 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 	if err != nil {
 		return nil, err
 	}
-	r.Header.Set(header.ContentType, qheader.BuildContentType(c.marshalName, header.UTF8))
+
+	if !bodyIsEmpty {
+		r.Header.Set(header.ContentType, qheader.BuildContentType(c.marshalName, header.UTF8))
+	}
+
 	r.Header.Set(header.Accept, c.codec.clientAcceptHeader)
 	r.Header.Set(header.AcceptEncoding, c.codec.acceptEncodingHeader)
 	if c.requestIDKey != "" {

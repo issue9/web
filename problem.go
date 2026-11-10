@@ -51,6 +51,11 @@ type (
 
 		// 反馈给用户的信息
 		Extensions any `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty" cbor:"extensions,omitempty" yaml:"extensions,omitempty" comment:"problem extensions"`
+
+		// 是否已经通过 [Problem.Apply] 放回对象池中。
+		// Apply 是公开对象，如果多次调用可能会被放回多次，
+		// 此标记可以记录是否已经放回对象池。
+		isFree bool
 	}
 
 	// ProblemParam 单个错误字段的描述
@@ -76,6 +81,7 @@ func newProblem() *Problem {
 	p.Type = ""
 	p.Title = ""
 	p.Status = 0
+	p.isFree = false
 	return p
 }
 
@@ -84,7 +90,8 @@ func (p *Problem) MarshalHTML() (string, any) { return "problem", p }
 
 func (p *Problem) Apply(ctx *Context) {
 	ctx.Render(p.Status, p)
-	if len(p.Params) < 30 {
+	if len(p.Params) < 30 && !p.isFree {
+		p.isFree = true
 		problemPool.Put(p)
 	}
 }

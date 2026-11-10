@@ -72,10 +72,10 @@ func buildNodeHandle(status int) types.BuildNodeHandler[HandlerFunc] {
 
 func (s *Server) call(w http.ResponseWriter, r *http.Request, route *types.Route, f HandlerFunc) {
 	if ctx := s.NewContext(w, r, route); ctx != nil {
+		defer ctx.freeContext()
 		if resp := f(ctx); resp != nil {
 			resp.Apply(ctx)
 		}
-		ctx.freeContext()
 	}
 }
 
@@ -107,15 +107,15 @@ func (r *Routers) Use(m ...Middleware) { r.g.Use(m...) }
 func withRecovery(s *Server) RouterOption {
 	return mux.WithRecovery(func(w http.ResponseWriter, msg any) {
 		status := http.StatusInternalServerError
-		err, ok := msg.(error)
-		if ok {
+		err, isErr := msg.(error)
+		if isErr {
 			if pe, ok := errors.AsType[*problemError](err); ok {
 				status = s.Problems().Get(pe.id).Status
 			}
 		}
 
 		http.Error(w, http.StatusText(status), status)
-		s.Logs().ERROR().String(source.Stack(4, true, err))
+		s.Logs().ERROR().String(source.Stack(4, true, msg))
 	})
 }
 

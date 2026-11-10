@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"iter"
 	"net/http"
 	"slices"
 	"sync"
@@ -29,9 +28,11 @@ type (
 	// Services [Service] 管理接口
 	Services struct {
 		server    *Server
-		services  []*Service
 		scheduled *scheduled.Server
 		wait      *sync.WaitGroup
+
+		mux      sync.RWMutex
+		services []*Service
 	}
 
 	// Service 单个服务对象
@@ -67,7 +68,7 @@ func (s *Server) initServices() {
 	s.services = &Services{
 		server:    s,
 		services:  make([]*Service, 0, 5),
-		scheduled: scheduled.NewServer(s.Location(), s.Logs().ERROR(), s.Logs().DEBUG()),
+		scheduled: scheduled.NewServer(s.Location(), s.Logs().ERROR(), s.Logs().INFO()),
 		wait:      &sync.WaitGroup{},
 	}
 
@@ -140,12 +141,19 @@ func (srv *Service) serve(ctx context.Context) {
 // title 是对该服务的简要说明；
 // 返回取消该服务的操作函数，该函数同时会将整个服务从列表中删除；
 func (srv *Services) Add(title LocaleStringer, f ServiceFunc) context.CancelFunc {
+	if srv.server.State() == Cancelled {
+		panic("服务已经停止，不能再添加新服务")
+	}
+
 	s := &Service{
 		s:       srv,
 		title:   title,
 		service: f,
 	}
+
+	srv.mux.Lock()
 	srv.services = append(srv.services, s)
+	srv.mux.Unlock()
 
 	ctx, cancel := context.WithCancel(srv.server)
 	s.goServe(ctx)
@@ -153,7 +161,9 @@ func (srv *Services) Add(title LocaleStringer, f ServiceFunc) context.CancelFunc
 	return func() {
 		s.setState(Stopped)
 		cancel()
+		srv.mux.Lock()
 		srv.services = slices.DeleteFunc(srv.services, func(e *Service) bool { return e == s })
+		srv.mux.Unlock()
 	}
 }
 
@@ -196,17 +206,14 @@ func (srv *Services) AddJob(title LocaleStringer, job JobFunc, scheduler Schedul
 }
 
 // Jobs 访问所有的计划任务
-func (srv *Services) Jobs() iter.Seq[*scheduled.Job] { return srv.scheduled.Jobs() }
+func (srv *Services) Jobs() []*scheduled.Job { return srv.scheduled.Jobs() }
 
 // All 返回所有的服务对象
-func (srv *Services) All() iter.Seq[*Service] {
-	return func(yield func(*Service) bool) {
-		for _, s := range srv.services {
-			if !yield(s) {
-				break
-			}
-		}
-	}
+func (srv *Services) All() []*Service {
+	srv.mux.RLock()
+	srvs := slices.Clone(srv.services)
+	srv.mux.RUnlock()
+	return srvs
 }
 
 func (srv *Services) waitExit() { srv.wait.Wait() }

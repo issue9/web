@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"testing"
 	"time"
 
@@ -58,7 +57,7 @@ func TestServer_service(t *testing.T) {
 
 	srv := s.Services()
 	a.Length(srv.services, 2). // scheduled, unique id generate
-					Length(slices.Collect(srv.All()), 2)
+					Length(srv.All(), 2)
 
 	s1, start1, _, _ := buildService()
 	srv.Add(Phrase("srv1"), s1)
@@ -99,17 +98,17 @@ func TestServer_scheduled(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a, false)
 	srv := s.Services()
-	a.Equal(0, len(slices.Collect(srv.scheduled.Jobs())))
+	a.Equal(0, len(srv.scheduled.Jobs()))
 
 	srv.AddAt(Phrase("lang"), func(t time.Time) error {
 		println("at:", t.Format(time.RFC3339))
 		return nil
 	}, time.Now())
-	a.Equal(1, len(slices.Collect(srv.scheduled.Jobs())))
+	a.Equal(1, len(srv.scheduled.Jobs()))
 
 	// 查找翻译项是否正确
 	var found bool
-	for j := range srv.Jobs() {
+	for _, j := range srv.Jobs() {
 		p := s.Locale().NewPrinter(language.SimplifiedChinese)
 		if !found {
 			found = j.Title().LocaleString(p) == "cn"
