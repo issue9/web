@@ -405,6 +405,7 @@ func (ctx *Context) Read(exitAtError bool, v any, id unique.Handle[string]) Resp
 		if f.HasError() {
 			return ctx.initProblem(p, id)
 		}
+		p.free()
 	}
 	return nil
 }

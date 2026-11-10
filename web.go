@@ -57,8 +57,9 @@ type (
 // GetAppVersion 获得应用的版本号
 //
 // 只有 -buildinfo 参数不为 false 编译的程序才会带版本信息，否则始终返回 v。
+// 如果是在无 VCS 环境下构建的项目（从 buildinfo 中读到的是 devel），也会返回 v 作为版本号。
 func GetAppVersion(v string) string {
-	if info, ok := debug.ReadBuildInfo(); ok {
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "(devel)" {
 		return info.Main.Version
 	}
 	return v

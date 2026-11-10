@@ -6,6 +6,7 @@ package web
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 
@@ -118,23 +119,32 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 
 	var reader io.Reader = rsp.Body
 	encName := rsp.Header.Get(header.ContentEncoding)
-	reader, err = c.codec.contentEncoding(encName, reader)
+	encodingReader, err := c.codec.contentEncoding(encName, reader)
 	if err != nil {
 		return nil, nil, err
 	}
+	reader = encodingReader
+
+	defer func() {
+		// rsp.Body 由传入方负责关闭。
+		// 需要注意后续代码对于 err 的赋值方式，是否是覆盖。
+		err = errors.Join(err, encodingReader.Close())
+	}()
 
 	var inputMimetype UnmarshalFunc
 	var inputCharset encoding.Encoding
 	if h := rsp.Header.Get(header.ContentType); h != "" {
 		if inputMimetype, inputCharset, err = c.codec.contentType(h); err != nil {
-			return nil, nil, err
+			return
 		}
 
 		if inputMimetype == nil {
-			return nil, nil, NewError("not found unmarshaler for the server content-type %s", h)
+			err = NewError("not found unmarshaler for the server content-type %s", h)
+			return
 		}
 	} else {
-		return nil, nil, NewError("the server miss content-type header")
+		err = NewError("the server miss content-type header")
+		return
 	}
 
 	if !qheader.CharsetIsNop(inputCharset) {
@@ -143,17 +153,17 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 
 	if problems.IsProblem(rsp.StatusCode) {
 		var e E
-		p := newProblem()
+		p = newProblem()
 		p.Extensions = e
-		if err := inputMimetype(reader, p); err != nil {
-			return nil, nil, err
+		if err = inputMimetype(reader, p); err != nil {
+			return
 		}
 		return nil, p, nil
 	}
 
 	var resp R
 	if err = inputMimetype(reader, &resp); err != nil {
-		return nil, nil, err
+		return
 	}
 	return &resp, nil, nil
 }

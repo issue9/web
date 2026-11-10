@@ -100,11 +100,13 @@ type (
 	decoder struct {
 		io.ReadCloser
 		destroy func()
+		closed  bool // 是否已经关闭
 	}
 
 	encoder struct {
 		io.WriteCloser
 		destroy func()
+		closed  bool // 是否已经关闭
 	}
 )
 
@@ -123,6 +125,7 @@ func (c *zstdCompressor) Name() string { return "zstd" }
 func (c *zstdCompressor) NewDecoder(r io.Reader) (io.ReadCloser, error) {
 	rr := zstdReaders.Get().(*zstd.Decoder)
 	if err := rr.Reset(r); err != nil {
+		zstdReaders.Put(rr)
 		return nil, err
 	}
 	return wrapDecoder(io.NopCloser(rr), func() { zstdReaders.Put(rr) }), nil
@@ -253,6 +256,7 @@ func wrapEncoder(w io.WriteCloser, f func()) *encoder {
 	e := encoderPool.Get().(*encoder)
 	e.WriteCloser = w
 	e.destroy = f
+	e.closed = false
 	return e
 }
 
@@ -260,19 +264,30 @@ func wrapDecoder(r io.ReadCloser, f func()) *decoder {
 	d := decoderPool.Get().(*decoder)
 	d.ReadCloser = r
 	d.destroy = f
+	d.closed = false
 	return d
 }
 
 func (e *encoder) Close() error {
+	if e.closed {
+		return nil
+	}
+
 	err := e.WriteCloser.Close()
 	e.destroy()
+	e.closed = true
 	encoderPool.Put(e)
 	return err
 }
 
 func (d *decoder) Close() error {
+	if d.closed {
+		return nil
+	}
+
 	err := d.ReadCloser.Close()
 	d.destroy()
+	d.closed = true
 	decoderPool.Put(d)
 	return err
 }

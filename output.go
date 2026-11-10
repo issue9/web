@@ -65,22 +65,10 @@ func (ctx *Context) Render(status int, body any) {
 		return
 	}
 
-	if id := ctx.LanguageTag().String(); id != "" {
-		ctx.Header().Set(header.ContentLanguage, id)
-		ctx.Header().Add(header.Vary, header.AcceptLanguage)
-	}
-	if ctx.outputCompressor != nil {
-		ctx.Header().Set(header.ContentEncoding, ctx.outputCompressor.Name())
-		ctx.Header().Add(header.Vary, header.AcceptEncoding)
-	}
-	if ctx.outputCharset != nil {
-		ctx.Header().Add(header.Vary, header.AcceptCharset)
-	}
-
 	isProblem := problems.IsProblem(status)
 	data, err := ctx.Marshal(body)
 	if err != nil {
-		ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(true), ctx.Charset()))
+		ctx.writeHeaders(true)
 
 		if isProblem {
 			ctx.Logs().ERROR().Error(err)
@@ -90,6 +78,7 @@ func (ctx *Context) Render(status int, body any) {
 
 		problem := ctx.Log(err, problems.InternalServerError) // 根据 err 创建 Problem
 		status = problem.Status
+		isProblem = true
 		if data, err = ctx.Marshal(problem); err != nil {
 			ctx.Logs().ERROR().Error(err)
 			ctx.WriteHeader(status) // 此处也不考虑 ctx.Marshal 返回的 err 可能为 problemError 的情况。
@@ -97,7 +86,7 @@ func (ctx *Context) Render(status int, body any) {
 		}
 	}
 
-	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(isProblem), ctx.Charset()))
+	ctx.writeHeaders(isProblem)
 	ctx.WriteHeader(status)
 	if _, err = ctx.Write(data); err != nil {
 		ctx.Logs().ERROR().Error(err) // 此时已经有内容输出，再使用 Problem 已经没有意义。
@@ -106,7 +95,6 @@ func (ctx *Context) Render(status int, body any) {
 
 // Marshal 将对象 v 按用户要求编码并返回
 func (ctx *Context) Marshal(v any) ([]byte, error) {
-	ctx.Header().Add(header.Vary, header.Accept)
 	return ctx.outputMimetype.Marshal(ctx, v)
 }
 
@@ -121,7 +109,7 @@ func (ctx *Context) Sprintf(key string, v ...any) string {
 // Write 向客户端输出内容
 //
 // NOTE: 如非必要，应该采用 [Context.Render] 输出。
-// 需要自己解决报头的输出问题。
+// 此方法直接输出 []byte，所以调用方需要自己写入 Content-Type 和 Content-Encoding 以及 Content-Language 等报头。
 func (ctx *Context) Write(bs []byte) (n int, err error) {
 	if len(bs) == 0 {
 		return 0, nil
@@ -171,9 +159,32 @@ func (ctx *Context) WriteHeader(status int) {
 		panic(fmt.Sprintf("已有状态码 %d，再次设置无效 %d", ctx.status, status))
 	}
 
+	// 内容协商的报头名称，无论是否有输出都应该无条件添加。
+	if status >= http.StatusOK && ctx.status < http.StatusOK {
+		ctx.Header().Add(header.Vary, header.Accept)
+		ctx.Header().Add(header.Vary, header.AcceptLanguage)
+		ctx.Header().Add(header.Vary, header.AcceptEncoding)
+		ctx.Header().Add(header.Vary, header.AcceptCharset)
+	}
+
 	ctx.Header().Del(header.ContentLength) // https://github.com/golang/go/issues/14975
 	ctx.status = status
 	ctx.originResponse.WriteHeader(status)
+}
+
+func (ctx *Context) writeHeaders(problem bool) {
+	if ctx.status >= http.StatusOK { // 已经输出过报头了，就不再考虑了
+		return
+	}
+
+	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(problem), ctx.Charset()))
+
+	if id := ctx.LanguageTag().String(); id != "" {
+		ctx.Header().Set(header.ContentLanguage, id)
+	}
+	if ctx.outputCompressor != nil {
+		ctx.Header().Set(header.ContentEncoding, ctx.outputCompressor.Name())
+	}
 }
 
 func (ctx *Context) Header() http.Header { return ctx.originResponse.Header() }
@@ -216,11 +227,7 @@ func NotModified(etag func() (string, bool), body func() (any, error)) Responser
 		}
 
 		if data, ok := b.([]byte); ok {
-			ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.Mimetype(false), ctx.Charset()))
-			if id := ctx.LanguageTag().String(); id != "" {
-				ctx.Header().Set(header.ContentLanguage, id)
-			}
-
+			ctx.writeHeaders(false)
 			ctx.WriteHeader(http.StatusOK)
 			if _, err := ctx.Write(data); err != nil {
 				ctx.Logs().ERROR().Error(err)

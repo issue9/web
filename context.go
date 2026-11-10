@@ -63,7 +63,7 @@ type Context struct {
 	outputCharset     encoding.Encoding
 	outputCharsetName string
 	outputMimetype    *mediaType
-	status            int // WriteHeader 保存的副本
+	status            int // WriteHeader 保存的副本，非零表示已经输出。
 	wrote             bool
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
