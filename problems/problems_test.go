@@ -13,16 +13,6 @@ import (
 	"github.com/issue9/localeutil"
 )
 
-type problem struct {
-	Type  string
-	Title string
-}
-
-func initProblem(lp *Item, printer *localeutil.Printer, p *problem) {
-	p.Type = lp.Type
-	p.Title = lp.Title.LocaleString(printer)
-}
-
 func TestProblems_Add(t *testing.T) {
 	a := assert.New(t, false)
 

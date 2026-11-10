@@ -60,8 +60,8 @@ type (
 
 	// ProblemParam 单个错误字段的描述
 	ProblemParam struct {
-		Name   string `json:"name" xml:"name" form:"name" cbor:"name" yaml:"name"`           // 出错字段的名称
-		Reason string `json:"reason" xml:"reason" form:"reason" cbor:"reason" yaml:"reason"` // 出错信息
+		Name    string   `json:"name" xml:"name" form:"name" cbor:"name" yaml:"name"`                // 出错字段的名称
+		Reasons []string `json:"reasons" xml:"reasons" form:"reasons" cbor:"reasons" yaml:"reasons"` // 出错信息
 	}
 
 	problemError struct {
@@ -90,6 +90,10 @@ func (p *Problem) MarshalHTML() (string, any) { return "problem", p }
 
 func (p *Problem) Apply(ctx *Context) {
 	ctx.Render(p.Status, p)
+	p.free()
+}
+
+func (p *Problem) free() {
 	if len(p.Params) < 30 && !p.isFree {
 		p.isFree = true
 		problemPool.Put(p)
@@ -97,13 +101,15 @@ func (p *Problem) Apply(ctx *Context) {
 }
 
 // WithParam 添加具体的错误字段及描述信息
-//
-// 如果已经存在同名，则会 panic。
 func (p *Problem) WithParam(name, reason string) *Problem {
-	if slices.IndexFunc(p.Params, func(pp ProblemParam) bool { return pp.Name == name }) > -1 {
-		panic("已经存在")
+	if idx := slices.IndexFunc(p.Params, func(pp ProblemParam) bool { return pp.Name == name }); idx > -1 {
+		param := p.Params[idx]
+		param.Reasons = append(param.Reasons, reason)
+		p.Params[idx] = param
+	} else {
+		p.Params = append(p.Params, ProblemParam{Name: name, Reasons: []string{reason}})
 	}
-	p.Params = append(p.Params, ProblemParam{Name: name, Reason: reason})
+
 	return p
 }
 

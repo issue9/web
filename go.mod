@@ -8,7 +8,7 @@ require (
 	github.com/fpatron/jsonc/v2 v2.0.0-20260301162213-8bd9fe9747dd
 	github.com/fxamacker/cbor/v2 v2.10.0
 	github.com/goccy/go-yaml v1.19.2
-	github.com/issue9/assert/v6 v6.0.0
+	github.com/issue9/assert/v6 v6.0.1
 	github.com/issue9/cache v0.21.1
 	github.com/issue9/cmdopt v0.16.1
 	github.com/issue9/config v0.11.0
