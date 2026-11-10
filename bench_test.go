@@ -350,10 +350,11 @@ func BenchmarkCodec_accept(b *testing.B) {
 	mt := newCodec(a)
 	b.ReportAllocs()
 
+	var item *mediaType
 	for b.Loop() {
-		item := mt.accept("application/json;q=0.9")
-		a.NotNil(item)
+		item, _ = mt.accept("application/json;q=0.9")
 	}
+	a.NotNil(item)
 }
 
 func BenchmarkCodec_contentType(b *testing.B) {
@@ -430,10 +431,11 @@ func BenchmarkCodec_acceptEncoding(b *testing.B) {
 		a.NotNil(c)
 		c.AddCompressor(NewZstd(), "application/*")
 
+		var err error
 		for b.Loop() {
-			_, na := c.acceptEncoding(header.JSON, "zstd")
-			a.False(na)
+			_, err = c.acceptEncoding(header.JSON, "zstd")
 		}
+		a.NotError(err)
 	})
 
 	b.Run("5", func(b *testing.B) {
@@ -448,10 +450,11 @@ func BenchmarkCodec_acceptEncoding(b *testing.B) {
 			AddCompressor(NewZstd(), "application/*").
 			AddCompressor(NewLZW(lzw.LSB, 8), header.Plain)
 
+		var err error
 		for b.Loop() {
-			_, na := c.acceptEncoding(header.Plain, "compress")
-			a.False(na)
+			_, err = c.acceptEncoding(header.Plain, "compress")
 		}
+		a.NotError(err)
 	})
 }
 

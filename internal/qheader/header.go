@@ -50,17 +50,17 @@ func ParseWithParam(header, param string) (mt, paramValue string) {
 // 其它值则按值查找，或是在找不到时返回空值。
 //
 // 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
-func ParseAcceptCharset(h string) (name string, enc encoding.Encoding) {
+func ParseAcceptCharset(h string) (name string, enc encoding.Encoding, err error) {
 	if h == "" || h == "*" {
-		return header.UTF8, nil
+		return header.UTF8, nil, nil
 	}
 
-	items := ParseQHeader(h, "*")
-	for _, item := range items {
-		if item.Err != nil {
-			continue
-		}
+	items, err := ParseQHeader(h, "*")
+	if err != nil {
+		return "", nil, err
+	}
 
+	for _, item := range items {
 		var err error
 		if enc, err = htmlindex.Get(item.Value); err != nil { // err != nil 表示未找到，继续查找
 			continue
@@ -70,10 +70,10 @@ func ParseAcceptCharset(h string) (name string, enc encoding.Encoding) {
 		if name, err = htmlindex.Name(enc); err != nil { // 不存在，直接使用用户上传的名称
 			name = item.Value
 		}
-		return name, enc
+		return name, enc, nil
 	}
 
-	return "", nil
+	return "", nil, nil
 }
 
 // CharsetIsNop 指定的编码是否不需要任何额外操作

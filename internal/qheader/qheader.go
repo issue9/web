@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
@@ -21,7 +21,6 @@ var itemsPool = &sync.Pool{New: func() any { return []*Item{} }}
 type Item struct {
 	Value string
 	Q     float32
-	Err   error // 如果 Q 解析出错会出现在此
 }
 
 func PutQHeader(items []*Item) { itemsPool.Put(items) }
@@ -34,7 +33,9 @@ func PutQHeader(items []*Item) { itemsPool.Put(items) }
 //
 // header 表示报头的内容；
 // any 表示通配符的值，只能是 */*、* 和空值，其它情况则 panic；
-func ParseQHeader(header string, any string) (items []*Item) {
+//
+// 所有 Item.Q 为零的会被忽略，如果解析 q 出错会返回错误；
+func ParseQHeader(header string, any string) (items []*Item, err error) {
 	if any != "*" && any != "*/*" && any != "" {
 		panic("any 值错误")
 	}
@@ -60,31 +61,30 @@ func ParseQHeader(header string, any string) (items []*Item) {
 		var err error
 		v, p := ParseWithParam(h, "q")
 		if p != "" {
-			q, err = strconv.ParseFloat(p, 32)
+			if q, err = strconv.ParseFloat(p, 32); err != nil {
+				return nil, err
+			}
+		}
+
+		// 如果是 *;q=0 这样特殊的项需要保留
+		if q == 0 && v != any {
+			continue
 		}
 
 		// NOTE: 从 pool 取得的值，需要全部覆盖。
 		item := items[count]
 		item.Value = v
 		item.Q = float32(q)
-		item.Err = err
 
 		count++
 	}
 	items = items[:count]
 	sortItems(items, any)
-	return items
+	return items, nil
 }
 
 func sortItems(items []*Item, any string) {
 	slices.SortStableFunc(items, func(i, j *Item) int {
-		if i.Err != nil {
-			return 1
-		}
-		if j.Err != nil {
-			return -1
-		}
-
 		if i.Q != j.Q {
 			return cmp.Compare(j.Q, i.Q)
 		}

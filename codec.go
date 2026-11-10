@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/sliceutil"
 	"golang.org/x/text/encoding"
@@ -200,12 +201,16 @@ func (c *Codec) contentEncoding(name string, r io.Reader) (io.ReadCloser, error)
 //
 // 如果返回的 c 为空值表示不需要压缩。
 // 当有多个符合时，按添加顺序拿第一个符合条件数据。
-func (e *Codec) acceptEncoding(contentType, h string) (c Compressor, notAcceptable bool) {
+func (e *Codec) acceptEncoding(contentType, h string) (c Compressor, err error) {
 	if len(e.compressions) == 0 {
 		return
 	}
 
-	accepts := qheader.ParseQHeader(h, "*")
+	var accepts []*qheader.Item
+	if accepts, err = qheader.ParseQHeader(h, "*"); err != nil {
+		return nil, err
+	}
+
 	defer qheader.PutQHeader(accepts)
 	if len(accepts) == 0 {
 		return
@@ -217,14 +222,14 @@ func (e *Codec) acceptEncoding(contentType, h string) (c Compressor, notAcceptab
 	}
 
 	if last := accepts[len(accepts)-1]; last.Value == "*" { // * 匹配其他任意未在该请求头字段中列出的编码方式
-		if last.Q == 0.0 {
-			return nil, true
+		if last.Q == 0 {
+			return nil, localeutil.Error("client set accept-encoding=*;q=0")
 		}
 
 		for _, index := range indexes {
 			curr := e.compressions[index]
 			if slices.IndexFunc(accepts, func(i *qheader.Item) bool { return i.Value == curr.compressor.Name() }) < 0 {
-				return curr.compressor, false
+				return curr.compressor, nil
 			}
 		}
 		return
@@ -232,24 +237,19 @@ func (e *Codec) acceptEncoding(contentType, h string) (c Compressor, notAcceptab
 
 	var identity *qheader.Item
 	for _, accept := range accepts {
-		if accept.Err != nil {
-			// NOTE: 对于客户端的错误，不记录于日志中。
-			continue
-		}
-
 		if accept.Value == header.Identity { // 除非 q=0，否则表示总是可以被接受
 			identity = accept
 		}
 
 		for _, index := range indexes {
 			if curr := e.compressions[index]; curr.compressor.Name() == accept.Value {
-				return curr.compressor, false
+				return curr.compressor, nil
 			}
 		}
 	}
 	if identity != nil && identity.Q > 0 {
 		c := e.compressions[indexes[0]]
-		return c.compressor, false
+		return c.compressor, nil
 	}
 
 	return // 没有匹配，表示不需要进行压缩
@@ -322,23 +322,30 @@ func (e *Codec) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) 
 //	application/json;q=0.9,*/*;q=1
 //
 // 则因为 */* 的 q 值比较高，而返回 */* 匹配的内容
-func (c *Codec) accept(h string) *mediaType {
+func (c *Codec) accept(h string) (*mediaType, error) {
 	if h == "" {
 		if item := c.findMarshal("*/*"); item != nil {
-			return item
+			return item, nil
 		}
-		return nil
+		return nil, nil
 	}
 
-	items := qheader.ParseQHeader(h, "*/*")
+	items, err := qheader.ParseQHeader(h, "*/*")
+	if err != nil {
+		return nil, err
+	}
+
 	defer qheader.PutQHeader(items)
 	for _, item := range items {
+		if item.Q == 0 {
+			continue
+		} // q==0
 		if i := c.findMarshal(item.Value); i != nil {
-			return i
+			return i, nil
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (c *Codec) findMarshal(name string) *mediaType {

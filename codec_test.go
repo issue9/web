@@ -129,49 +129,52 @@ func TestCodec_acceptEncoding(t *testing.T) {
 
 	t.Run("一般", func(t *testing.T) {
 		a := assert.New(t, false)
-		b, notAccept := e.acceptEncoding(header.JSON, "gzip;q=0.9,br")
-		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
+		b, err := e.acceptEncoding(header.JSON, "gzip;q=0.9,br")
+		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, notAccept = e.acceptEncoding(header.JSON, "br,gzip")
-		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
+		b, err = e.acceptEncoding(header.JSON, "gzip;q=x.9,br")
+		a.Error(err).Nil(b)
 
-		b, notAccept = e.acceptEncoding(header.Plain, "gzip,br")
-		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
+		b, err = e.acceptEncoding(header.JSON, "br,gzip")
+		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, notAccept = e.acceptEncoding(header.Plain, "br")
-		a.False(notAccept).Nil(b)
+		b, err = e.acceptEncoding(header.Plain, "gzip,br")
+		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, notAccept = e.acceptEncoding(header.Plain, "")
-		a.False(notAccept).Nil(b)
+		b, err = e.acceptEncoding(header.Plain, "br")
+		a.NotError(err).Nil(b)
+
+		b, err = e.acceptEncoding(header.Plain, "")
+		a.NotError(err).Nil(b)
 	})
 
 	t.Run("header=*", func(t *testing.T) {
 		a := assert.New(t, false)
-		b, notAccept := e.acceptEncoding(header.XML, "*;q=0")
-		a.True(notAccept).Nil(b)
+		b, err := e.acceptEncoding(header.XML, "*;q=0")
+		a.Error(err).Nil(b)
 
-		b, notAccept = e.acceptEncoding(header.XML, "*,br")
-		a.False(notAccept).NotNil(b).Equal(b.Name(), "compress")
+		b, err = e.acceptEncoding(header.XML, "*,br")
+		a.NotError(err).NotNil(b).Equal(b.Name(), "compress")
 
-		b, notAccept = e.acceptEncoding(header.XML, "*,gzip")
-		a.False(notAccept).NotNil(b).Equal(b.Name(), "compress")
+		b, err = e.acceptEncoding(header.XML, "*,gzip")
+		a.NotError(err).NotNil(b).Equal(b.Name(), "compress")
 
-		b, notAccept = e.acceptEncoding(header.XML, "*,gzip,compress") // gzip,compress 都排除了
-		a.False(notAccept).Nil(b)
+		b, err = e.acceptEncoding(header.XML, "*,gzip,compress") // gzip,compress 都排除了
+		a.NotError(err).Nil(b)
 	})
 
 	t.Run("header=identity", func(t *testing.T) {
 		a := assert.New(t, false)
-		b, notAccept := e.acceptEncoding(header.XML, "identity,gzip,br")
-		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
+		b, err := e.acceptEncoding(header.XML, "identity,gzip,br")
+		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
 		// 正常匹配
-		b, notAccept = e.acceptEncoding(header.XML, "identity;q=0,gzip,br")
-		a.False(notAccept).NotNil(b).Equal(b.Name(), "gzip")
+		b, err = e.acceptEncoding(header.XML, "identity;q=0,gzip,br")
+		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
 		// 没有可匹配，选取第一个
-		b, notAccept = e.acceptEncoding(header.XML, "identity;q=0,abc,def")
-		a.False(notAccept).Nil(b)
+		b, err = e.acceptEncoding(header.XML, "identity;q=0,abc,def")
+		a.NotError(err).Nil(b)
 	})
 }
 
@@ -227,46 +230,46 @@ func TestCodec_accept(t *testing.T) {
 	mt := NewCodec()
 	a.NotNil(mt)
 
-	item := mt.accept(header.JSON)
-	a.Nil(item)
+	item, err := mt.accept(header.JSON)
+	a.NotError(err).Nil(item)
 
-	item = mt.accept("")
-	a.Nil(item)
+	item, err = mt.accept("")
+	a.NotError(err).Nil(item)
 
 	mt = NewCodec()
 	a.NotNil(mt)
 	mt.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "", true, true).
 		AddMimetype(header.Plain, marshalXML, unmarshalXML, "text/plain+problem", true, true)
 
-	item = mt.accept(header.JSON)
-	a.NotNil(item).
+	item, err = mt.accept(header.JSON)
+	a.NotError(err).NotNil(item).
 		NotNil(item.Marshal).
 		Equal(item.name(false), header.JSON).
 		Equal(item.name(true), header.JSON)
 
 	// */*
-	item = mt.accept("*/*")
-	a.NotNil(item).
+	item, err = mt.accept("*/*")
+	a.NotError(err).NotNil(item).
 		NotNil(item.Marshal).
 		Equal(item.name(false), header.JSON)
 
 	// 空参数，结果同 */*
-	item = mt.accept("")
-	a.NotNil(item).
+	item, err = mt.accept("")
+	a.NotError(err).NotNil(item).
 		NotNil(item.Marshal).
 		Equal(item.name(false), header.JSON)
 
-	item = mt.accept("*/*,text/plain")
-	a.NotNil(item).
+	item, err = mt.accept("*/*,text/plain")
+	a.NotError(err).NotNil(item).
 		NotNil(item.Marshal).
 		Equal(item.name(false), header.Plain).
 		Equal(item.name(true), "text/plain+problem")
 
-	item = mt.accept("font/wottf;q=x.9")
-	a.Nil(item)
+	item, err = mt.accept("font/wottf;q=x.9")
+	a.Error(err).Nil(item)
 
-	item = mt.accept("font/wottf")
-	a.Nil(item)
+	item, err = mt.accept("font/wottf")
+	a.NotError(err).Nil(item)
 }
 
 func TestCodec_findMarshal(t *testing.T) {

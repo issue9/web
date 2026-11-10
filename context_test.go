@@ -171,7 +171,7 @@ func TestContext_SetEncoding(t *testing.T) {
 		a := assert.New(t, false)
 		a.PanicString(func() {
 			ctx.SetEncoding("*;q=0")
-		}, "指定的压缩编码 *;q=0 不存在")
+		}, "解析参数时发生了错误")
 
 		_, err := ctx.Write([]byte("200"))
 		a.NotError(err).

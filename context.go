@@ -79,6 +79,10 @@ type Context struct {
 	logs *AttrLogs
 }
 
+func parseHeaderErr(h string, err error) LocaleStringer {
+	return Phrase("parse %[1]s error %[2]s", h, err.Error())
+}
+
 // NewContext 将 w 和 r 包装为 [Context] 对象
 //
 // 这适合从标准库的请求中创建 [Context] 对象。
@@ -89,33 +93,43 @@ type Context struct {
 func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types.Route) *Context {
 	id := r.Header.Get(s.requestIDKey)
 
-	debug := func() logs.Recorder { // 根据 id 是否为空返回不同的日志对象
+	warn := func() logs.Recorder { // 根据 id 是否为空返回不同的日志对象
 		if id != "" {
-			return s.Logs().DEBUG().With(s.requestIDKey, id)
+			return s.Logs().WARN().With(s.requestIDKey, id)
 		}
-		return s.Logs().DEBUG()
+		return s.Logs().WARN()
 	}
 
 	h := r.Header.Get(header.Accept)
-	mt := s.codec.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
+	mt, err := s.codec.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
+	if err != nil {
+		warn().LocaleString(parseHeaderErr(header.Accept, err))
+		w.WriteHeader(http.StatusNotAcceptable)
+		return nil
+	}
 	if mt == nil {
-		debug().LocaleString(Phrase("not found serialization for %s", h))
-		w.WriteHeader(http.StatusNotAcceptable) // 此时还不知道将 problem 序列化成什么类型，只简单地返回状态码。
+		warn().LocaleString(Phrase("not found serialization for %s", h))
+		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
 	h = r.Header.Get(header.AcceptCharset)
-	outputCharsetName, outputCharset := qheader.ParseAcceptCharset(h)
+	outputCharsetName, outputCharset, err := qheader.ParseAcceptCharset(h)
+	if err != nil {
+		warn().LocaleString(parseHeaderErr(header.AcceptCharset, err))
+		w.WriteHeader(http.StatusNotAcceptable)
+		return nil
+	}
 	if outputCharsetName == "" {
-		debug().LocaleString(Phrase("not found charset for %s", h))
-		w.WriteHeader(http.StatusNotAcceptable) // 无法找到对方要求的字符集，依然只是简单地返回状态码。
+		warn().LocaleString(Phrase("not found charset for %s", h))
+		w.WriteHeader(http.StatusNotAcceptable)
 		return nil
 	}
 
 	var outputCompressor Compressor
 	if s.codec.CanCompress() {
-		var na bool
-		if outputCompressor, na = s.codec.acceptEncoding(mt.name(false), r.Header.Get(header.AcceptEncoding)); na {
+		if outputCompressor, err = s.codec.acceptEncoding(mt.name(false), r.Header.Get(header.AcceptEncoding)); err != nil {
+			warn().LocaleString(parseHeaderErr(header.AcceptEncoding, err))
 			w.WriteHeader(http.StatusNotAcceptable)
 			return nil
 		}
@@ -127,7 +141,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 		var err error
 		var inputCharset encoding.Encoding
 		if inputMimetype, inputCharset, err = s.codec.contentType(h); err != nil {
-			debug().Error(err)
+			warn().Error(err)
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			return nil
 		}
@@ -235,7 +249,10 @@ func (ctx *Context) SetCharset(charset string) {
 		return
 	}
 
-	outputCharsetName, outputCharset := qheader.ParseAcceptCharset(charset)
+	outputCharsetName, outputCharset, err := qheader.ParseAcceptCharset(charset)
+	if err != nil {
+		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
+	}
 	if outputCharsetName == "" {
 		panic(fmt.Sprintf("指定的字符集 %s 不存在", charset))
 	}
@@ -258,7 +275,10 @@ func (ctx *Context) SetMimetype(mimetype string) {
 		return
 	}
 
-	item := ctx.s.codec.accept(mimetype)
+	item, err := ctx.s.codec.accept(mimetype)
+	if err != nil {
+		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
+	}
 	if item == nil {
 		panic(fmt.Sprintf("指定的编码 %s 不存在", mimetype))
 	}
@@ -282,9 +302,9 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	c, notAcceptable := ctx.s.codec.acceptEncoding(ctx.Mimetype(false), enc)
-	if notAcceptable {
-		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
+	c, err := ctx.s.codec.acceptEncoding(ctx.Mimetype(false), enc)
+	if err != nil {
+		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
 	}
 	ctx.outputCompressor = c
 	if c == nil {
