@@ -18,6 +18,8 @@ type Startup interface {
 	Init(h http.Handler)
 
 	// Serve 启动服务
+	//
+	// 如果是由 [Startup.Close] 关闭的服务，则 Serve 方法必须返回 [http.ErrServerClosed]。
 	Serve(s *Server) error
 
 	// 关闭服务

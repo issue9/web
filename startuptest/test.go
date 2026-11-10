@@ -42,7 +42,8 @@ func NewTLSServerStartup(a *assert.Assertion) Startup {
 
 func (b *testStartup) Init(h http.Handler) { b.rs = b.creator(h) }
 
-func (b *testStartup) Serve(s *web.Server) error { return nil }
+// 返回值始终表示由 Close 关闭
+func (b *testStartup) Serve(s *web.Server) error { return http.ErrServerClosed }
 
 func (s *testStartup) Close(ctx context.Context) error {
 	s.rs.Close()

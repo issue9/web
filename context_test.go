@@ -6,7 +6,9 @@ package web
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -165,18 +167,57 @@ func TestContext_SetEncoding(t *testing.T) {
 	ctx := srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 
-	a.PanicString(func() {
-		ctx.SetEncoding("*;q=0")
-	}, "指定的压缩编码 *;q=0 不存在")
+	t.Run("出错", func(t *testing.T) {
+		a := assert.New(t, false)
+		a.PanicString(func() {
+			ctx.SetEncoding("*;q=0")
+		}, "指定的压缩编码 *;q=0 不存在")
 
-	ctx.SetEncoding("gzip")
-	a.Equal(ctx.Encoding(), "gzip")
+		_, err := ctx.Write([]byte("200"))
+		a.NotError(err).
+			PanicString(func() {
+				ctx.SetEncoding("br")
+			}, "已有内容输出，不可再更改！")
+	})
 
-	_, err := ctx.Write([]byte("200"))
-	a.NotError(err).
-		PanicString(func() {
-			ctx.SetEncoding("br")
-		}, "已有内容输出，不可再更改！")
+	t.Run("setEncoding()", func(t *testing.T) {
+		a := assert.New(t, false)
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		r.Header.Set(header.Accept, header.JSON)
+		r.Header.Set(header.AcceptEncoding, "gzip")
+		ctx := srv.NewContext(w, r, types.NewRoute())
+
+		ctx.SetEncoding("")
+		a.Empty(w.Header().Get(header.ContentEncoding))
+		_, err := ctx.Write([]byte("plain"))
+		a.NotError(err)
+		ctx.freeContext()
+		a.Equal(w.Body.String(), "plain")
+	})
+
+	t.Run("setEncoding(gzip)", func(t *testing.T) {
+		a := assert.New(t, false)
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		r.Header.Set(header.Accept, header.JSON)
+		ctx := srv.NewContext(w, r, types.NewRoute())
+
+		ctx.SetEncoding("gzip")
+		a.Equal(w.Header().Get(header.ContentEncoding), "gzip").
+			Equal(ctx.Encoding(), "gzip")
+		_, err := ctx.Write([]byte("plain"))
+		a.NotError(err)
+		ctx.freeContext()
+
+		reader, err := gzip.NewReader(bytes.NewReader(w.Body.Bytes()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		data, err := io.ReadAll(reader)
+		a.NotError(err).Equal(string(data), "plain")
+		a.NotError(reader.Close())
+	})
 }
 
 func TestContext_SetLanguage(t *testing.T) {

@@ -93,6 +93,7 @@ func TestDocument_Handler(t *testing.T) {
 			Get("/openapi", d.Handler())
 
 		go s.Serve()
+		synctest.Wait()
 
 		ts.Get("/p/openapi").Header("accept", json.Mimetype).
 			Do().

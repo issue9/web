@@ -6,9 +6,11 @@ package web
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/issue9/cache"
@@ -38,7 +40,7 @@ type (
 	// 创建该接口对象的方法在 [server] 包之下，提供了不同功能的服务对象。
 	Server struct {
 		startup Startup
-		state   State
+		state   atomic.Int32
 		id      string
 		version string
 
@@ -206,20 +208,39 @@ func (s *Server) Use(p ...Plugin) {
 }
 
 // State 获取当前的状态
-func (s *Server) State() State { return s.state }
+func (s *Server) State() State { return State(s.state.Load()) }
+
+func (s *Server) setState(v State) { s.state.Store(int32(v)) }
 
 // Serve 开始 HTTP 服务
 //
 // 这是个阻塞方法，会等待 [Server.Close] 执行完之后才返回。
 // 始终返回非空的错误对象，如果是由 [Server.Close] 关闭的，将返回 [http.ErrServerClosed]。
 func (s *Server) Serve() (err error) {
-	if s.State() == Running {
+	if !s.state.CompareAndSwap(int32(Stopped), int32(Running)) {
 		panic("当前已经处于运行状态")
 	}
-	s.state = Running
+
+	defer func() { s.setState(Stopped) }()
 
 	err = s.startup.Serve(s)
-	<-s.Done()
+
+	// 已经退出服务，无论是否有错，都选关闭所有注册的 closes
+	for _, f := range slices.Backward(s.closes) {
+		if err := f(); err != nil { // 出错不退出，继续其它操作。
+			s.Logs().ERROR().Error(err)
+		}
+	}
+
+	// 如果是由 Close 触发的，还要等待其 Done 信号。
+	if errors.Is(err, http.ErrServerClosed) {
+		<-s.Done()
+	} else {
+		s.closeDone()
+	}
+
+	s.services.waitExit() // 这个要等待 done 才能触发
+
 	return err
 }
 
@@ -229,17 +250,15 @@ func (s *Server) Serve() (err error) {
 //
 // 调用此方法表示 [Server] 的生命周期结束，对象将处于不可用状态。
 func (s *Server) Close(shutdownTimeout time.Duration) {
-	if s.State() != Running {
+	if !s.state.CompareAndSwap(int32(Running), int32(Cancelled)) {
 		return
 	}
-	s.state = Stopped // 调用 Close 即设置状态
 
 	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 
 	defer func() {
-		s.close()
 		cancel()
-		s.services.waitExit() // 这要放在 cancel 之后
+		s.closeDone()
 	}()
 
 	if err := s.startup.Close(ctx); err != nil {
@@ -247,13 +266,7 @@ func (s *Server) Close(shutdownTimeout time.Duration) {
 	}
 }
 
-func (s *Server) close() {
-	for _, f := range slices.Backward(s.closes) {
-		if err := f(); err != nil { // 出错不退出，继续其它操作。
-			s.Logs().ERROR().Error(err)
-		}
-	}
-
+func (s *Server) closeDone() {
 	s.doneErr = http.ErrServerClosed // 在 close 之前调用，以保证在 close 之后，doneErr 始终是正确的。
 	close(s.done)
 }

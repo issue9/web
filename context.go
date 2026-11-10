@@ -287,10 +287,10 @@ func (ctx *Context) SetEncoding(enc string) {
 		panic(fmt.Sprintf("指定的压缩编码 %s 不存在", enc))
 	}
 	ctx.outputCompressor = c
-
-	if ctx.outputCompressor != nil {
-		h := ctx.Header()
-		h.Set(header.ContentEncoding, c.Name())
+	if c == nil {
+		ctx.Header().Del(header.ContentEncoding)
+	} else {
+		ctx.Header().Set(header.ContentEncoding, c.Name())
 	}
 }
 

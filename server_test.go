@@ -196,7 +196,7 @@ func TestHTTPServer_Close(t *testing.T) {
 		a.Equal(srv.State(), Running)
 		srv.Close(0)
 		srv.Close(0) // 可多次调用
-		a.Equal(srv.State(), Stopped)
+		a.Equal(srv.State(), Cancelled)
 		return nil
 	})
 

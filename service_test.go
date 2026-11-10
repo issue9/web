@@ -54,6 +54,8 @@ func buildService() (f ServiceFunc, start, p, err chan struct{}) {
 func TestServer_service(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a, false)
+	defer s.Run()()
+
 	srv := s.Services()
 	a.Length(srv.services, 2). // scheduled, unique id generate
 					Length(slices.Collect(srv.All()), 2)
@@ -65,32 +67,32 @@ func TestServer_service(t *testing.T) {
 	srv1 := srv.services[2]
 	<-start1
 	a.Equal(srv1.service, s1). // 并不会改变状态
-					Equal(srv1.state, Running).
-					Equal(sched.state, Running)
+					Equal(srv1.State(), Running).
+					Equal(sched.State(), Running)
 
 	s2, start2, _, _ := buildService()
 	srv.Add(Phrase("srv2"), s2)
 	a.Equal(4, len(srv.services))
 	srv2 := srv.services[3]
 	<-start2
-	a.Equal(Running, srv2.state) // 运行中添加自动运行服务
+	a.Equal(Running, srv2.State()) // 运行中添加自动运行服务
 
 	s3, start3, _, _ := buildService()
 	del := srv.Add(Phrase("srv3"), s3)
 	a.Equal(5, len(srv.services))
 	srv3 := srv.services[4]
 	<-start3
-	a.Equal(Running, srv3.state)
+	a.Equal(Running, srv3.State())
 	del()                          // 删除 s3
 	a.Equal(4, len(srv.services)). // 确定删除
-					Equal(Running, srv2.state). // 确定不会改变其它服务的状态
-					Equal(srv3.state, Stopped)
+					Equal(Running, srv2.State()). // 确定不会改变其它服务的状态
+					Equal(srv3.State(), Stopped)
 
-	s.close()                           // 并未调用 Serve，直接调用 Close 会阻塞，所以直接调用 close 结束。
+	s.Close(0)
 	time.Sleep(1000 * time.Millisecond) // 等待主服务设置状态值
-	a.Equal(srv1.state, Stopped).
-		Equal(sched.state, Stopped).
-		Equal(srv2.state, Stopped)
+	a.Equal(srv1.State(), Stopped).
+		Equal(sched.State(), Stopped).
+		Equal(srv2.State(), Stopped)
 }
 
 func TestServer_scheduled(t *testing.T) {
@@ -120,52 +122,55 @@ func TestService_state(t *testing.T) {
 	t.Run("normal", func(t *testing.T) {
 		a := assert.New(t, false)
 		ts := newTestServer(a, false)
+		defer ts.Run()()
 
 		f, start, _, _ := buildService()
 		ts.Services().Add(Phrase("normal service"), f)
 		<-start
 		ss := ts.Services().services
 		s := ss[len(ss)-1]
-		a.Equal(s.state, Running)
+		a.Equal(s.State(), Running)
 
-		ts.close()                         // 触发 context.WithCancel
+		ts.Close(0)                        // 触发 context.WithCancel
 		time.Sleep(200 * time.Millisecond) // 等待 context.Context 链路完成
-		a.Equal(s.state, Stopped)
+		a.Equal(s.State(), Stopped)
 	})
 
 	t.Run("panic", func(t *testing.T) {
 		a := assert.New(t, false)
 		ts := newTestServer(a, false)
+		defer ts.Run()()
 
 		f, start, p, _ := buildService()
 		ts.Services().Add(Phrase("panic service"), f)
 		<-start
 		ss := ts.Services().services
 		s := ss[len(ss)-1]
-		a.StrictEqual(s.state, Running)
+		a.StrictEqual(s.State(), Running)
 
 		p <- struct{}{}
 		time.Sleep(200 * time.Millisecond) // 等待 p 被取出且 s 的状态设置完成
-		a.StrictEqual(s.state, Failed).Contains(s.err.Error(), "service panic")
+		a.StrictEqual(s.State(), Failed).ErrorString(s.Err(), "service panic")
 
-		ts.close()
+		ts.Close(0)
 	})
 
 	t.Run("error", func(t *testing.T) {
 		a := assert.New(t, false)
 		ts := newTestServer(a, false)
+		defer ts.Run()()
 
 		f, start, _, err := buildService()
 		ts.Services().Add(Phrase("error service"), f)
 		<-start
 		ss := ts.Services().services
 		s := ss[len(ss)-1]
-		a.StrictEqual(s.state, Running)
+		a.StrictEqual(s.State(), Running).Equal(s.Title(), Phrase("error service"))
 
 		err <- struct{}{}
 		time.Sleep(200 * time.Millisecond) // 等待 err 被取出且 s 的状态设置完成
-		a.StrictEqual(s.state, Failed).NotNil(s.err).Contains(s.err.Error(), "service error")
+		a.StrictEqual(s.State(), Failed).NotNil(s.Err()).ErrorString(s.Err(), "service error")
 
-		ts.close()
+		ts.Close(0)
 	})
 }

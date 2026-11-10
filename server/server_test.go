@@ -122,6 +122,9 @@ func TestNewGateway(t *testing.T) {
 	defer s2.Close(0)
 	s2.Routers().New("default", nil).Get("/mux/test", buildHandler(202))
 
+	// 等待 s1 和 s2 初始化完成
+	time.Sleep(500 * time.Millisecond)
+
 	// Registry 和 Mapper 是空的
 	g, err := NewGateway("app", "0.1.0", newOptions(a, nil))
 	a.Equal(err, newParamError("o", locales.NewFieldError("Mapper", locales.CanNotBeEmpty))).Nil(g)

@@ -69,7 +69,7 @@ func (ctx *Context) Paths(exitAtError bool) *Paths {
 	pp.ctx = ctx
 	pp.problem = p
 
-	ctx.OnExit(func(*Context, int) { queryPool.Put(pp) })
+	ctx.OnExit(func(*Context, int) { pathPool.Put(pp) })
 
 	return pp
 }

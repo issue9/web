@@ -22,7 +22,7 @@ const (
 	Stopped   State = scheduled.Stopped   // 停止状态，默认状态
 	Running   State = scheduled.Running   // 正在运行
 	Failed    State = scheduled.Failed    // 出错，不再执行后续操作
-	Cancelled State = scheduled.Cancelled // 由用户取消，该值只在 [Service] 上使用，[Server.State] 未使用。
+	Cancelled State = scheduled.Cancelled // 由用户取消
 )
 
 type (
@@ -39,10 +39,10 @@ type (
 		s       *Services
 		title   LocaleStringer
 		service ServiceFunc
-		err     error // 保存上次的出错内容，不会清空该值。
 
-		state    State
-		stateMux sync.RWMutex
+		mux   sync.RWMutex
+		err   error // 保存上次的出错内容，不会清空该值。
+		state State
 	}
 
 	// ServiceFunc 服务函数
@@ -79,20 +79,31 @@ func (s *Server) initServices() {
 func (srv *Service) Title() LocaleStringer { return srv.title }
 
 // Err 服务的出错时的错误信息
-func (srv *Service) Err() error { return srv.err }
+func (srv *Service) Err() error {
+	srv.mux.RLock()
+	err := srv.err
+	srv.mux.RUnlock()
+	return err
+}
 
 // State 服务的当前状态
 func (srv *Service) State() State {
-	srv.stateMux.RLock()
+	srv.mux.RLock()
 	s := srv.state
-	srv.stateMux.RUnlock()
+	srv.mux.RUnlock()
 	return s
 }
 
 func (srv *Service) setState(s State) {
-	srv.stateMux.Lock()
+	srv.mux.Lock()
 	srv.state = s
-	srv.stateMux.Unlock()
+	srv.mux.Unlock()
+}
+
+func (srv *Service) setError(err error) {
+	srv.mux.Lock()
+	srv.err = err
+	srv.mux.Unlock()
 }
 
 func (srv *Service) goServe(ctx context.Context) {
@@ -105,19 +116,22 @@ func (srv *Service) goServe(ctx context.Context) {
 func (srv *Service) serve(ctx context.Context) {
 	defer func() {
 		if msg := recover(); msg != nil {
-			srv.err = fmt.Errorf("panic:%v", msg)
-			srv.s.server.Logs().ERROR().Error(srv.err)
+			err := fmt.Errorf("panic:%v", msg)
+			srv.s.server.Logs().ERROR().Error(err)
+
+			srv.setError(err)
 			srv.setState(Failed)
 		}
 	}()
 
-	srv.err = srv.service(ctx)
+	err := srv.service(ctx)
 	state := Stopped
-	if !errors.Is(srv.err, context.Canceled) && !errors.Is(srv.err, http.ErrServerClosed) {
-		srv.s.server.Logs().ERROR().Error(srv.err)
+	if !errors.Is(err, context.Canceled) && !errors.Is(err, http.ErrServerClosed) {
+		srv.s.server.Logs().ERROR().Error(err)
 		state = Failed
 	}
 
+	srv.setError(err)
 	srv.setState(state)
 }
 
