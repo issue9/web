@@ -72,8 +72,11 @@ func newProblem() *Problem {
 	}
 	p.Extensions = nil
 	p.Instance = ""
+	p.Detail = ""
+	p.Type = ""
+	p.Title = ""
+	p.Status = 0
 	return p
-	// 其它的基本字段在 [Context.initProblem] 中初始化
 }
 
 // MarshalHTML 实现 [mimetype/html.Marshaler] 接口

@@ -329,8 +329,8 @@ func (ctx *Context) freeContext() {
 
 	// 以下开始回收内存
 
-	close(ctx.done)
 	ctx.doneErr = ErrExitContext()
+	close(ctx.done)
 
 	logs.FreeAttrLogs(ctx.logs)
 	contextPool.Put(ctx)

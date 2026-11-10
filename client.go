@@ -93,14 +93,16 @@ func (c *Client) Patch[R any, E any](path string, body any) (*R, *Problem, error
 //
 // body 为提交的对象，最终是由初始化参数的 marshal 进行编码；
 func (c *Client) Do[R any, E any](method, path string, body any) (*R, *Problem, error) {
-	r, err := c.NewRequest(method, path, body)
+	req, err := c.NewRequest(method, path, body)
 	if err != nil {
 		return nil, nil, err
 	}
-	rsp, err := c.Client().Do(r)
+	rsp, err := c.Client().Do(req)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	defer rsp.Body.Close() // ignore error
 
 	return c.ParseResponse[R, E](rsp)
 }

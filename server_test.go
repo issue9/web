@@ -301,6 +301,13 @@ func TestHTTPServer_NewClient(t *testing.T) {
 		Zero(resp).
 		NotNil(p).
 		Equal(p.Type, problems.AboutBlank).
+		Nil(p.Extensions)
+
+	resp, p, err = c.Post[object, *object]("/post", &object{Age: 1, Name: "invalid"})
+	a.NotError(err).
+		Zero(resp).
+		NotNil(p).
+		Equal(p.Type, problems.AboutBlank).
 		Equal(p.Extensions, &object{Name: "name"})
 
 	resp, p, err = c.Post[object, any]("/post", &object{Age: 1, Name: "name"})

@@ -15,7 +15,10 @@ import (
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/mux/v10/types"
 
+	"github.com/issue9/web/filter"
+	"github.com/issue9/web/filter/validators"
 	"github.com/issue9/web/internal/qheader"
+	"github.com/issue9/web/locales"
 )
 
 var (
@@ -33,6 +36,10 @@ const objectJSONString = `{"name":"中文","Age":456}`
 type object struct {
 	Name string `json:"name"`
 	Age  int
+}
+
+func (o *object) FilterContext(f *filter.Filter, _ *Context) {
+	f.Valid("name", o.Name, validators.Not(validators.Empty), locales.CanNotBeEmpty)
 }
 
 func newContextWithQuery(a *assert.Assertion, path string) (ctx *Context, w *httptest.ResponseRecorder) {

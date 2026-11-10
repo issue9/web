@@ -398,10 +398,13 @@ func (ctx *Context) Read(exitAtError bool, v any, id unique.Handle[string]) Resp
 		return ctx.Log(err, problems.UnprocessableEntity)
 	}
 
-	p := newProblem()
 	if vv, ok := v.(ContextFilter); ok {
-		vv.FilterContext(ctx.newFilter(p, exitAtError), ctx)
-		return ctx.initProblem(p, id)
+		p := newProblem()
+		f := ctx.newFilter(p, exitAtError)
+		vv.FilterContext(f, ctx)
+		if f.HasError() {
+			return ctx.initProblem(p, id)
+		}
 	}
 	return nil
 }
