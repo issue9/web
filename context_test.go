@@ -107,7 +107,7 @@ func TestNewContext(t *testing.T) {
 	})
 }
 
-func TestContext_SetMimetype(t *testing.T) {
+func TestContext_SetMediaType(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, false)
 
@@ -117,16 +117,16 @@ func TestContext_SetMimetype(t *testing.T) {
 	a.NotNil(ctx)
 
 	a.PanicString(func() {
-		ctx.SetMimetype("not-exists")
+		ctx.SetMediaType("not-exists")
 	}, "指定的编码 not-exists 不存在").
-		Equal(ctx.Mimetype(false), header.JSON) // 不改变原有的值
+		Equal(ctx.MeidaType(false), header.JSON) // 不改变原有的值
 
-	ctx.SetMimetype(header.XML)
-	a.Equal(ctx.Mimetype(false), header.XML)
+	ctx.SetMediaType(header.XML)
+	a.Equal(ctx.MeidaType(false), header.XML)
 
 	ctx.Render(200, 200) // 输出内容
 	a.PanicString(func() {
-		ctx.SetMimetype(header.JSON)
+		ctx.SetMediaType(header.JSON)
 	}, "已有内容输出，不可再更改！")
 }
 

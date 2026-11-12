@@ -17,7 +17,7 @@ import (
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/mimetype/json"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/problems"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
@@ -28,7 +28,7 @@ func TestServer(t *testing.T) {
 	ts := startuptest.NewHTTPServerStartup(a, false)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Startup: ts,
-		Codec:   web.NewCodec().AddMediaType(web.NewMediaType(json.Mimetype, "", json.Marshal, json.Unmarshal), true, true),
+		Codec:   web.NewCodec().AddMediaType(codec.NewJSON(), true, true),
 		Logs:    logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout), logs.WithLevels(logs.AllLevels()...)),
 	})
 	a.NotError(err).NotNil(s)

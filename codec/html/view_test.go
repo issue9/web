@@ -14,7 +14,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/mimetype/html"
+	"github.com/issue9/web/codec/html"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
 )
@@ -24,7 +24,7 @@ func newServer(a *assert.Assertion, lang string) (*web.Server, startuptest.Start
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Startup:  ts,
 		Language: language.MustParse(lang),
-		Codec:    web.NewCodec().AddMediaType(web.NewMediaType(html.Mimetype, "", html.Marshal, html.Unmarshal), true, true),
+		Codec:    web.NewCodec().AddMediaType(html.NewHTML(), true, true),
 		Logs:     logs.New(logs.NewTermHandler(os.Stderr, nil)),
 	})
 	a.NotError(err).NotNil(s)
@@ -54,14 +54,14 @@ func TestInstall(t *testing.T) {
 
 	ts.Get("/path").
 		Header(header.AcceptLanguage, "cmn-hans").
-		Header(header.Accept, html.Mimetype).
+		Header(header.Accept, header.HTML).
 		Do().
 		Status(200).
 		StringBody("\n<div>hans</div>\n<div>hans</div>\n")
 
 	ts.Get("/path").
 		Header(header.AcceptLanguage, "zh-hant").
-		Header(header.Accept, html.Mimetype).
+		Header(header.Accept, header.HTML).
 		Do().
 		Status(200).
 		StringBody("\n<div>hant</div>\n<div>hans</div>\n")
@@ -83,14 +83,14 @@ func TestInstall_withLocalized(t *testing.T) {
 	})
 	ts.Get("/path").
 		Header(header.AcceptLanguage, "cmn-hans").
-		Header(header.Accept, html.Mimetype).
+		Header(header.Accept, header.HTML).
 		Do().
 		Status(200).
 		StringBody("\n<div>hans简</div>\n<div>hans</div>\n")
 
 	ts.Get("/path").
 		Header(header.AcceptLanguage, "cmn-hant").
-		Header(header.Accept, html.Mimetype).
+		Header(header.Accept, header.HTML).
 		Do().
 		Status(200).
 		StringBody("\n<div>hant繁</div>\n<div>hans</div>\n")

@@ -131,14 +131,14 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 		err = errors.Join(err, encodingReader.Close())
 	}()
 
-	var inputMimetype UnmarshalFunc
+	var unmarshal UnmarshalFunc
 	var inputCharset encoding.Encoding
 	if h := rsp.Header.Get(header.ContentType); h != "" {
-		if inputMimetype, inputCharset, err = c.codec.contentType(h); err != nil {
+		if unmarshal, inputCharset, err = c.codec.contentType(h); err != nil {
 			return
 		}
 
-		if inputMimetype == nil {
+		if unmarshal == nil {
 			err = NewError("not found unmarshaler for the server content-type %s", h)
 			return
 		}
@@ -155,14 +155,14 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 		var e E
 		p = newProblem()
 		p.Extensions = e
-		if err = inputMimetype(reader, p); err != nil {
+		if err = unmarshal(reader, p); err != nil {
 			return
 		}
 		return nil, p, nil
 	}
 
 	var resp R
-	if err = inputMimetype(reader, &resp); err != nil {
+	if err = unmarshal(reader, &resp); err != nil {
 		return
 	}
 	return &resp, nil, nil

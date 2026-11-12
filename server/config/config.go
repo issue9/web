@@ -101,10 +101,10 @@ type configOf[T comparable] struct {
 	// 如果为空，那么不支持压缩功能。
 	Compressors []*compressConfig `yaml:"compressions,omitempty" json:"compressions,omitempty" xml:"compressions>compression,omitempty" toml:"compressions,omitempty"`
 
-	// 指定可用的 mimetype
+	// 指定可用的 mediaTypes
 	//
 	// 如果为空，那么将不支持任何格式的内容输出。
-	Mimetypes []*mimetypeConfig `yaml:"mimetypes,omitempty" json:"mimetypes,omitempty" xml:"mimetypes>mimetype,omitempty" toml:"mimetypes,omitempty"`
+	MediaTypes []*mediaTypeConfig `yaml:"mediaTypes,omitempty" json:"mediaTypes,omitempty" xml:"mediaTypes>mediaType,omitempty" toml:"mediaTypes,omitempty"`
 
 	codec *web.Codec
 

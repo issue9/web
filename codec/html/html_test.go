@@ -12,11 +12,7 @@ import (
 	"github.com/issue9/web"
 )
 
-var (
-	_ web.MarshalFunc   = Marshal
-	_ web.UnmarshalFunc = Unmarshal
-	_ Marshaler         = &web.Problem{}
-)
+var _ Marshaler = &web.Problem{}
 
 func TestGetName(t *testing.T) {
 	a := assert.New(t, false)

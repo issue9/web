@@ -11,6 +11,7 @@ import (
 	"compress/lzw"
 	"encoding/json/v2"
 	"encoding/xml"
+	"errors"
 	"io"
 	"testing"
 
@@ -21,7 +22,6 @@ import (
 	"github.com/klauspost/compress/zstd"
 
 	"github.com/issue9/web/internal/qheader"
-	"github.com/issue9/web/mimetype"
 )
 
 type (
@@ -78,11 +78,11 @@ func marshalTest(_ *Context, v any) ([]byte, error) {
 	case error:
 		return nil, vv
 	default:
-		return nil, mimetype.ErrUnsupported()
+		return nil, errors.ErrUnsupported // 测试环境，直接返回 errors.ErrUnsupported 了
 	}
 }
 
-func unmarshalTest(io.Reader, any) error { return mimetype.ErrUnsupported() }
+func unmarshalTest(io.Reader, any) error { return errors.ErrUnsupported }
 
 func marshalJSON(_ *Context, v any) ([]byte, error) { return json.Marshal(v) }
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/issue9/assert/v6"
 
-	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/codec"
 )
 
 var (
@@ -102,7 +102,7 @@ func (s Sex) MarshalText() ([]byte, error) {
 	case 1:
 		return []byte("female"), nil
 	default:
-		return nil, mimetype.ErrUnsupported()
+		return nil, codec.ErrUnsupported()
 	}
 }
 
@@ -113,7 +113,7 @@ func (s *Sex) UnmarshalText(v []byte) error {
 	case "female":
 		*s = 1
 	default:
-		return mimetype.ErrUnsupported()
+		return codec.ErrUnsupported()
 	}
 	return nil
 }
@@ -122,7 +122,7 @@ func TestMarshalWithFormTag(t *testing.T) {
 	a := assert.New(t, false)
 
 	// Marshal
-	data, err := Marshal(nil, tagObjectData)
+	data, err := marshalForm(nil, tagObjectData)
 	a.NotError(err).Equal(string(data), tagObjectString)
 
 	// Unmarshal
@@ -130,21 +130,21 @@ func TestMarshalWithFormTag(t *testing.T) {
 		Ignore:   "i",
 		unexport: true,
 	}
-	a.NotError(Unmarshal(strings.NewReader(tagObjectString), obj)).Equal(obj, tagObjectData)
+	a.NotError(umarshalForm(strings.NewReader(tagObjectString), obj)).Equal(obj, tagObjectData)
 
 	// anonymous marshal
-	data, err = Marshal(nil, anonymousData)
+	data, err = marshalForm(nil, anonymousData)
 	a.NotError(err).Equal(string(data), anonymousString)
 
 	// anonymous unmarshal
 	anoobj := &anonymousObject{}
-	a.NotError(Unmarshal(strings.NewReader(anonymousString), anoobj)).Equal(anoobj, anonymousData)
+	a.NotError(umarshalForm(strings.NewReader(anonymousString), anoobj)).Equal(anoobj, anonymousData)
 
 	// nest marshal
-	data, err = Marshal(nil, nestData)
+	data, err = marshalForm(nil, nestData)
 	a.NotError(err).Equal(string(data), nestString)
 
 	// nest unmarshal
 	nestObj := &nestObject{}
-	a.NotError(Unmarshal(strings.NewReader(nestString), nestObj)).Equal(nestObj, nestData)
+	a.NotError(umarshalForm(strings.NewReader(nestString), nestObj)).Equal(nestObj, nestData)
 }

@@ -24,7 +24,7 @@ func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
 	ts := startuptest.NewTestServerStartup(a)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		Codec:   web.NewCodec().AddMediaType(web.NewMediaType(Mimetype, "", Marshal, Unmarshal), true, true),
+		Codec:   web.NewCodec().AddMediaType(NewJSONP(), true, true),
 		Startup: ts,
 	})
 	a.NotError(err).NotNil(s)
@@ -34,14 +34,14 @@ func TestJSONP(t *testing.T) {
 		return web.OK("jsonp")
 	})
 
-	ts.Get("/jsonp").Header(header.Accept, Mimetype).Do().
+	ts.Get("/jsonp").Header(header.Accept, header.Javascript).Do().
 		Status(http.StatusBadRequest).
 		BodyEmpty()
 
-	ts.Get("/jsonp?callback=cb").Header(header.Accept, Mimetype).Do().
+	ts.Get("/jsonp?callback=cb").Header(header.Accept, header.Javascript).Do().
 		StringBody(`cb("jsonp")`)
 
-	ts.Get("/jsonp?cb=cb").Header(header.Accept, Mimetype).Do().
+	ts.Get("/jsonp?cb=cb").Header(header.Accept, header.Javascript).Do().
 		Status(http.StatusBadRequest).
 		BodyEmpty()
 }

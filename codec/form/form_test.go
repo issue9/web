@@ -10,14 +10,9 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v6"
-
-	"github.com/issue9/web"
 )
 
 var (
-	_ web.MarshalFunc   = Marshal
-	_ web.UnmarshalFunc = Unmarshal
-
 	_ Marshaler   = objectData
 	_ Unmarshaler = objectData
 )
@@ -61,7 +56,7 @@ func TestMarshal(t *testing.T) {
 	a := assert.New(t, false)
 
 	formObject := url.Values{}
-	data, err := Marshal(nil, formObject)
+	data, err := marshalForm(nil, formObject)
 	a.NotError(err)
 	a.NotNil(data). // 非 nil
 			Empty(data) // 但长度为 0
@@ -70,16 +65,16 @@ func TestMarshal(t *testing.T) {
 	formObject.Add("friend", "Jess")
 	formObject.Add("friend", "Sarah")
 	formObject.Add("friend", "Zoe")
-	data, err = Marshal(nil, formObject)
+	data, err = marshalForm(nil, formObject)
 	a.NotError(err).NotNil(data)
 	a.Equal(string(data), formString)
 
 	// 非 url.Values 类型
-	data, err = Marshal(nil, &struct{}{})
+	data, err = marshalForm(nil, &struct{}{})
 	a.NotError(err).Empty(data)
 
 	// Marshaler 类型
-	data, err = Marshal(nil, objectData)
+	data, err = marshalForm(nil, objectData)
 	a.NotError(err).
 		Equal(string(data), formString)
 }
@@ -88,16 +83,16 @@ func TestUnmarshal(t *testing.T) {
 	a := assert.New(t, false)
 
 	v := url.Values{}
-	a.NotError(Unmarshal(strings.NewReader(""), v))
+	a.NotError(umarshalForm(strings.NewReader(""), v))
 	a.Equal(len(v), 0)
 
 	v = url.Values{}
-	a.Error(Unmarshal(strings.NewReader("%"), v))
+	a.Error(umarshalForm(strings.NewReader("%"), v))
 
-	a.NotError(Unmarshal(strings.NewReader(formString), &struct{}{}))
+	a.NotError(umarshalForm(strings.NewReader(formString), &struct{}{}))
 
 	v = url.Values{}
-	a.NotError(Unmarshal(strings.NewReader(formString), v)).
+	a.NotError(umarshalForm(strings.NewReader(formString), v)).
 		Equal(len(v), 2).
 		Equal(v.Get("name"), "Ava").
 		Equal(v.Get("friend"), "Jess").
@@ -105,5 +100,5 @@ func TestUnmarshal(t *testing.T) {
 
 	// Unmarshaler 类型
 	obj := &object{}
-	a.NotError(Unmarshal(strings.NewReader(formString), obj)).Equal(obj, objectData)
+	a.NotError(umarshalForm(strings.NewReader(formString), obj)).Equal(obj, objectData)
 }

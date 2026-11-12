@@ -51,7 +51,7 @@ type MediaType struct {
 	// 比如：application/json
 	normalName string
 
-	// 对应的错误状态下的 mimetype 值
+	// 对应的错误状态下的值
 	//
 	// 比如：application/problem+json。如果为空则采用 normalName。
 	problemName string
@@ -322,11 +322,11 @@ LOOP:
 //
 // h 表示 Content-Type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
 func (e *Codec) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
-	mimetype, charset := qheader.ParseWithParam(h, "charset")
+	mt, charset := qheader.ParseWithParam(h, "charset")
 
-	item := e.searchFunc(func(s string) bool { return s == mimetype })
+	item := e.searchFunc(func(s string) bool { return s == mt })
 	if item == nil {
-		return nil, nil, NewError("not found serialization function for %s", mimetype)
+		return nil, nil, NewError("not found serialization function for %s", mt)
 	}
 
 	if charset == "" || charset == header.UTF8 {
@@ -431,7 +431,7 @@ func (c *Codec) SetCompress(enable bool) { c.disableCompress = !enable }
 
 // MediaTypes 返回支持的所有媒体类型
 //
-// 键名为 mimetype，键值为 problem 状态下的 mimetype。
+// 键名和键值分别为正常和 problem 下的名称。
 func (c *Codec) MediaTypes() iter.Seq2[string, string] {
 	return func(yield func(string, string) bool) {
 		for _, v := range c.mediaTypes {

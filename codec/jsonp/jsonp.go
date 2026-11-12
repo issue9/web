@@ -15,11 +15,10 @@ import (
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/locales"
 	"github.com/issue9/web/problems"
 )
-
-const Mimetype = header.Javascript
 
 type contextKeyType int
 
@@ -31,6 +30,10 @@ type options struct {
 const contextKey contextKeyType = 1
 
 var once = &sync.Once{}
+
+func NewJSONP() *codec.MediaType {
+	return web.NewMediaType(header.Javascript, "", marshal, unmarshal)
+}
 
 // Install 安装 JSONP 的处理方式
 //
@@ -50,7 +53,7 @@ func Install(s *web.Server, key string, unsetProblem unique.Handle[string]) {
 	})
 }
 
-func Marshal(ctx *web.Context, v any) ([]byte, error) {
+func marshal(ctx *web.Context, v any) ([]byte, error) {
 	if ctx == nil {
 		panic("ctx 不能为空")
 	}
@@ -81,4 +84,4 @@ func Marshal(ctx *web.Context, v any) ([]byte, error) {
 	return []byte(b.String()), b.Err
 }
 
-func Unmarshal(r io.Reader, v any) error { return json.UnmarshalRead(r, v) }
+func unmarshal(r io.Reader, v any) error { return json.UnmarshalRead(r, v) }

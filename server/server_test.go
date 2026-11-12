@@ -18,9 +18,8 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/mimetype/json"
-	"github.com/issue9/web/mimetype/xml"
 	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server/registry"
 	"github.com/issue9/web/startuptest"
@@ -63,8 +62,8 @@ func newOptions(a *assert.Assertion, o *Options) *Options {
 	}
 	if o.Codec == nil {
 		o.Codec = web.NewCodec().
-			AddMediaType(web.NewMediaType(json.Mimetype, json.ProblemMimetype, json.Marshal, json.Unmarshal), true, true).
-			AddMediaType(web.NewMediaType(xml.Mimetype, "", xml.Marshal, xml.Unmarshal), true, true)
+			AddMediaType(codec.NewJSON(), true, true).
+			AddMediaType(codec.NewXML(), true, true)
 	}
 
 	return o

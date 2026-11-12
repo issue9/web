@@ -333,7 +333,7 @@ func TestHTTPServer_NewContext(t *testing.T) {
 	// 正常，指定 Accept-Language，采用默认的 accept
 	router.Get("/path", func(ctx *Context) Responser {
 		a.NotNil(ctx).NotEmpty(ctx.ID())
-		a.Equal(ctx.Mimetype(false), header.JSON).
+		a.Equal(ctx.MeidaType(false), header.JSON).
 			Equal(ctx.Charset(), header.UTF8).
 			Equal(ctx.LanguageTag(), language.SimplifiedChinese).
 			NotNil(ctx.LocalePrinter())

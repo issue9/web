@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package mimetype
+package codec
 
 import (
 	"errors"

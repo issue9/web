@@ -85,7 +85,7 @@ func newProblem() *Problem {
 	return p
 }
 
-// MarshalHTML 实现 [mimetype/html.Marshaler] 接口
+// MarshalHTML 实现 [codec/html.Marshaler] 接口
 func (p *Problem) MarshalHTML() (string, any) { return "problem", p }
 
 func (p *Problem) Apply(ctx *Context) {

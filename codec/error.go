@@ -1,9 +1,8 @@
-// SPDX-FileCopyrightText: 2018-2024 caixw
+// SPDX-FileCopyrightText: 2018-2026 caixw
 //
 // SPDX-License-Identifier: MIT
 
-// Package mimetype 对媒体类型的编解码处理
-package mimetype
+package codec
 
 import (
 	"errors"
@@ -21,7 +20,7 @@ func (err errorUnsupported) LocaleString(p *localeutil.Printer) string {
 	return localeutil.StringPhrase("unsupported serialization").LocaleString(p)
 }
 
-func (err errorUnsupported) Unwrap() error { return errors.ErrUnsupported }
+func (err errorUnsupported) Is(e error) bool { return e == errors.ErrUnsupported }
 
 // ErrUnsupported 返回不支持序列化的错误信息
 //

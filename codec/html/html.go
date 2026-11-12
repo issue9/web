@@ -35,10 +35,8 @@ import (
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/mimetype"
+	"github.com/issue9/web/codec"
 )
-
-const Mimetype = header.HTML
 
 // Marshaler 自定义 HTML 输出需要实现的接口
 //
@@ -51,14 +49,19 @@ type Marshaler interface {
 	MarshalHTML() (name string, data any)
 }
 
+// NewHTML 提供对 HTML 编码的支持
+func NewHTML() *codec.MediaType {
+	return web.NewMediaType(header.HTML, "", marshalHTML, unmarshalHTML)
+}
+
 // Marshal 针对 HTML 内容的解码实现
 //
 // 参数 v 可以是以下几种可能：
 //   - string 或是 []byte 将内容作为 HTML 内容直接输出；
 //   - 实现了 [Marshaler] 接口，则按 [Marshaler.MarshalHTML] 返回的查找模板名称；
 //   - 其它普通对象，将获取对象的 XMLName 的 struct tag，若不存在则直接采用类型名作为模板名；
-//   - 其它情况下则是返回 [mimetype.ErrUnsupported]；
-func Marshal(ctx *web.Context, v any) ([]byte, error) {
+//   - 其它情况下则是返回 [codec.ErrUnsupported]；
+func marshalHTML(ctx *web.Context, v any) ([]byte, error) {
 	if ctx == nil {
 		panic("参数 ctx 不能为空")
 	}
@@ -76,13 +79,13 @@ func Marshal(ctx *web.Context, v any) ([]byte, error) {
 func marshal(ctx *web.Context, v any) ([]byte, error) {
 	tt, found := ctx.Server().Vars().Load(viewContextKey)
 	if !found {
-		return nil, mimetype.ErrUnsupported()
+		return nil, codec.ErrUnsupported()
 	}
 	vv := tt.(*view)
 
 	tpl := vv.buildCurrentTpl(ctx)
 	if tpl == nil {
-		return nil, mimetype.ErrUnsupported()
+		return nil, codec.ErrUnsupported()
 	}
 
 	name, v := getName(v)
@@ -94,7 +97,7 @@ func marshal(ctx *web.Context, v any) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func Unmarshal(io.Reader, any) error { return mimetype.ErrUnsupported() }
+func unmarshalHTML(io.Reader, any) error { return codec.ErrUnsupported() }
 
 func getName(v any) (string, any) {
 	if m, ok := v.(Marshaler); ok {
@@ -111,7 +114,7 @@ func getName(v any) (string, any) {
 		if name := rt.Name(); name != "" {
 			return name, v
 		}
-		panic(fmt.Sprintf("%s 不支持输出当前类型 %s", Mimetype, rt.Kind()))
+		panic(fmt.Sprintf("%s 不支持输出当前类型 %s", header.HTML, rt.Kind()))
 	}
 
 	field, found := rt.FieldByName("XMLName")

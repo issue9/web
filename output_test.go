@@ -118,24 +118,24 @@ func TestContext_Render(t *testing.T) {
 	ctx.freeContext()
 	a.True(n > 0).Equal(w.Body.String(), `"123"123`)
 
-	// outputMimetype.Marshal 返回 ErrUnsupported
+	// outputMediaType.Marshal 返回 ErrUnsupported
 	srv.logBuf.Reset()
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/p1").Header(header.Accept, "application/test").Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx, srv.logBuf.String()).
-		Equal(ctx.Mimetype(false), "application/test").
+		Equal(ctx.MeidaType(false), "application/test").
 		Equal(ctx.Charset(), header.UTF8)
 	ctx.Render(http.StatusCreated, "任意值")
 	ctx.freeContext()
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 
-	// outputMimetype.Marshal 返回错误
+	// outputMediaType.Marshal 返回错误
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/p1").Header(header.Accept, "application/test").Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx).
-		Equal(ctx.Mimetype(false), "application/test").
+		Equal(ctx.MeidaType(false), "application/test").
 		Equal(ctx.Charset(), header.UTF8)
 	ctx.Render(http.StatusCreated, errors.New("error"))
 	ctx.freeContext()
