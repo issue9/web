@@ -27,6 +27,7 @@ import (
 	"github.com/issue9/unique/v2"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/mimetype/cbor"
 	"github.com/issue9/web/mimetype/form"
 	"github.com/issue9/web/mimetype/gob"
@@ -159,22 +160,22 @@ func init() {
 
 	// RegisterCompression
 
-	RegisterCompression("deflate-default", web.NewDeflate(flate.DefaultCompression, nil))
-	RegisterCompression("deflate-best-compression", web.NewDeflate(flate.BestCompression, nil))
-	RegisterCompression("deflate-best-speed", web.NewDeflate(flate.BestSpeed, nil))
+	RegisterCompression("deflate-default", codec.NewDeflate(flate.DefaultCompression, nil))
+	RegisterCompression("deflate-best-compression", codec.NewDeflate(flate.BestCompression, nil))
+	RegisterCompression("deflate-best-speed", codec.NewDeflate(flate.BestSpeed, nil))
 
-	RegisterCompression("gzip-default", web.NewGzip(gzip.DefaultCompression))
-	RegisterCompression("gzip-best-compression", web.NewGzip(gzip.BestCompression))
-	RegisterCompression("gzip-best-speed", web.NewGzip(gzip.BestSpeed))
+	RegisterCompression("gzip-default", codec.NewGzip(gzip.DefaultCompression))
+	RegisterCompression("gzip-best-compression", codec.NewGzip(gzip.BestCompression))
+	RegisterCompression("gzip-best-speed", codec.NewGzip(gzip.BestSpeed))
 
-	RegisterCompression("compress-lsb-8", web.NewLZW(lzw.LSB, 8))
-	RegisterCompression("compress-msb-8", web.NewLZW(lzw.MSB, 8))
+	RegisterCompression("compress-lsb-8", codec.NewLZW(lzw.LSB, 8))
+	RegisterCompression("compress-msb-8", codec.NewLZW(lzw.MSB, 8))
 
-	RegisterCompression("br-default", web.NewBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
-	RegisterCompression("br-best-compression", web.NewBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
-	RegisterCompression("br-best-speed", web.NewBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
+	RegisterCompression("br-default", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
+	RegisterCompression("br-best-compression", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
+	RegisterCompression("br-best-speed", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
 
-	RegisterCompression("zstd-default", web.NewZstd())
+	RegisterCompression("zstd-default", codec.NewZstd())
 
 	// RegisterIDGenerator
 

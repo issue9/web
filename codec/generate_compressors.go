@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	pkg  = "web"
+	pkg  = "codec"
 	file = "generated_compressors.go"
 )
 

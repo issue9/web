@@ -1,6 +1,6 @@
 // 此文件由工具产生，请勿手动修改！
 
-package web
+package codec
 
 var (
 	zstdInitData    = []byte{40, 181, 47, 253, 4, 104, 1, 0, 0, 153, 233, 216, 81}

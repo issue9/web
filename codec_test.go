@@ -14,13 +14,64 @@ import (
 	"io"
 	"testing"
 
+	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v10/header"
+	"github.com/klauspost/compress/zstd"
 
 	"github.com/issue9/web/internal/qheader"
 	"github.com/issue9/web/mimetype"
 )
+
+type (
+	gzipImpl    struct{}
+	deflateImpl struct{}
+	lzwImpl     struct{}
+	zstdImpl    struct{}
+	brotliImpl  struct{}
+)
+
+func newGzip() Compressor                                       { return &gzipImpl{} }
+func (gzipImpl) Name() string                                   { return "gzip" }
+func (gzipImpl) NewDecoder(r io.Reader) (io.ReadCloser, error)  { return gzip.NewReader(r) }
+func (gzipImpl) NewEncoder(w io.Writer) (io.WriteCloser, error) { return gzip.NewWriter(w), nil }
+
+func newLZW() Compressor     { return &lzwImpl{} }
+func (lzwImpl) Name() string { return "compress" }
+func (c lzwImpl) NewDecoder(r io.Reader) (io.ReadCloser, error) {
+	return lzw.NewReader(r, lzw.LSB, 8), nil
+}
+func (c lzwImpl) NewEncoder(w io.Writer) (io.WriteCloser, error) {
+	return lzw.NewWriter(w, lzw.LSB, 8), nil
+}
+
+func newZstd() Compressor     { return &zstdImpl{} }
+func (zstdImpl) Name() string { return "zstd" }
+func (zstdImpl) NewDecoder(r io.Reader) (io.ReadCloser, error) {
+	rr, err := zstd.NewReader(r)
+	if err != nil {
+		return nil, err
+	}
+	return io.NopCloser(rr), nil
+}
+func (zstdImpl) NewEncoder(w io.Writer) (io.WriteCloser, error) { return zstd.NewWriter(w) }
+
+func newBrotli() Compressor     { return &brotliImpl{} }
+func (brotliImpl) Name() string { return "br" }
+func (brotliImpl) NewDecoder(r io.Reader) (io.ReadCloser, error) {
+	return io.NopCloser(brotli.NewReader(r)), nil
+}
+func (c brotliImpl) NewEncoder(w io.Writer) (io.WriteCloser, error) {
+	return brotli.NewWriterOptions(w, brotli.WriterOptions{}), nil
+}
+
+func newDeflate() Compressor                                      { return &deflateImpl{} }
+func (deflateImpl) Name() string                                  { return "deflate" }
+func (deflateImpl) NewDecoder(r io.Reader) (io.ReadCloser, error) { return flate.NewReader(r), nil }
+func (deflateImpl) NewEncoder(w io.Writer) (io.WriteCloser, error) {
+	return flate.NewWriter(w, flate.DefaultCompression)
+}
 
 func marshalTest(_ *Context, v any) ([]byte, error) {
 	switch vv := v.(type) {
@@ -45,8 +96,8 @@ func newCodec(a *assert.Assertion) *Codec {
 	c := NewCodec()
 	a.NotNil(c)
 
-	c.AddCompressor(NewGzip(gzip.BestSpeed)).
-		AddCompressor(NewDeflate(flate.DefaultCompression, nil)).
+	c.AddCompressor(newGzip()).
+		AddCompressor(newDeflate()).
 		//AddCompressor(nil).
 		AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "application/problem+json", true, true).
 		AddMimetype(header.XML, marshalXML, unmarshalXML, "application/problem+xml", true, true).
@@ -83,15 +134,15 @@ func TestCodec_AddMimetype(t *testing.T) {
 func TestBuildCompression(t *testing.T) {
 	a := assert.New(t, false)
 
-	c := buildCompression(NewGzip(gzip.DefaultCompression), nil)
+	c := buildCompression(newGzip(), nil)
 	a.True(c.wildcard).
 		Length(c.types, 0).
 		Length(c.wildcardSuffix, 0)
 
-	c = buildCompression(NewGzip(gzip.DefaultCompression), []string{"text"})
+	c = buildCompression(newGzip(), []string{"text"})
 	a.Equal(c.types, []string{"text"})
 
-	c = buildCompression(NewGzip(gzip.DefaultCompression), []string{"text", "*"})
+	c = buildCompression(newGzip(), []string{"text", "*"})
 	a.Nil(c.types).
 		True(c.wildcard).
 		Nil(c.wildcardSuffix)
@@ -102,9 +153,10 @@ func TestCodec_contentEncoding(t *testing.T) {
 
 	e := NewCodec()
 	a.NotNil(e)
-	e.AddCompressor(NewLZW(lzw.LSB, 8), header.Plain, "application/*").
-		AddCompressor(NewGzip(gzip.BestSpeed), header.Plain).
-		AddCompressor(NewZstd(), "application/*")
+	e.AddCompressor(newLZW(), header.Plain, "application/*").
+		AddCompressor(newGzip(), header.Plain).
+		AddCompressor(newZstd(), "application/*").
+		AddCompressor(newBrotli(), "text/*")
 
 	r := &bytes.Buffer{}
 	rc, err := e.contentEncoding("zstd", r)
@@ -122,9 +174,9 @@ func TestCodec_acceptEncoding(t *testing.T) {
 
 	e := NewCodec()
 	a.NotNil(e)
-	e.AddCompressor(NewLZW(lzw.LSB, 8), header.Plain, "application/*").
-		AddCompressor(NewGzip(gzip.DefaultCompression), header.Plain).
-		AddCompressor(NewGzip(gzip.DefaultCompression), "application/*")
+	e.AddCompressor(newLZW(), header.Plain, "application/*").
+		AddCompressor(newGzip(), header.Plain).
+		AddCompressor(newGzip(), "application/*")
 
 	a.Equal(e.acceptEncodingHeader, "compress,gzip")
 

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package web
+package codec
 
 import (
 	"bytes"
@@ -14,6 +14,8 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/zstd"
+
+	"github.com/issue9/web"
 )
 
 var (
@@ -65,17 +67,7 @@ var (
 )
 
 type (
-	// Compressor 压缩算法的接口
-	Compressor interface {
-		// Name 算法的名称
-		Name() string
-
-		// NewDecoder 将 r 包装成为当前压缩算法的解码器
-		NewDecoder(r io.Reader) (io.ReadCloser, error)
-
-		// NewEncoder 将 w 包装成当前压缩算法的编码器
-		NewEncoder(w io.Writer) (io.WriteCloser, error)
-	}
+	Compressor = web.Compressor
 
 	zstdCompressor struct{}
 
