@@ -24,7 +24,7 @@ func (err errorUnsupported) Is(e error) bool { return e == errors.ErrUnsupported
 
 // ErrUnsupported 返回不支持序列化的错误信息
 //
-// 此方法的返回对象同时也包含了 [errors.ErrUnsupported]
+// 此方法也支持验证 [errors.ErrUnsupported]
 //
 //	errors.Is(ErrUnsupported(), errors.ErrUnsupported) == true。
 func ErrUnsupported() error { return errUnsupported }

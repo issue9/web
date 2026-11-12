@@ -104,9 +104,6 @@ type (
 
 // NewZstd 声明基于 [zstd] 的压缩算法
 //
-// NOTE: 请注意[浏览器支持情况]
-//
-// [浏览器支持情况]: https://caniuse.com/zstd
 // [zstd]: https://www.rfc-editor.org/rfc/rfc8878.html
 func NewZstd() Compressor {
 	return &zstdCompressor{} // TODO: 替换为官方的 https://github.com/golang/go/issues/62513
@@ -159,9 +156,7 @@ func (c *brotliCompressor) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 // NewLZW 声明基于 lzw 的压缩算法
 //
 // NOTE: 在 http 报头中名称为 compress 或是 x-compress
-func NewLZW(order lzw.Order, width int) Compressor {
-	return &lzwCompressor{order: order, width: width}
-}
+func NewLZW(order lzw.Order, width int) Compressor { return &lzwCompressor{order: order, width: width} }
 
 func (c *lzwCompressor) Name() string { return "compress" }
 

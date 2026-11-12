@@ -8,6 +8,7 @@ package jsonp
 import (
 	"encoding/json/v2"
 	"io"
+	"net/http"
 	"sync"
 	"unique"
 
@@ -22,61 +23,59 @@ import (
 
 type contextKeyType int
 
-type options struct {
-	key          string
-	unsetProblem unique.Handle[string]
-}
-
 const contextKey contextKeyType = 1
+
+// ProblemCallbackUnset 表示查询参数中没有 key 指定的参数或是参数值为空时的应该返回的 [web.Problem]
+var ProblemCallbackUnset = unique.Make("callback-unset")
 
 var once = &sync.Once{}
 
-func NewJSONP() *codec.MediaType {
-	return web.NewMediaType(header.Javascript, "", marshal, unmarshal)
-}
+// NewJSONP 提供对 JSONP 编码的支持
+func NewJSONP() *codec.MediaType { return web.NewMediaType(header.Javascript, "", marshal, unmarshal) }
 
 // Install 安装 JSONP 的处理方式
 //
 // key 用于指定回函数名称的查询参数名称；
-// unsetProblem 表示查询参数中没有 key 指定的参数或是参数值为空时的应该返回的 [web.Problem]
-func Install(s *web.Server, key string, unsetProblem unique.Handle[string]) {
+func Install(s *web.Server, key string) {
 	if key == "" {
 		panic("key 不能为空")
 	}
 
-	if unsetProblem == problems.Empty {
-		panic("unsetProblem 不能为空")
-	}
-
 	once.Do(func() {
-		s.Vars().Store(contextKey, options{key: key, unsetProblem: unsetProblem})
+		s.Vars().Store(contextKey, key)
+		s.Problems().Add("", &problems.Item{
+			ID:     ProblemCallbackUnset,
+			Type:   "callback-unset",
+			Status: http.StatusBadRequest,
+			Title:  web.Phrase("the jsonp callback is unset"),
+		})
 	})
 }
 
-func marshal(ctx *web.Context, v any) ([]byte, error) {
+func marshal(ctx *web.Context, ctxKey any) ([]byte, error) {
 	if ctx == nil {
 		panic("ctx 不能为空")
 	}
 
-	data, err := json.Marshal(v)
+	data, err := json.Marshal(ctxKey)
 	if err != nil {
 		return nil, err
 	}
 
-	v, found := ctx.Server().Vars().Load(contextKey)
+	ctxKey, found := ctx.Server().Vars().Load(contextKey)
 	if !found {
 		return data, nil
 	}
-	o := v.(options)
 
 	q, err := ctx.Queries(true)
 	if err != nil {
 		return data, err
 	}
 
-	callback := q.String(o.key, "")
+	key := ctxKey.(string)
+	callback := q.String(key, "")
 	if callback == "" {
-		return nil, web.NewProblemError(o.unsetProblem, locales.NewFieldError(o.key, web.StringPhrase("can not be empty")))
+		return nil, web.NewProblemError(ProblemCallbackUnset, locales.NewFieldError(key, web.StringPhrase("can not be empty")))
 	}
 
 	b := errwrap.StringBuilder{}
