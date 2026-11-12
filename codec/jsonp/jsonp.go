@@ -52,12 +52,12 @@ func Install(s *web.Server, key string) {
 	})
 }
 
-func marshal(ctx *web.Context, ctxKey any) ([]byte, error) {
+func marshal(ctx *web.Context, v any) ([]byte, error) {
 	if ctx == nil {
 		panic("ctx 不能为空")
 	}
 
-	data, err := json.Marshal(ctxKey)
+	data, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
 	}
