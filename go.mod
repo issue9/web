@@ -17,7 +17,7 @@ require (
 	github.com/issue9/localeutil v0.35.0
 	github.com/issue9/logs/v7 v7.8.0
 	github.com/issue9/messages v0.1.0
-	github.com/issue9/mux/v10 v10.0.0-beta.3
+	github.com/issue9/mux/v10 v10.0.0-beta.4
 	github.com/issue9/query/v3 v3.2.0
 	github.com/issue9/scheduled v0.25.0
 	github.com/issue9/sliceutil v0.19.0

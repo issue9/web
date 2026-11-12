@@ -50,8 +50,6 @@ type mediaType struct {
 
 	// 解码方法
 	Unmarshal UnmarshalFunc
-
-	requestAccept, responseAccept bool
 }
 
 type compression struct {
@@ -157,12 +155,10 @@ func (c *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem
 	}
 
 	c.mediaTypes = append(c.mediaTypes, &mediaType{
-		Name:           name,
-		Marshal:        m,
-		Unmarshal:      u,
-		Problem:        problem,
-		requestAccept:  requestAccept,
-		responseAccept: responseAccept,
+		Name:      name,
+		Marshal:   m,
+		Unmarshal: u,
+		Problem:   problem,
 	})
 
 	if requestAccept {
