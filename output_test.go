@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v6"
+	"github.com/issue9/assert/v6/rest"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/mux/v10/types"
 	"golang.org/x/text/language"
@@ -33,9 +34,7 @@ func TestContext_Render(t *testing.T) {
 	srv := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.ContentType, header.JSON)
-	r.Header.Set(header.Accept, header.JSON)
+	r := rest.Get(a, "/p1").Header(header.ContentType, header.JSON).Header(header.Accept, header.JSON).Request()
 	ctx := srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, objectInst)
@@ -44,9 +43,11 @@ func TestContext_Render(t *testing.T) {
 		Equal(w.Header().Get(header.ContentLanguage), "zh-Hans")
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, header.JSON)
-	r.Header.Set(header.AcceptLanguage, "")
+	r = rest.Get(a, "/p1").
+		Header(header.Accept, header.JSON).
+		Header(header.AcceptLanguage, "").
+		Header(header.AcceptEncoding, header.Identity).
+		Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, objectInst)
@@ -56,9 +57,7 @@ func TestContext_Render(t *testing.T) {
 
 	// 输出 nil，content-type 和 content-language 均为空
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, header.JSON)
-	r.Header.Set(header.AcceptLanguage, "zh-hans")
+	r = rest.Get(a, "/p1").Header(header.Accept, header.JSON).Header(header.AcceptLanguage, "zh-hans").Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, nil)
@@ -68,10 +67,12 @@ func TestContext_Render(t *testing.T) {
 
 	// accept,accept-language,accept-charset
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, header.JSON)
-	r.Header.Set(header.AcceptLanguage, "zh-hans")
-	r.Header.Set(header.AcceptCharset, "gbk")
+	r = rest.Get(a, "/p1").
+		Header(header.Accept, header.JSON).
+		Header(header.AcceptLanguage, "zh-hans").
+		Header(header.AcceptCharset, "gbk").
+		Header(header.AcceptEncoding, header.Identity).
+		Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, objectInst)
@@ -79,11 +80,12 @@ func TestContext_Render(t *testing.T) {
 
 	// 同时指定了 accept,accept-language,accept-charset 和 accept-encoding
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, header.JSON)
-	r.Header.Set(header.AcceptLanguage, "zh-hans")
-	r.Header.Set(header.AcceptCharset, "gbk")
-	r.Header.Set(header.AcceptEncoding, "deflate")
+	r = rest.Get(a, "/p1").
+		Header(header.Accept, header.JSON).
+		Header(header.AcceptLanguage, "zh-hans").
+		Header(header.AcceptCharset, "gbk").
+		Header(header.AcceptEncoding, "deflate").
+		Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 	ctx.Render(http.StatusCreated, objectInst)
@@ -95,8 +97,7 @@ func TestContext_Render(t *testing.T) {
 
 	// 同时通过 ctx.Write 和 ctx.Marshal 输出内容
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, header.JSON)
+	r = rest.Get(a, "/p1").Header(header.Accept, header.JSON).Header(header.AcceptEncoding, header.Identity).Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 	n, err := ctx.Write([]byte("123"))
@@ -109,21 +110,18 @@ func TestContext_Render(t *testing.T) {
 
 	// ctx.Write 在 ctx.Marshal 之后可以正常调用。
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, header.JSON)
+	r = rest.Get(a, "/p1").Header(header.Accept, header.JSON).Header(header.AcceptEncoding, header.Identity).Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	ctx.Render(http.StatusCreated, "123")
 	n, err = ctx.Write([]byte("123"))
 	a.NotError(err)
 	ctx.freeContext()
-	a.True(n > 0).
-		Equal(w.Body.String(), `"123"123`)
+	a.True(n > 0).Equal(w.Body.String(), `"123"123`)
 
 	// outputMimetype.Marshal 返回 ErrUnsupported
 	srv.logBuf.Reset()
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "application/test")
+	r = rest.Get(a, "/p1").Header(header.Accept, "application/test").Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx, srv.logBuf.String()).
 		Equal(ctx.Mimetype(false), "application/test").
@@ -134,8 +132,7 @@ func TestContext_Render(t *testing.T) {
 
 	// outputMimetype.Marshal 返回错误
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, "application/test")
+	r = rest.Get(a, "/p1").Header(header.Accept, "application/test").Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx).
 		Equal(ctx.Mimetype(false), "application/test").
@@ -152,9 +149,10 @@ func TestContext_Wrap(t *testing.T) {
 	// 输出内容之后，不能调用 Wrap
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, header.JSON)
-	r.Header.Set(header.AcceptLanguage, "cmn-hant")
+	r := rest.Get(a, "/p1").Header(header.Accept, header.JSON).
+		Header(header.AcceptLanguage, "cmn-hant").
+		Header(header.AcceptEncoding, header.Identity).
+		Request()
 	ctx := s.NewContext(w, r, types.NewRoute())
 	_, err := ctx.Write([]byte("abc"))
 	a.NotError(err)
@@ -169,10 +167,11 @@ func TestContext_Wrap(t *testing.T) {
 	// 调用 Wrap 之后修改了报头内容
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, header.JSON)
-	r.Header.Set(header.AcceptLanguage, "cmn-hant")
-	r.Header.Set(header.AcceptEncoding, "")
+	r = rest.Get(a, "/p1").
+		Header(header.Accept, header.JSON).
+		Header(header.AcceptLanguage, "cmn-hant").
+		Header(header.AcceptEncoding, header.Identity).
+		Request()
 	ctx = s.NewContext(w, r, types.NewRoute())
 
 	ctx.Header().Set("h1", "v1")
@@ -188,10 +187,11 @@ func TestContext_Wrap(t *testing.T) {
 	// 多次调用 Wrap
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p1", nil)
-	r.Header.Set(header.Accept, header.JSON)
-	r.Header.Set(header.AcceptLanguage, "cmn-hant")
-	r.Header.Set(header.AcceptEncoding, "")
+	r = rest.Get(a, "/p1").
+		Header(header.Accept, header.JSON).
+		Header(header.AcceptLanguage, "cmn-hant").
+		Header(header.AcceptEncoding, header.Identity).
+		Request()
 	ctx = s.NewContext(w, r, types.NewRoute())
 
 	a.PanicString(func() { // Wrap(nil)
@@ -217,17 +217,21 @@ func TestContext_LocalePrinter(t *testing.T) {
 	a.NotError(b.SetString(language.MustParse("cmn-hant"), "test", "測試"))
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/p", nil)
-	r.Header.Set(header.Accept, header.JSON)
-	r.Header.Set(header.AcceptLanguage, "cmn-hant")
+	r := rest.Get(a, "/p").
+		Header(header.Accept, header.JSON).
+		Header(header.AcceptLanguage, "cmn-hant").
+		Header(header.AcceptEncoding, header.Identity).
+		Request()
 	ctx := srv.NewContext(w, r, types.NewRoute())
 	ctx.Render(http.StatusOK, ctx.Sprintf("test"))
 	a.Equal(w.Body.String(), `"測試"`)
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p", nil)
-	r.Header.Set(header.Accept, header.JSON)
-	r.Header.Set(header.AcceptLanguage, "cmn-hans")
+	r = rest.Get(a, "/p").
+		Header(header.Accept, header.JSON).
+		Header(header.AcceptLanguage, "cmn-hans").
+		Header(header.AcceptEncoding, header.Identity).
+		Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	n, err := ctx.LocalePrinter().Fprintf(ctx, "test")
 	a.NotError(err).Equal(n, len("测试")).Equal(w.Body.String(), "测试")
@@ -246,21 +250,21 @@ func TestNotModified(t *testing.T) {
 	)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/p", nil)
+	r := rest.Get(a, "/p").Request()
 	s.NewContext(w, r, types.NewRoute()).apply(nm)
 	tag := w.Header().Get(header.ETag)
 	a.Equal(w.Result().StatusCode, http.StatusOK).NotEmpty(tag).
 		Equal(w.Result().Header.Get("Content-Type"), "application/json; charset=utf-8")
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	r = rest.Get(a, "/p").Request()
 	r.Header.Set(header.IfNoneMatch, tag)
 	s.NewContext(w, r, types.NewRoute()).apply(nm)
 	a.Equal(w.Result().StatusCode, http.StatusNotModified)
 
 	// Post 不启用
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodPost, "/p", nil)
+	r = rest.Post(a, "/p", nil).Request()
 	s.NewContext(w, r, types.NewRoute()).apply(nm)
 	tag = w.Header().Get(header.ETag)
 	a.Equal(w.Result().StatusCode, http.StatusOK).Empty(tag)
@@ -273,13 +277,13 @@ func TestNotModified(t *testing.T) {
 	)
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	r = rest.Get(a, "/p").Request()
 	s.NewContext(w, r, types.NewRoute()).apply(nm)
 	tag = w.Header().Get(header.ETag)
 	a.Equal(w.Result().StatusCode, http.StatusOK).NotEmpty(tag)
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	r = rest.Get(a, "/p").Request()
 	r.Header.Set(header.IfNoneMatch, tag)
 	s.NewContext(w, r, types.NewRoute()).apply(nm)
 	a.Equal(w.Result().StatusCode, http.StatusNotModified)
@@ -292,7 +296,7 @@ func TestNotModified(t *testing.T) {
 	)
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	r = rest.Get(a, "/p").Request()
 	s.NewContext(w, r, types.NewRoute()).apply(nm)
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
 }
@@ -302,16 +306,14 @@ func TestCreated(t *testing.T) {
 	s := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/p", nil)
-	r.Header.Set(header.Accept, header.JSON)
+	r := rest.Get(a, "/p").Header(header.Accept, header.JSON).Request()
 	s.NewContext(w, r, types.NewRoute()).
 		apply(Created(nil, ""))
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
 		Empty(w.Body.String())
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p", nil)
-	r.Header.Set(header.Accept, header.JSON)
+	r = rest.Get(a, "/p").Header(header.Accept, header.JSON).Header(header.AcceptEncoding, header.Identity).Request()
 	s.NewContext(w, r, types.NewRoute()).
 		apply(Created(objectInst, ""))
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
@@ -319,8 +321,7 @@ func TestCreated(t *testing.T) {
 		Empty(w.Header().Get(header.Location))
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p", nil)
-	r.Header.Set(header.Accept, header.JSON)
+	r = rest.Get(a, "/p").Header(header.Accept, header.JSON).Header(header.AcceptEncoding, header.Identity).Request()
 	s.NewContext(w, r, types.NewRoute()).
 		apply(Created(objectInst, "/p2"))
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
@@ -333,13 +334,13 @@ func TestRedirect(t *testing.T) {
 	s := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/p", nil)
+	r := rest.Get(a, "/p").Request()
 	ctx := s.NewContext(w, r, types.NewRoute())
 	ctx.apply(ctx.NotImplemented())
 	a.Equal(w.Result().StatusCode, http.StatusNotImplemented)
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	r = rest.Get(a, "/p").Request()
 	Redirect(http.StatusMovedPermanently, "http://example.com")
 	s.NewContext(w, r, types.NewRoute()).
 		apply(Redirect(http.StatusMovedPermanently, "http://example.com"))
@@ -355,7 +356,7 @@ func TestNoContent(t *testing.T) {
 	s.logBuf.Reset()
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/p", nil)
+	r := rest.Get(a, "/p").Request()
 	r.Header.Set(header.AcceptEncoding, "gzip") // 服务端不应该构建压缩对象
 	r.Header.Set(header.Accept, header.JSON)
 	s.NewContext(w, r, types.NewRoute()).apply(NoContent())

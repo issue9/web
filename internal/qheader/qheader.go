@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-var itemsPool = &sync.Pool{New: func() any { return []*Item{} }}
+var itemsPool = &sync.Pool{New: func() any { return &[]Item{} }}
 
 // Item 表示报头内容的单个元素内容
 //
@@ -23,7 +23,7 @@ type Item struct {
 	Q     float32
 }
 
-func PutQHeader(items []*Item) { itemsPool.Put(items) }
+func FreeItems(items *[]Item) { itemsPool.Put(items) }
 
 // ParseQHeader 解析报头内容
 //
@@ -31,60 +31,54 @@ func PutQHeader(items []*Item) { itemsPool.Put(items) }
 //
 // Q 值大的靠前，如果 Q 值相同，则全名的比带通配符的靠前，*/* 最后，都是全名则按原来顺序返回。
 //
-// header 表示报头的内容；
+// header 表示报头的内容，如果为空则相当于支持所有值；
 // any 表示通配符的值，只能是 */*、* 和空值，其它情况则 panic；
 //
-// 所有 Item.Q 为零的会被忽略，如果解析 q 出错会返回错误；
-func ParseQHeader(header string, any string) (items []*Item, err error) {
+// allow 为报头解析出来的正常项；
+// deny 为报头解析出来之后 Q 值为零的项的值；
+// errs 为报头中无法正常解析的原始项；
+func ParseQHeader(header string, any string) (allow []Item, deny, errs []string) {
 	if any != "*" && any != "*/*" && any != "" {
 		panic("any 值错误")
 	}
 
-	headers := strings.Split(header, ",")
-	items = itemsPool.Get().([]*Item)
-	il, hl := len(items), len(headers)
-	if il > hl {
-		items = items[:hl]
-	} else if il < hl {
-		for i := 0; i < hl-il; i++ {
-			items = append(items, &Item{})
-		}
+	if header == "" {
+		header = any
 	}
 
-	count := 0
+	headers := strings.Split(header, ",")
+	allow = *itemsPool.Get().(*[]Item)
+	allow = allow[:0]
+
 	for _, h := range headers {
 		if h = strings.TrimSpace(h); h == "" {
 			continue
 		}
 
 		q := 1.0
-		var err error
 		v, p := ParseWithParam(h, "q")
 		if p != "" {
+			var err error
 			if q, err = strconv.ParseFloat(p, 32); err != nil {
-				return nil, err
+				errs = append(errs, h)
+				continue
 			}
 		}
 
-		// 如果是 *;q=0 这样特殊的项需要保留
-		if q <= 0 && v != any {
-			continue
+		if q <= 0 {
+			deny = append(deny, v)
+		} else {
+			allow = append(allow, Item{Value: v, Q: float32(q)})
 		}
-
-		// NOTE: 从 pool 取得的值，需要全部覆盖。
-		item := items[count]
-		item.Value = v
-		item.Q = float32(q)
-
-		count++
 	}
-	items = items[:count]
-	sortItems(items, any)
-	return items, nil
+
+	sortItems(allow, any)
+
+	return allow, deny, errs
 }
 
-func sortItems(items []*Item, any string) {
-	slices.SortStableFunc(items, func(i, j *Item) int {
+func sortItems(items []Item, any string) {
+	slices.SortStableFunc(items, func(i, j Item) int {
 		if i.Q != j.Q {
 			return cmp.Compare(j.Q, i.Q)
 		}

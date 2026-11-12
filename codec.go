@@ -197,62 +197,82 @@ func (c *Codec) contentEncoding(name string, r io.Reader) (io.ReadCloser, error)
 	return nil, NewError("not found compress for %s", name)
 }
 
+func unableParse(v string) error {
+	return localeutil.Error("unable parse %s", v)
+}
+
 // 根据客户端的 Accept-Encoding 报头选择是适合的压缩方法
 //
 // 如果返回的 c 为空值表示不需要压缩。
 // 当有多个符合时，按添加顺序拿第一个符合条件数据。
+// 如果 h 为空，那么将被设置为默认值 ＊；
 func (e *Codec) acceptEncoding(contentType, h string) (c Compressor, err error) {
+	// 规则如下：
+	//  - 按 q 从大到小进行排序；
+	//  - 忽略无法解析 q 的项；
+	//  - 依次匹配，匹配到即返回；
+	//  - 如果匹配到的项是 *，那么还要查看匹配到的项是否在 q=0 的项中，如果是则匹配下一个项；
+	//
+	// 如果传递的内容如下：
+	//
+	//	gzip;q=0.9,*;q=1
+	//
+	// 则因为 * 的 q 值比较高，而返回 * 匹配的内容
+	//
+	// */*;q=0 表示匹配所有未列出的编码
+
 	if len(e.compressions) == 0 {
 		return
 	}
 
-	var accepts []*qheader.Item
-	if accepts, err = qheader.ParseQHeader(h, "*"); err != nil {
-		return nil, err
-	}
+	accepts, deny, errs := qheader.ParseQHeader(h, "*")
+	defer qheader.FreeItems(&accepts)
 
-	defer qheader.PutQHeader(accepts)
-	if len(accepts) == 0 {
-		return
+	if len(accepts) == 0 && len(deny) == 0 && len(errs) > 0 {
+		return nil, unableParse(h)
 	}
 
 	indexes := e.getMatchCompresses(contentType)
-	if len(indexes) == 0 {
-		return
-	}
-
-	if last := accepts[len(accepts)-1]; last.Value == "*" { // * 匹配其他任意未在该请求头字段中列出的编码方式
-		if last.Q == 0 {
-			return nil, localeutil.Error("client set accept-encoding=*;q=0")
-		}
-
-		for _, index := range indexes {
-			curr := e.compressions[index]
-			if slices.IndexFunc(accepts, func(i *qheader.Item) bool { return i.Value == curr.compressor.Name() }) < 0 {
-				return curr.compressor, nil
-			}
+	if len(indexes) == 0 { // 服务端未添加任何压缩算法
+		if slices.Contains(deny, header.Identity) { // 且服务端明确必须要压缩
+			return nil, localeutil.Error("client set \"identity;q=0\"")
 		}
 		return
 	}
 
-	var identity *qheader.Item
-	for _, accept := range accepts {
-		if accept.Value == header.Identity { // 除非 q=0，否则表示总是可以被接受
-			identity = accept
+	hasAny := false
+	for _, item := range accepts {
+		if item.Value == "*" { // * 必然在切片的最后
+			hasAny = true
+			break
 		}
 
-		for _, index := range indexes {
-			if curr := e.compressions[index]; curr.compressor.Name() == accept.Value {
-				return curr.compressor, nil
+		if item.Value == header.Identity { // 明确指定了不用压缩
+			continue
+		}
+
+		for _, idx := range indexes {
+			c := e.compressions[idx]
+			if item.Value == c.compressor.Name() {
+				return c.compressor, nil
 			}
 		}
 	}
-	if identity != nil && identity.Q > 0 {
-		c := e.compressions[indexes[0]]
-		return c.compressor, nil
+
+	// 在 accept 中未找到符合的，且指定 *，挑一个服务器支持且不在 deny 中的
+	if hasAny {
+		for _, idx := range indexes {
+			c := e.compressions[idx]
+			if !denied(c.compressor.Name(), deny) {
+				return c.compressor, nil
+			}
+		}
 	}
 
-	return // 没有匹配，表示不需要进行压缩
+	if slices.Contains(deny, header.Identity) { // 明确将 identity 设置为 0
+		return nil, localeutil.Error("client set \"identity;q=0\"")
+	}
+	return nil, nil
 }
 
 func (c *Codec) getMatchCompresses(contentType string) []int {
@@ -314,52 +334,76 @@ func (e *Codec) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) 
 
 // 从请求端提交的 Accept 报头解析出所需要的解码函数
 //
-// */* 或是空值 表示匹配任意内容，一般会选择第一个元素作匹配；
-// xx/* 表示匹配以 xx/ 开头的任意元素，一般会选择 xx/* 开头的第一个元素；
-// xx/ 表示完全匹配以 xx/ 的内容
-// 如果传递的内容如下：
-//
-//	application/json;q=0.9,*/*;q=1
-//
-// 则因为 */* 的 q 值比较高，而返回 */* 匹配的内容
+// 如果 h 为空，那么将被设置为默认值 ＊；
 func (c *Codec) accept(h string) (*mediaType, error) {
-	if h == "" {
-		if item := c.findMarshal("*/*"); item != nil {
-			return item, nil
+	// 规则如下：
+	//  - 按 q 从大到小进行排序；
+	//  - 忽略无法解析 q 的项；
+	//  - 依次匹配，匹配到即返回；
+	//  - 如果匹配到的项是 */*，那么还要查看匹配到的项是否在 q=0 的项中，如果是则匹配下一个项；
+	//
+	// 如果传递的内容如下：
+	//
+	//	application/json;q=0.9,*/*;q=1
+	//
+	// 则因为 */* 的 q 值比较高，而返回 */* 匹配的内容
+	//
+	// */*;q=0 表示匹配所有未列出的编码
+
+	accepts, deny, errs := qheader.ParseQHeader(h, "*/*")
+	defer qheader.FreeItems(&accepts)
+
+	if len(accepts) == 0 && len(deny) == 0 && len(errs) > 0 {
+		return nil, unableParse(h)
+	}
+
+	hasAny := false
+	for _, item := range accepts {
+		if item.Value == "*/*" { // */* 必然在切片的最后
+			hasAny = true
+			break
 		}
-		return nil, nil
+
+		for _, mt := range c.mediaTypes {
+			if match(item.Value, mt) {
+				return mt, nil
+			}
+		}
 	}
 
-	items, err := qheader.ParseQHeader(h, "*/*")
-	if err != nil {
-		return nil, err
-	}
-
-	defer qheader.PutQHeader(items)
-	for _, item := range items {
-		if item.Q == 0 {
-			continue
-		} // q==0
-		if i := c.findMarshal(item.Value); i != nil {
-			return i, nil
+	// 在 accept 中未找到符合的，且指定 */*，挑一个服务器支持且不在 deny 中的
+	if hasAny {
+		for _, mt := range c.mediaTypes {
+			if !denied(mt.Name, deny) {
+				return mt, nil
+			}
 		}
 	}
 
 	return nil, nil
 }
 
-func (c *Codec) findMarshal(name string) *mediaType {
+func match(name string, mt *mediaType) bool {
 	switch {
-	case len(c.mediaTypes) == 0:
-		return nil
-	case name == "" || name == "*/*":
-		return c.searchFunc(func(s string) bool { return true }) // 第一个元素
-	case strings.HasSuffix(name, "/*"):
-		prefix := name[:len(name)-3]
-		return c.searchFunc(func(s string) bool { return strings.HasPrefix(s, prefix) })
-	default:
-		return c.searchFunc(func(s string) bool { return s == name })
+	case name == mt.Name:
+		return true
+	case strings.HasSuffix(name, "/*") && strings.HasPrefix(mt.Name, name[:len(name)-1]):
+		return true
 	}
+	return false
+}
+
+// name 是否在 deny 中
+func denied(name string, deny []string) bool {
+	for _, d := range deny {
+		if d == "*/*" || d == name {
+			return true
+		}
+		if strings.HasSuffix(d, "/*") && strings.HasPrefix(name, d[:len(d)-1]) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Codec) searchFunc(match func(string) bool) *mediaType {

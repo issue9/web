@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v6"
+	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web/internal/qheader"
@@ -128,12 +129,14 @@ func TestCodec_acceptEncoding(t *testing.T) {
 	a.Equal(e.acceptEncodingHeader, "compress,gzip")
 
 	t.Run("一般", func(t *testing.T) {
-		a := assert.New(t, false)
+		a := a.New(t)
+
 		b, err := e.acceptEncoding(header.JSON, "gzip;q=0.9,br")
 		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
+		// gzip 无法解析，br 能解析但是未添加到 Codec
 		b, err = e.acceptEncoding(header.JSON, "gzip;q=x.9,br")
-		a.Error(err).Nil(b)
+		a.NotError(err).Nil(b)
 
 		b, err = e.acceptEncoding(header.JSON, "br,gzip")
 		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
@@ -145,22 +148,23 @@ func TestCodec_acceptEncoding(t *testing.T) {
 		a.NotError(err).Nil(b)
 
 		b, err = e.acceptEncoding(header.Plain, "")
-		a.NotError(err).Nil(b)
+		a.NotError(err).Equal(b.Name(), "compress")
 	})
 
 	t.Run("header=*", func(t *testing.T) {
-		a := assert.New(t, false)
+		a := a.New(t)
+
 		b, err := e.acceptEncoding(header.XML, "*;q=0")
-		a.Error(err).Nil(b)
+		a.NotError(err).Nil(b)
 
 		b, err = e.acceptEncoding(header.XML, "*,br")
 		a.NotError(err).NotNil(b).Equal(b.Name(), "compress")
 
 		b, err = e.acceptEncoding(header.XML, "*,gzip")
-		a.NotError(err).NotNil(b).Equal(b.Name(), "compress")
+		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, err = e.acceptEncoding(header.XML, "*,gzip,compress") // gzip,compress 都排除了
-		a.NotError(err).Nil(b)
+		b, err = e.acceptEncoding(header.XML, "*,gzip,compress")
+		a.NotError(err).Equal(b.Name(), "gzip")
 	})
 
 	t.Run("header=identity", func(t *testing.T) {
@@ -172,9 +176,9 @@ func TestCodec_acceptEncoding(t *testing.T) {
 		b, err = e.acceptEncoding(header.XML, "identity;q=0,gzip,br")
 		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
-		// 没有可匹配，选取第一个
+		// identity=0
 		b, err = e.acceptEncoding(header.XML, "identity;q=0,abc,def")
-		a.NotError(err).Nil(b)
+		a.Equal(err, localeutil.Error("client set \"identity;q=0\"")).Nil(b)
 	})
 }
 
@@ -265,50 +269,21 @@ func TestCodec_accept(t *testing.T) {
 		Equal(item.name(false), header.Plain).
 		Equal(item.name(true), "text/plain+problem")
 
+	// json 被禁，但是匹配 */* 匹配了 text/plain
+	item, err = mt.accept(header.JSON + ";q=0,*/*;q=1")
+	a.NotError(err).Equal(item.Name, header.Plain)
+
+	// json 被禁
+	item, err = mt.accept(header.JSON + ";q=0")
+	a.NotError(err).Nil(item)
+
+	// json 和 text/* 被禁，找不到匹配项
+	item, err = mt.accept("text/*;q=0,application/json;q=0,*/*;q=1")
+	a.NotError(err).Nil(item)
+
 	item, err = mt.accept("font/wottf;q=x.9")
 	a.Error(err).Nil(item)
 
 	item, err = mt.accept("font/wottf")
 	a.NotError(err).Nil(item)
-}
-
-func TestCodec_findMarshal(t *testing.T) {
-	a := assert.New(t, false)
-	mm := NewCodec()
-	a.NotNil(mm)
-	mm.AddMimetype("text", marshalTest, unmarshalTest, "", true, true).
-		AddMimetype("text/plain", marshalTest, unmarshalTest, "", true, true).
-		AddMimetype("text/text", marshalTest, unmarshalTest, "", true, true).
-		AddMimetype("application/aa", marshalTest, unmarshalTest, "", true, true).
-		AddMimetype("application/bb", marshalTest, unmarshalTest, "application/problem+bb", true, true).
-		AddMimetype(header.JSON, marshalTest, unmarshalTest, "", true, true)
-
-	item := mm.findMarshal("text")
-	a.NotNil(item).Equal(item.name(false), "text")
-
-	item = mm.findMarshal("text/*")
-	a.NotNil(item).Equal(item.name(false), "text")
-
-	item = mm.findMarshal("application/*")
-	a.NotNil(item).Equal(item.name(false), "application/aa")
-
-	// 第一条数据
-	item = mm.findMarshal("*/*")
-	a.NotNil(item).Equal(item.name(false), "text")
-
-	// 第一条数据
-	item = mm.findMarshal("")
-	a.NotNil(item).Equal(item.name(false), "text")
-
-	// DefaultMimetype 不影响 findMarshal
-	item = mm.findMarshal("*/*")
-	a.NotNil(item).Equal(item.name(false), "text")
-
-	// 通过 problem 查找
-	item = mm.findMarshal("application/problem+bb")
-	a.NotNil(item).Equal(item.name(false), "application/bb")
-
-	// 不存在
-	item = mm.findMarshal("xx/*")
-	a.Nil(item)
 }

@@ -37,9 +37,9 @@ func BenchmarkParseQHeader(b *testing.B) {
 	b.Run("5", func(b *testing.B) {
 		b.ReportAllocs()
 		str := "application/json;q=0.9,text/plain;q=0.8,text/html,text/xml,*/*;q=0.1"
-		var items []*Item
+		var items []Item
 		for b.Loop() {
-			items, _ = ParseQHeader(str, "*/*")
+			items, _, _ = ParseQHeader(str, "*/*")
 		}
 		a.True(len(items) > 0)
 	})
@@ -47,10 +47,10 @@ func BenchmarkParseQHeader(b *testing.B) {
 	b.Run("pool-5", func(b *testing.B) {
 		b.ReportAllocs()
 		str := "application/json;q=0.9,text/plain;q=0.8,text/html,text/xml,*/*;q=0.1"
-		var items []*Item
+		var items []Item
 		for b.Loop() {
-			items, _ = ParseQHeader(str, "*/*")
-			PutQHeader(items)
+			items, _, _ = ParseQHeader(str, "*/*")
+			FreeItems(&items)
 		}
 		a.True(len(items) > 0)
 	})
@@ -58,9 +58,9 @@ func BenchmarkParseQHeader(b *testing.B) {
 	b.Run("1", func(b *testing.B) {
 		b.ReportAllocs()
 		str := "application/json;q=0.9"
-		var items []*Item
+		var items []Item
 		for b.Loop() {
-			items, _ = ParseQHeader(str, "*/*")
+			items, _, _ = ParseQHeader(str, "*/*")
 		}
 		a.True(len(items) > 0)
 	})
@@ -68,10 +68,10 @@ func BenchmarkParseQHeader(b *testing.B) {
 	b.Run("pool-1", func(b *testing.B) {
 		b.ReportAllocs()
 		str := "application/json;q=0.9"
-		var items []*Item
+		var items []Item
 		for b.Loop() {
-			items, _ = ParseQHeader(str, "*/*")
-			PutQHeader(items)
+			items, _, _ = ParseQHeader(str, "*/*")
+			FreeItems(&items)
 		}
 		a.True(len(items) > 0)
 	})

@@ -6,6 +6,7 @@ package web
 
 import (
 	"bytes"
+	"compress/flate"
 	"compress/gzip"
 	"context"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/issue9/assert/v6"
+	"github.com/issue9/assert/v6/rest"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/mux/v10/types"
 	"golang.org/x/text/language"
@@ -42,7 +44,7 @@ func newContext(a *assert.Assertion, w http.ResponseWriter, r *http.Request) *Co
 func TestContext_KeepAlive(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a, false)
-	ctx := s.NewContext(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/p", nil), types.NewRoute())
+	ctx := s.NewContext(httptest.NewRecorder(), rest.Get(a, "/p").Request(), types.NewRoute())
 	dur := 500 * time.Millisecond
 	begin := time.Now()
 
@@ -58,7 +60,7 @@ func TestNewContext(t *testing.T) {
 
 	t.Run("unset request id key", func(*testing.T) {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, "/path", nil)
+		r := rest.Get(a, "/path").Request()
 
 		s.NewContext(w, r, types.NewRoute())
 		a.NotEmpty(w.Header().Get(header.XRequestID))
@@ -66,8 +68,7 @@ func TestNewContext(t *testing.T) {
 
 	t.Run("set request id key", func(*testing.T) {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set(header.XRequestID, "111")
+		r := rest.Get(a, "/path").Header(header.XRequestID, "111").Request()
 
 		s.NewContext(w, r, types.NewRoute())
 		a.Equal(w.Header().Get(header.XRequestID), "111")
@@ -75,8 +76,7 @@ func TestNewContext(t *testing.T) {
 
 	t.Run("accept", func(*testing.T) {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set(header.Accept, "111")
+		r := rest.Get(a, "/path").Header(header.Accept, "111").Request()
 
 		s.NewContext(w, r, types.NewRoute())
 		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
@@ -84,8 +84,7 @@ func TestNewContext(t *testing.T) {
 
 	t.Run("accept-charset", func(*testing.T) {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set(header.AcceptCharset, "111")
+		r := rest.Get(a, "/path").Header(header.AcceptCharset, "111").Request()
 
 		s.NewContext(w, r, types.NewRoute())
 		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
@@ -93,17 +92,15 @@ func TestNewContext(t *testing.T) {
 
 	t.Run("accept-encoding", func(*testing.T) {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set(header.AcceptEncoding, "*;q=0") // *;q=0
+		r := rest.Get(a, "/path").Header(header.AcceptEncoding, "*;q=0").Request()
 
 		s.NewContext(w, r, types.NewRoute())
-		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
+		a.Equal(w.Result().StatusCode, http.StatusOK)
 	})
 
 	t.Run("content-type", func(*testing.T) {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set(header.ContentType, "111")
+		r := rest.Get(a, "/path").Header(header.ContentType, "111").Request()
 
 		s.NewContext(w, r, types.NewRoute())
 		a.Equal(w.Result().StatusCode, http.StatusUnsupportedMediaType)
@@ -115,8 +112,7 @@ func TestContext_SetMimetype(t *testing.T) {
 	srv := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
-	r.Header.Set(header.Accept, header.JSON)
+	r := rest.Post(a, "/path", []byte("123")).Header(header.Accept, header.JSON).Request()
 	ctx := srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 
@@ -139,8 +135,7 @@ func TestContext_SetCharset(t *testing.T) {
 	srv := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
-	r.Header.Set(header.Accept, header.JSON)
+	r := rest.Post(a, "/path", []byte("123")).Header(header.Accept, header.JSON).Request()
 	ctx := srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 
@@ -162,15 +157,14 @@ func TestContext_SetEncoding(t *testing.T) {
 	srv := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
-	r.Header.Set(header.Accept, header.JSON)
+	r := rest.Post(a, "/path", bytes.NewBufferString("123").Bytes()).Header(header.Accept, header.JSON).Request()
 	ctx := srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 
 	t.Run("出错", func(t *testing.T) {
 		a := assert.New(t, false)
 		a.PanicString(func() {
-			ctx.SetEncoding("*;q=0")
+			ctx.SetEncoding("*;q=x.0")
 		}, "解析参数时发生了错误")
 
 		_, err := ctx.Write([]byte("200"))
@@ -181,30 +175,13 @@ func TestContext_SetEncoding(t *testing.T) {
 	})
 
 	t.Run("setEncoding()", func(t *testing.T) {
-		a := assert.New(t, false)
+		a := a.New(t)
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set(header.Accept, header.JSON)
-		r.Header.Set(header.AcceptEncoding, "gzip")
+		r = rest.Get(a, "/path").Header(header.Accept, header.JSON).Header(header.AcceptEncoding, "gzip").Request()
 		ctx := srv.NewContext(w, r, types.NewRoute())
 
-		ctx.SetEncoding("")
+		ctx.SetEncoding("") // 相当于 *
 		a.Empty(w.Header().Get(header.ContentEncoding))
-		_, err := ctx.Write([]byte("plain"))
-		a.NotError(err)
-		ctx.freeContext()
-		a.Equal(w.Body.String(), "plain")
-	})
-
-	t.Run("setEncoding(gzip)", func(t *testing.T) {
-		a := assert.New(t, false)
-		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodGet, "/path", nil)
-		r.Header.Set(header.Accept, header.JSON)
-		ctx := srv.NewContext(w, r, types.NewRoute())
-
-		ctx.SetEncoding("gzip")
-		a.Equal(ctx.Encoding(), "gzip")
 		_, err := ctx.Write([]byte("plain"))
 		a.NotError(err)
 		ctx.freeContext()
@@ -217,6 +194,37 @@ func TestContext_SetEncoding(t *testing.T) {
 		a.NotError(err).Equal(string(data), "plain")
 		a.NotError(reader.Close())
 	})
+
+	t.Run("setEncoding(identity)", func(t *testing.T) {
+		a := a.New(t)
+		w := httptest.NewRecorder()
+		r = rest.Get(a, "/path").Header(header.Accept, header.JSON).Header(header.AcceptEncoding, "gzip").Request()
+		ctx := srv.NewContext(w, r, types.NewRoute())
+
+		ctx.SetEncoding(header.Identity)
+		a.Empty(w.Header().Get(header.ContentEncoding))
+		_, err := ctx.Write([]byte("plain"))
+		a.NotError(err)
+		ctx.freeContext()
+		a.Equal(w.Body.String(), "plain")
+	})
+
+	t.Run("setEncoding(compress)", func(t *testing.T) {
+		a := assert.New(t, false)
+		w := httptest.NewRecorder()
+		r := rest.Get(a, "/path").Header(header.Accept, header.JSON).Request()
+		ctx := srv.NewContext(w, r, types.NewRoute())
+
+		ctx.SetEncoding("deflate")
+		a.Equal(ctx.Encoding(), "deflate")
+		_, err := ctx.Write([]byte("plain"))
+		a.NotError(err)
+		ctx.freeContext()
+
+		reader := flate.NewReader(bytes.NewReader(w.Body.Bytes()))
+		data, err := io.ReadAll(reader)
+		a.NotError(err).NotNil(data).Equal("plain", string(data))
+	})
 }
 
 func TestContext_SetLanguage(t *testing.T) {
@@ -224,8 +232,7 @@ func TestContext_SetLanguage(t *testing.T) {
 	srv := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
-	r.Header.Set(header.Accept, header.JSON)
+	r := rest.Post(a, "/path", []byte("123")).Header(header.Accept, header.JSON).Request()
 	ctx := srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 
@@ -241,12 +248,12 @@ func TestContext_IsXHR(t *testing.T) {
 	s := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/p", nil)
+	r := rest.Get(a, "/p").Request()
 	ctx := s.NewContext(w, r, types.NewRoute())
 	a.False(ctx.IsXHR())
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodGet, "/p", nil)
+	r = rest.Get(a, "/p").Request()
 	r.Header.Set(header.XRequestedWith, "XMLHttpRequest")
 	ctx = s.NewContext(w, r, types.NewRoute())
 	a.True(ctx.IsXHR())
@@ -257,12 +264,12 @@ func TestContext_IsIdempotent(t *testing.T) {
 	s := newTestServer(a, false)
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/p", nil)
+	r := rest.Get(a, "/p").Request()
 	ctx := s.NewContext(w, r, types.NewRoute())
 	a.True(ctx.IsIdempotent())
 
 	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodPatch, "/p", nil)
+	r = rest.Patch(a, "/p", nil).Request()
 	ctx = s.NewContext(w, r, types.NewRoute())
 	a.False(ctx.IsIdempotent())
 }
@@ -298,7 +305,7 @@ func TestServer_acceptLanguage(t *testing.T) {
 
 func TestContext_ClientIP(t *testing.T) {
 	a := assert.New(t, false)
-	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
+	r := rest.Post(a, "/path", []byte("123")).Request()
 	ctx := newContext(a, nil, r)
 	a.NotNil(ctx).Equal(ctx.ClientIP(), r.RemoteAddr)
 }
@@ -306,7 +313,7 @@ func TestContext_ClientIP(t *testing.T) {
 func TestContext_time(t *testing.T) {
 	a := assert.New(t, false)
 
-	r := httptest.NewRequest(http.MethodPost, "/path", bytes.NewBufferString("123"))
+	r := rest.Post(a, "/path", []byte("123")).Request()
 	ctx := newContext(a, nil, r)
 
 	a.Equal(ctx.Location(), ctx.Server().Location()).

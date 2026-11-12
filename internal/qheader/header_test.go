@@ -59,34 +59,37 @@ func TestAcceptCharset(t *testing.T) {
 	a := assert.New(t, false)
 
 	name, enc, err := ParseAcceptCharset(header.UTF8)
-	a.NotError(err).Equal(name, header.UTF8).
+	a.Nil(err).Equal(name, header.UTF8).
 		True(CharsetIsNop(enc))
 
 	name, enc, err = ParseAcceptCharset("")
-	a.NotError(err).Equal(name, header.UTF8).
+	a.Nil(err).Equal(name, header.UTF8).
 		True(CharsetIsNop(enc))
 
 	// * 表示采用默认的编码
 	name, enc, err = ParseAcceptCharset("*")
-	a.NotError(err).Equal(name, header.UTF8).
+	a.Nil(err).Equal(name, header.UTF8).
 		True(CharsetIsNop(enc))
 
 	name, enc, err = ParseAcceptCharset("gbk")
-	a.NotError(err).Equal(name, "gbk").
+	a.Nil(err).Equal(name, "gbk").
 		Equal(enc, simplifiedchinese.GBK)
 
 	// 传递一个非正规名称
 	name, enc, err = ParseAcceptCharset("chinese")
-	a.NotError(err).Equal(name, "gbk").
+	a.Nil(err).Equal(name, "gbk").
 		Equal(enc, simplifiedchinese.GBK)
 
 	// q 错解析错误
 	name, enc, err = ParseAcceptCharset("utf-8;q=x.9,gbk;q=0.8")
-	a.Error(err).Empty(name).Nil(enc)
+	a.Equal(err, []string{"utf-8;q=x.9"}).
+		Equal(name, "gbk").
+		Equal(enc, simplifiedchinese.GBK)
 
 	// 不支持的编码
 	name, enc, err = ParseAcceptCharset("not-supported")
-	a.NotError(err).Empty(name).
+	a.Empty(err).
+		Empty(name).
 		Nil(enc)
 }
 

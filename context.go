@@ -81,8 +81,8 @@ type Context struct {
 	logs *AttrLogs
 }
 
-func parseHeaderErr(h string, err error) LocaleStringer {
-	return Phrase("parse %[1]s error %[2]s", h, err.Error())
+func parseHeaderErr(header string, err error) LocaleStringer {
+	return Phrase("parse %[1]s error %[2]s", header, err.Error())
 }
 
 // 输出降级的错误页面
@@ -124,9 +124,9 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 
 	h = r.Header.Get(header.AcceptCharset)
-	outputCharsetName, outputCharset, err := qheader.ParseAcceptCharset(h)
-	if err != nil {
-		warn().LocaleString(parseHeaderErr(header.AcceptCharset, err))
+	outputCharsetName, outputCharset, errs := qheader.ParseAcceptCharset(h)
+	if len(errs) > 0 {
+		warn().LocaleString(parseHeaderErr(header.AcceptCharset, unableParse(strings.Join(errs, ","))))
 		s.errorPage(w, problems.NotAcceptable)
 		return nil
 	}
@@ -256,9 +256,9 @@ func (ctx *Context) SetCharset(charset string) {
 		return
 	}
 
-	outputCharsetName, outputCharset, err := qheader.ParseAcceptCharset(charset)
-	if err != nil {
-		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
+	outputCharsetName, outputCharset, errs := qheader.ParseAcceptCharset(charset)
+	if len(errs) > 0 {
+		panic(fmt.Sprintf("无法解析以下内容：%s", strings.Join(errs, ",")))
 	}
 	if outputCharsetName == "" {
 		panic(fmt.Sprintf("指定的字符集 %s 不存在", charset))
