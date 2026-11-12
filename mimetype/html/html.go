@@ -5,7 +5,7 @@
 // Package html 提供输出 HTML 内容的解码函数
 //
 //	srv := server.New("", "", &server.Options{
-//		Codec: web.New().AddMimetype("text/html", html.Marshal, html.Unmarshal, "")
+//		Codec: web.NewCodec().AddMediaType(web.NewMediaType("text/html", html.Marshal, html.Unmarshal, ""), true, true)
 //	})
 //
 //	html.Init(...)

@@ -131,7 +131,7 @@ func (conf *configOf[T]) sanitizeMimetypes(c *web.Codec, f *filter.Filter) {
 			}
 		}
 
-		c.AddMimetype(item.Type, m.marshal, m.unmarshal, item.Problem, request, response)
+		c.AddMediaType(web.NewMediaType(item.Type, item.Problem, m.marshal, m.unmarshal), request, response)
 	}
 
 	conf.codec = c

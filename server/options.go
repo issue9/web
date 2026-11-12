@@ -196,7 +196,7 @@ func sanitizeOptions(o *Options, t int) (*Options, error) {
 	}
 
 	if o.Codec == nil {
-		o.Codec = web.NewCodec().AddMimetype(xj.Mimetype, xj.Marshal, xj.Unmarshal, xj.ProblemMimetype, true, true)
+		o.Codec = web.NewCodec().AddMediaType(web.NewMediaType(xj.Mimetype, xj.ProblemMimetype, xj.Marshal, xj.Unmarshal), true, true)
 	}
 
 	switch t {

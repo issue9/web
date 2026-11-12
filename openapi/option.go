@@ -97,7 +97,7 @@ func WithMediaType(t ...string) Option {
 		for _, tt := range t {
 			found := false
 
-			for k, v := range d.s.Codec().Mimetypes() {
+			for k, v := range d.s.Codec().MediaTypes() {
 				if k == tt {
 					found = true
 					d.mediaTypes[tt] = v

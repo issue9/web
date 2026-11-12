@@ -63,8 +63,8 @@ func newOptions(a *assert.Assertion, o *Options) *Options {
 	}
 	if o.Codec == nil {
 		o.Codec = web.NewCodec().
-			AddMimetype(json.Mimetype, json.Marshal, json.Unmarshal, json.ProblemMimetype, true, true).
-			AddMimetype(xml.Mimetype, xml.Marshal, xml.Unmarshal, "", true, true)
+			AddMediaType(web.NewMediaType(json.Mimetype, json.ProblemMimetype, json.Marshal, json.Unmarshal), true, true).
+			AddMediaType(web.NewMediaType(xml.Mimetype, "", xml.Marshal, xml.Unmarshal), true, true)
 	}
 
 	return o

@@ -24,7 +24,7 @@ func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
 	ts := startuptest.NewTestServerStartup(a)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		Codec:   web.NewCodec().AddMimetype(Mimetype, Marshal, Unmarshal, "", true, true),
+		Codec:   web.NewCodec().AddMediaType(web.NewMediaType(Mimetype, "", Marshal, Unmarshal), true, true),
 		Startup: ts,
 	})
 	a.NotError(err).NotNil(s)

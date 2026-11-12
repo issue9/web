@@ -99,36 +99,45 @@ func newCodec(a *assert.Assertion) *Codec {
 	c.AddCompressor(newGzip()).
 		AddCompressor(newDeflate()).
 		//AddCompressor(nil).
-		AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "application/problem+json", true, true).
-		AddMimetype(header.XML, marshalXML, unmarshalXML, "application/problem+xml", true, true).
-		AddMimetype("application/test", marshalTest, unmarshalTest, "application/problem+test", true, true)
+		AddMediaType(NewMediaType(header.JSON, "application/problem+json", marshalJSON, unmarshalJSON), true, true).
+		AddMediaType(NewMediaType(header.XML, "application/problem+xml", marshalXML, unmarshalXML), true, true).
+		AddMediaType(NewMediaType("application/test", "application/problem+test", marshalTest, unmarshalTest), true, true)
 
 	return c
 }
 
-func TestCodec_AddMimetype(t *testing.T) {
+func TestCodec_AddMediaType(t *testing.T) {
 	a := assert.New(t, false)
 	c := NewCodec()
 
 	a.PanicString(func() {
-		c.AddMimetype("", nil, nil, "", true, true)
+		NewMediaType("", "", nil, nil)
 	}, "参数 name 不能为空")
 
 	a.PanicString(func() {
-		c.AddMimetype(header.JSON, nil, nil, "", true, true)
+		NewMediaType(header.JSON, "", nil, nil)
 	}, "参数 m 不能为空")
 
 	a.PanicString(func() {
-		c.AddMimetype(header.JSON, marshalJSON, nil, "", true, true)
+		NewMediaType(header.JSON, "", marshalJSON, nil)
 	}, "参数 u 不能为空")
 
 	a.NotPanic(func() {
-		c.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "", true, true)
+		c.AddMediaType(NewMediaType(header.JSON, "", marshalJSON, unmarshalJSON), true, true)
 	})
 
 	a.PanicString(func() {
-		c.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "", true, true)
+		c.AddMediaType(NewMediaType(header.JSON, "", marshalJSON, unmarshalJSON), true, true)
 	}, "存在重复的项 "+header.JSON)
+
+	a.PanicString(func() {
+		c.AddMediaType(nil, true, true)
+	}, "参数 mt 不能为空")
+
+	mt := NewMediaType(header.Plain, "", marshalJSON, unmarshalJSON)
+	a.Equal(mt.Name(true), header.Plain)
+	e := NewCodec().AddMediaType(mt, false, true)
+	a.Equal(e.clientAcceptHeader, "").Equal(e.serverAcceptHeader, header.Plain)
 }
 
 func TestBuildCompression(t *testing.T) {
@@ -239,7 +248,7 @@ func TestCodec_contentType(t *testing.T) {
 
 	mt := NewCodec()
 	a.NotNil(mt)
-	mt.AddMimetype(header.OctetStream, marshalJSON, unmarshalJSON, "", true, true)
+	mt.AddMediaType(NewMediaType(header.OctetStream, "", marshalJSON, unmarshalJSON), true, true)
 
 	f, e, err := mt.contentType(";;;")
 	a.Error(err).Nil(f).Nil(e)
@@ -294,36 +303,36 @@ func TestCodec_accept(t *testing.T) {
 
 	mt = NewCodec()
 	a.NotNil(mt)
-	mt.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "", true, true).
-		AddMimetype(header.Plain, marshalXML, unmarshalXML, "text/plain+problem", true, true)
+	mt.AddMediaType(NewMediaType(header.JSON, "", marshalJSON, unmarshalJSON), true, true).
+		AddMediaType(NewMediaType(header.Plain, "text/plain+problem", marshalXML, unmarshalXML), true, true)
 
 	item, err = mt.accept(header.JSON)
 	a.NotError(err).NotNil(item).
-		NotNil(item.Marshal).
-		Equal(item.name(false), header.JSON).
-		Equal(item.name(true), header.JSON)
+		NotNil(item.marshal).
+		Equal(item.Name(false), header.JSON).
+		Equal(item.Name(true), header.JSON)
 
 	// */*
 	item, err = mt.accept("*/*")
 	a.NotError(err).NotNil(item).
-		NotNil(item.Marshal).
-		Equal(item.name(false), header.JSON)
+		NotNil(item.marshal).
+		Equal(item.Name(false), header.JSON)
 
 	// 空参数，结果同 */*
 	item, err = mt.accept("")
 	a.NotError(err).NotNil(item).
-		NotNil(item.Marshal).
-		Equal(item.name(false), header.JSON)
+		NotNil(item.marshal).
+		Equal(item.Name(false), header.JSON)
 
 	item, err = mt.accept("*/*,text/plain")
 	a.NotError(err).NotNil(item).
-		NotNil(item.Marshal).
-		Equal(item.name(false), header.Plain).
-		Equal(item.name(true), "text/plain+problem")
+		NotNil(item.marshal).
+		Equal(item.Name(false), header.Plain).
+		Equal(item.Name(true), "text/plain+problem")
 
 	// json 被禁，但是匹配 */* 匹配了 text/plain
 	item, err = mt.accept(header.JSON + ";q=0,*/*;q=1")
-	a.NotError(err).Equal(item.Name, header.Plain)
+	a.NotError(err).Equal(item.normalName, header.Plain)
 
 	// json 被禁
 	item, err = mt.accept(header.JSON + ";q=0")

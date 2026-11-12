@@ -51,8 +51,8 @@ import (
 
 srv := server.New("app", "1.0.0", &server.Options{
 	Codec: web.NewCodec().
-		AddMimetype(xml.Mimetype, json.Marshal, json.Unmarshal, xml.ProblemMimetype, true, true).
-		AddMimetype(xml.Mimetype, xml.Marshal, xml.Unmarshal, xml.ProblemMimetype, true, true)
+		AddMediaType(xml.Mimetype, json.Marshal, json.Unmarshal, xml.ProblemMimetype, true, true).
+		AddMediaType(xml.Mimetype, xml.Marshal, xml.Unmarshal, xml.ProblemMimetype, true, true)
 	}
 })
 

@@ -94,9 +94,7 @@ func (ctx *Context) Render(status int, body any) {
 }
 
 // Marshal 将对象 v 按用户要求编码并返回
-func (ctx *Context) Marshal(v any) ([]byte, error) {
-	return ctx.outputMimetype.Marshal(ctx, v)
-}
+func (ctx *Context) Marshal(v any) ([]byte, error) { return ctx.outputMimetype.marshal(ctx, v) }
 
 // Wrote 是否已经有内容输出
 func (ctx *Context) Wrote() bool { return ctx.wrote }
