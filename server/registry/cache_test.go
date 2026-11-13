@@ -7,6 +7,7 @@ package registry_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 	"time"
 
@@ -33,26 +34,36 @@ func TestCache_Discover(t *testing.T) {
 
 	p1Dreg, err := c.Register("s1", selector.NewPeer("http://localhost:8080"))
 	a.NotError(err).NotNil(p1Dreg)
-	time.Sleep(2 * time.Second) // 等待 Discover 刷新
-	addr, err = sel.Next()
-	a.NotError(err).Equal(addr, "http://localhost:8080")
-	addr, err = sel.Next()
-	a.NotError(err).Equal(addr, "http://localhost:8080")
+	a.Eventually(func() bool {
+		addr, err = sel.Next()
+		if err == nil && addr == "http://localhost:8080" {
+			addr, err = sel.Next()
+			return err == nil && addr == "http://localhost:8080"
+		}
+		return false
+	}, 2*time.Second)
 
 	p2Dreg, err := c.Register("s1", selector.NewPeer("http://localhost:8081"))
 	a.NotError(err).NotNil(p2Dreg)
-	time.Sleep(2 * time.Second) // 等待 Discover 刷新
-	addr, err = sel.Next()
-	a.NotError(err).Contains([]string{"http://localhost:8080", "http://localhost:8081"}, addr)
-	addr, err = sel.Next()
-	a.NotError(err).Contains([]string{"http://localhost:8080", "http://localhost:8081"}, addr)
+	addrs := []string{"http://localhost:8080", "http://localhost:8081"}
+	a.Eventually(func() bool {
+		addr, err = sel.Next()
+		if err == nil && slices.Contains(addrs, addr) {
+			addr, err = sel.Next()
+			return err == nil && slices.Contains(addrs, addr)
+		}
+		return false
+	}, 2*time.Second)
 
 	a.NotError(p1Dreg())
-	time.Sleep(2 * time.Second) // 等待 Discover 刷新
-	addr, err = sel.Next()
-	a.NotError(err).Equal(addr, "http://localhost:8081")
-	addr, err = sel.Next()
-	a.NotError(err).Equal(addr, "http://localhost:8081")
+	a.Eventually(func() bool {
+		addr, err = sel.Next()
+		if err == nil && addr == "http://localhost:8081" {
+			addr, err = sel.Next()
+			return err == nil && addr == "http://localhost:8081"
+		}
+		return false
+	}, 2*time.Second)
 }
 
 func TestCache_ReverseProxy(t *testing.T) {

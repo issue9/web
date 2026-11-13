@@ -243,9 +243,12 @@ func TestNotModified(t *testing.T) {
 
 	// weak
 
-	const body = "string"
+	const (
+		body = "body"
+		etag = `"etag"`
+	)
 	nm := NotModified(
-		func() (string, bool) { return body, true },
+		func() (string, bool) { return etag, true },
 		func() (any, error) { return body, nil },
 	)
 
@@ -272,7 +275,7 @@ func TestNotModified(t *testing.T) {
 	// weak=false
 
 	nm = NotModified(
-		func() (string, bool) { return body, false },
+		func() (string, bool) { return etag, false },
 		func() (any, error) { return []byte(body), nil },
 	)
 

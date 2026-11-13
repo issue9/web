@@ -82,7 +82,7 @@ func (d *Document) Handler(tag ...string) web.HandlerFunc {
 			h := md5.New()
 			h.Write([]byte(etag))
 			val := h.Sum(nil)
-			return hex.EncodeToString(val), true
+			return `"` + hex.EncodeToString(val) + `"`, true
 		}, func() (any, error) {
 			return d.build(ctx.LocalePrinter(), ctx.LanguageTag(), tag), nil
 		})

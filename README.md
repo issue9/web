@@ -12,50 +12,60 @@ web 是一个比较完整的 API 开发框架，相对于简单的路由，提�
 ```go
 package main
 
-import "github.com/issue9/web"
-import "github.com/issue9/web/server"
+import (
+	"errors"
+	"log"
+	"net/http"
 
-// main.go
+	"github.com/issue9/web"
+	"github.com/issue9/web/server"
+)
+
 func main() {
-    srv, err := server.New("web", "1.0.0", &server.Options{})
-    router := srv.Routers().New()
-    router.Get("/admins", getAdmins).
-        Get("/groups", getGroups)
+	srv, err := server.NewHTTP("web", "1.0.0", &server.Options{
+		Startup: web.NewHTTPServerStartup(&http.Server{Addr: ":8080"}),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    srv.Serve()
+	router := srv.Routers().New("default", nil)
+	router.Get("/admins", getAdmins).
+		Get("/groups", getGroups)
+
+	if err := srv.Serve(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal(err)
+	}
 }
 
-func getAdmins(ctx* web.Context) web.Responser {
-    return ctx.NotImplemented()
+func getAdmins(ctx *web.Context) web.Responser {
+	return ctx.NotImplemented()
 }
 
-func getGroups(ctx* web.Context) web.Responser {
-    return ctx.NotImplemented()
+func getGroups(ctx *web.Context) web.Responser {
+	return ctx.NotImplemented()
 }
 ```
 
 ## 字符集和文档类型
 
 <https://www.iana.org/assignments/character-sets/character-sets.xhtml> 中列出的字符集都能自动转换。
-文档类型由 `Server.Mimetypes` 指定。
+支持的文档类型由 `web.Codec` 注册和配置。
 
 ```go
-package main
-
 import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/codec"
 )
 
-srv := server.New("app", "1.0.0", &server.Options{
-	Codec: web.NewCodec().
+func newServer() (*web.Server, error) {
+	c := web.NewCodec().
 		AddMediaType(codec.NewJSON(), true, true).
 		AddMediaType(codec.NewXML(), true, true)
-	}
-})
 
-srv.Serve()
+	return server.NewHTTP("app", "1.0.0", &server.Options{Codec: c})
+}
 ```
 
 客户端只要在请求时设置 Accept 报头就可返回相应类型的数据，而 Accept-Charset 报头可设置接收的字符集。
@@ -68,7 +78,7 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 在处理出错时，调用 Context.Problem 即可：
 
 ```go
-func getAdmins(ctx* web.Context) web.Responser {
+func getAdmins(ctx *web.Context) web.Responser {
 	return ctx.Problem(web.ProblemBadRequest).WithParam("param", "invalid format")
 }
 ```
@@ -78,17 +88,20 @@ func getAdmins(ctx* web.Context) web.Responser {
 可直接在添加 API 的中间件上指定文档内容：
 
 ```go
-srv := server.New("app", "1.0.0", ...)
-router := s.Routers().New(...)
-doc := openapi.New(srv, web.Phrase("title")) // 声明文档对象
+import (
+	"github.com/issue9/web"
+	"github.com/issue9/web/openapi"
+)
 
-router.Get("/admins", getAdmins, doc.API(func(o* openapi.Operation){
-	o.Desc(web.Phrase("desc of api")). // 接口的描述
-		Body(). // 请求内容
-		Response() // 指定返回内容
-}))
+func registerRoutes(srv *web.Server) {
+	router := srv.Routers().New("default", nil)
+	doc := openapi.New(srv, web.Phrase("title"))
 
-router.Get("/openapi", doc.Handler()) // 将文档以接口的形式输出
+	router.Get("/admins", getAdmins, doc.API(func(o *openapi.Operation) {
+		o.Desc(web.Phrase("desc of API"))
+	}))
+	router.Get("/openapi", doc.Handler())
+}
 ```
 
 ## 插件

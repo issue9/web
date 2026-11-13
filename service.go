@@ -127,7 +127,7 @@ func (srv *Service) serve(ctx context.Context) {
 
 	err := srv.service(ctx)
 	state := Stopped
-	if !errors.Is(err, context.Canceled) && !errors.Is(err, http.ErrServerClosed) {
+	if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, http.ErrServerClosed) {
 		srv.s.server.Logs().ERROR().Error(err)
 		state = Failed
 	}

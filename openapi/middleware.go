@@ -370,6 +370,12 @@ func (o *Operation) Callback(name, path, method string, f func(*Operation)) *Ope
 		f(opt)
 	}
 
+	if item.Operations == nil {
+		item.Operations = map[string]*Operation{method: opt}
+	} else {
+		item.Operations[method] = opt
+	}
+
 	return o
 }
 

@@ -10,9 +10,9 @@ package servertest
 import (
 	"crypto/tls"
 	_ "embed"
+	"net"
 	"net/http"
 	"strconv"
-	"sync/atomic"
 
 	"github.com/issue9/assert/v6"
 )
@@ -22,10 +22,6 @@ var cert []byte
 
 //go:embed key.pem
 var key []byte
-
-var portNum atomic.Int64
-
-func init() { portNum.Store(8080) }
 
 type Server struct {
 	URL    string
@@ -41,7 +37,20 @@ type Server struct {
 
 // NewServer 创建用于测试的服务数据
 func NewServer(a *assert.Assertion, sec bool) *Server {
-	addr := ":" + strconv.FormatInt(portNum.Add(1), 10)
+	// NOTE: 以下方式获取临时端口依然可能会出现竞态，但是概率小。
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		a.TB().Fatalf("为测试服务器分配临时端口失败：%s", err)
+		return nil
+	}
+	port := listener.Addr().(*net.TCPAddr).Port
+	if err := listener.Close(); err != nil {
+		a.TB().Fatalf("释放测试服务器临时端口失败：%s", err)
+		return nil
+	}
+
+	addr := ":" + strconv.Itoa(port)
 
 	url := "http://localhost" + addr
 	if sec {
