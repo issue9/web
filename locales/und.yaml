@@ -151,6 +151,9 @@ messages:
 - key: can not be empty
   message:
     msg: can not be empty
+- key: client disabled identity
+  message:
+    msg: client disabled identity
 - key: cmd.daemon
   message:
     msg: cmd.daemon
@@ -190,9 +193,6 @@ messages:
 - key: duplicate value
   message:
     msg: duplicate value
-- key: exit context
-  message:
-    msg: exit context
 - key: "field %s has error: %s"
   message:
     msg: "field %s has error: %s"
@@ -244,6 +244,9 @@ messages:
 - key: "param %[1]s has error: %[2]s"
   message:
     msg: "param %[1]s has error: %[2]s"
+- key: parse http header %[1]s error %[2]s
+  message:
+    msg: parse http header %[1]s error %[2]s
 - key: problem detail
   message:
     msg: problem detail
@@ -292,9 +295,15 @@ messages:
 - key: the client miss content-type header
   message:
     msg: the client miss content-type header
+- key: the jsonp callback is unset
+  message:
+    msg: the jsonp callback is unset
 - key: the server miss content-type header
   message:
     msg: the server miss content-type header
+- key: unable parse %s
+  message:
+    msg: unable parse %s
 - key: unique identity generator
   message:
     msg: unique identity generator

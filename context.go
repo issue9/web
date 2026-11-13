@@ -5,6 +5,7 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -26,8 +27,6 @@ import (
 	"github.com/issue9/web/problems"
 )
 
-var errExitContext = NewError("exit context")
-
 var contextPool = &sync.Pool{
 	New: func() any {
 		return &Context{
@@ -37,15 +36,14 @@ var contextPool = &sync.Pool{
 	},
 }
 
-// ErrExitContext 当已经退出 [Context] 对象时还对其进行操作将返回此错误
-func ErrExitContext() error { return errExitContext }
-
 // Context 根据当次 HTTP 请求生成的上下文内容
 //
 // Context 同时也实现了 [http.ResponseWriter] 接口，
 // 但是不推荐非必要情况下直接使用 [http.ResponseWriter] 的接口方法，
 // 而是采用返回 [Responser] 的方式向客户端输出内容。
 type Context struct {
+	baseContext
+
 	s       *Server
 	route   *types.Route
 	request *http.Request
@@ -53,9 +51,6 @@ type Context struct {
 	id      string
 	begin   time.Time
 	queries *Queries
-
-	done    chan struct{}
-	doneErr error
 
 	originResponse    http.ResponseWriter // 原始的 http.ResponseWriter
 	writer            io.Writer
@@ -82,7 +77,7 @@ type Context struct {
 }
 
 func parseHeaderErr(header string, err error) LocaleStringer {
-	return Phrase("parse %[1]s error %[2]s", header, err.Error())
+	return Phrase("parse http header %[1]s error %[2]s", header, err.Error())
 }
 
 // 输出降级的错误页面
@@ -171,9 +166,14 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 	w.Header().Set(s.requestIDKey, id)
 
+	c, cancel := context.WithCancel(r.Context())
+
 	// NOTE: ctx 是从对象池中获取的，所有变量都必须初始化。
 
 	ctx := contextPool.Get().(*Context)
+	ctx.Context = c
+	ctx.cancel = cancel
+
 	ctx.s = s
 	ctx.route = route
 	ctx.request = r
@@ -181,9 +181,6 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	ctx.id = id
 	ctx.begin = s.Now()
 	ctx.queries = nil
-
-	ctx.done = make(chan struct{})
-	ctx.doneErr = nil
 
 	ctx.originResponse = w
 	ctx.writer = w
@@ -278,7 +275,7 @@ func (ctx *Context) SetMediaType(mediaType string) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
 	}
-	if ctx.MeidaType(false) == mediaType {
+	if ctx.MediaType(false) == mediaType {
 		return
 	}
 
@@ -292,10 +289,10 @@ func (ctx *Context) SetMediaType(mediaType string) {
 	ctx.outputMediaType = item
 }
 
-// MeidaType 返回输出编码名称
+// MediaType 返回输出编码名称
 //
 // problem 表示是否返回 problem 状态时的值。
-func (ctx *Context) MeidaType(problem bool) string {
+func (ctx *Context) MediaType(problem bool) string {
 	if problem {
 		return ctx.outputMediaType.ProblemName()
 	}
@@ -314,7 +311,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	c, err := ctx.s.codec.acceptEncoding(ctx.MeidaType(false), enc)
+	c, err := ctx.s.codec.acceptEncoding(ctx.MediaType(false), enc)
 	if err != nil {
 		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
 	}
@@ -356,9 +353,7 @@ func (ctx *Context) freeContext() {
 	}
 
 	// 以下开始回收内存
-
-	ctx.doneErr = ErrExitContext()
-	close(ctx.done)
+	ctx.cancel()
 
 	logs.FreeAttrLogs(ctx.logs)
 	contextPool.Put(ctx)
@@ -409,21 +404,12 @@ func (ctx *Context) Unwrap() http.ResponseWriter { return ctx.originResponse }
 // Server 获取关联的 [Server] 实例
 func (ctx *Context) Server() *Server { return ctx.s }
 
-// Deadline 接口 [context.Context] 的方法。
-//
-// 未提供实际的功能
-func (ctx *Context) Deadline() (time.Time, bool) { return time.Time{}, false }
-
 // Value 接口 [context.Context] 的方法
 //
 // 功能与 [Context.GetVar] 是相同的。
 func (ctx *Context) Value(key any) any {
-	val, _ := ctx.GetVar(key)
-	return val
+	if val, found := ctx.GetVar(key); found {
+		return val
+	}
+	return ctx.Context.Value(key)
 }
-
-// Done 接口 [context.Context] 的方法
-func (ctx *Context) Done() <-chan struct{} { return ctx.done }
-
-// Err 接口 [context.Context] 的方法
-func (ctx *Context) Err() error { return ctx.doneErr }

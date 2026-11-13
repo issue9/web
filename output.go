@@ -175,7 +175,7 @@ func (ctx *Context) writeHeaders(problem bool) {
 		return
 	}
 
-	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.MeidaType(problem), ctx.Charset()))
+	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.MediaType(problem), ctx.Charset()))
 
 	if id := ctx.LanguageTag().String(); id != "" {
 		ctx.Header().Set(header.ContentLanguage, id)

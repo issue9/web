@@ -153,6 +153,9 @@ messages:
 - key: can not be empty
   message:
     msg: 不能为空
+- key: client disabled identity
+  message:
+    msg: 客户端禁用了非压缩模式
 - key: cmd.daemon
   message:
     msg: 将当前程序作为守护进程进行的相关操作
@@ -206,9 +209,6 @@ messages:
 - key: duplicate value
   message:
     msg: 重复的值
-- key: exit context
-  message:
-    msg: 已经退出当前的会话环境
 - key: "field %s has error: %s"
   message:
     msg: "字段 %s 中包含了错误: %s"
@@ -260,6 +260,9 @@ messages:
 - key: "param %[1]s has error: %[2]s"
   message:
     msg: "参数 %[1]s 包含错误: %[2]s"
+- key: parse http header %[1]s error %[2]s
+  message:
+    msg: 分析 HTTP 报头 %[1]s 时出错 %[2]s
 - key: problem detail
   message:
     msg: 对于该错误的详细描述
@@ -308,9 +311,15 @@ messages:
 - key: the client miss content-type header
   message:
     msg: 客户端未指定 Content-Type 报头
+- key: the jsonp callback is unset
+  message:
+    msg: jsonp 未设置回调函数
 - key: the server miss content-type header
   message:
     msg: 服务端未指定 Content-Type 报头
+- key: unable parse %s
+  message:
+    msg: 无法解析 %s
 - key: unique identity generator
   message:
     msg: 唯一 ID 生成器

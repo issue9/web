@@ -212,8 +212,8 @@ func (e *Codec) acceptEncoding(contentType, h string) (c Compressor, err error) 
 
 	indexes := e.getMatchCompresses(contentType)
 	if len(indexes) == 0 { // 服务端未添加任何压缩算法
-		if slices.Contains(deny, header.Identity) { // 且服务端明确必须要压缩
-			return nil, localeutil.Error("client set \"identity;q=0\"")
+		if slices.Contains(deny, header.Identity) { // 且客户端要求必须要压缩
+			return nil, localeutil.Error("client disabled identity")
 		}
 		return
 	}
@@ -248,7 +248,7 @@ func (e *Codec) acceptEncoding(contentType, h string) (c Compressor, err error) 
 	}
 
 	if slices.Contains(deny, header.Identity) { // 明确将 identity 设置为 0
-		return nil, localeutil.Error("client set \"identity;q=0\"")
+		return nil, localeutil.Error("client disabled identity")
 	}
 	return nil, nil
 }
@@ -355,13 +355,8 @@ func (c *Codec) accept(h string) (MediaType, error) {
 }
 
 func match(name string, mt MediaType) bool {
-	switch {
-	case name == mt.Name():
-		return true
-	case strings.HasSuffix(name, "/*") && strings.HasPrefix(mt.Name(), name[:len(name)-1]):
-		return true
-	}
-	return false
+	return name == mt.Name() ||
+		(strings.HasSuffix(name, "/*") && strings.HasPrefix(mt.Name(), name[:len(name)-1]))
 }
 
 // name 是否在 deny 中
@@ -378,7 +373,9 @@ func denied(name string, deny []string) bool {
 }
 
 func (c *Codec) searchFunc(match func(string) bool) MediaType {
-	item, _ := sliceutil.At(c.mediaTypes, func(i MediaType, _ int) bool { return match(i.Name()) || match(i.ProblemName()) })
+	item, _ := sliceutil.At(c.mediaTypes, func(i MediaType, _ int) bool {
+		return match(i.Name()) || match(i.ProblemName())
+	})
 	return item
 }
 

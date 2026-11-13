@@ -23,6 +23,11 @@ import (
 )
 
 type (
+	baseContext struct {
+		context.Context
+		cancel context.CancelFunc
+	}
+
 	// OnExitContextFunc 表示在即将退出 [Context] 时执行的函数类型
 	//
 	// 其中 ctx 即为当前实例，status 则表示实际输出的状态码。
@@ -39,6 +44,8 @@ type (
 	//
 	// 创建该接口对象的方法在 [server] 包之下，提供了不同功能的服务对象。
 	Server struct {
+		baseContext // 多一层包装，可以不让 Context 包装公开。
+
 		startup Startup
 		state   atomic.Int32
 		id      string
@@ -47,9 +54,6 @@ type (
 		locale   *Locale
 		location *time.Location
 		uptime   time.Time
-
-		done    chan struct{}
-		doneErr error
 
 		config       *config.Config
 		requestIDKey string
@@ -82,7 +86,12 @@ func NewServer(
 	requestIDKey string,
 	o ...RouterOption,
 ) *Server {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	srv := &Server{
+		Context: ctx,
+		cancel:  cancel,
+
 		startup: startup,
 		id:      id,
 		version: ver,
@@ -90,8 +99,6 @@ func NewServer(
 		locale:   newLocale(lang, conf.Serializer()),
 		location: loc,
 		uptime:   time.Now().In(loc),
-
-		done: make(chan struct{}),
 
 		config:       conf,
 		requestIDKey: requestIDKey,
@@ -186,18 +193,12 @@ func (s *Server) OnExitContext(f ...OnExitContextFunc) {
 // Logs 提供日志接口
 func (s *Server) Logs() *Logs { return s.logs }
 
-func (s *Server) Deadline() (time.Time, bool) { return time.Time{}, false }
-
 func (s *Server) Value(key any) any {
 	if val, found := s.Vars().Load(key); found {
 		return val
 	}
-	return nil
+	return s.baseContext.Context.Value(key)
 }
-
-func (s *Server) Done() <-chan struct{} { return s.done }
-
-func (s *Server) Err() error { return s.doneErr }
 
 func (f PluginFunc) Plugin(s *Server) { f(s) }
 
@@ -268,7 +269,4 @@ func (s *Server) Close(shutdownTimeout time.Duration) {
 	}
 }
 
-func (s *Server) closeDone() {
-	s.doneErr = http.ErrServerClosed // 在 close 之前调用，以保证在 close 之后，doneErr 始终是正确的。
-	close(s.done)
-}
+func (s *Server) closeDone() { s.cancel() }

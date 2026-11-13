@@ -119,10 +119,10 @@ func TestContext_SetMediaType(t *testing.T) {
 	a.PanicString(func() {
 		ctx.SetMediaType("not-exists")
 	}, "指定的编码 not-exists 不存在").
-		Equal(ctx.MeidaType(false), header.JSON) // 不改变原有的值
+		Equal(ctx.MediaType(false), header.JSON) // 不改变原有的值
 
 	ctx.SetMediaType(header.XML)
-	a.Equal(ctx.MeidaType(false), header.XML)
+	a.Equal(ctx.MediaType(false), header.XML)
 
 	ctx.Render(200, 200) // 输出内容
 	a.PanicString(func() {

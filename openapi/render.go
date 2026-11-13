@@ -69,7 +69,7 @@ func (d *Document) Handler(tag ...string) web.HandlerFunc {
 			return ctx.NotFound()
 		}
 
-		if m := ctx.MeidaType(false); (m != header.JSON && m != header.YAML && m != header.HTML) ||
+		if m := ctx.MediaType(false); (m != header.JSON && m != header.YAML && m != header.HTML) ||
 			(m == header.HTML && d.templateName == "") {
 			return ctx.Problem(problems.NotAcceptable)
 		}
@@ -77,7 +77,7 @@ func (d *Document) Handler(tag ...string) web.HandlerFunc {
 		return web.NotModified(func() (string, bool) {
 			// 引起 ETag 变化的几个要素
 			etag := strconv.Itoa(int(d.last.Unix())) + "/" +
-				ctx.MeidaType(false) + "/" +
+				ctx.MediaType(false) + "/" +
 				ctx.LanguageTag().String()
 			h := md5.New()
 			h.Write([]byte(etag))

@@ -18,13 +18,13 @@
 | cache,omitempty | cache,omitempty | cache,omitempty | cache,omitempty | [cacheConfig](#cacheconfig) | 指定缓存对象<br />如果为空，则会采用内存作为缓存对象。<br /> |
 | fileSerializers,omitempty | fileSerializers,omitempty | fileSerializers&gt;fileSerializer,omitempty | fileSerializers,omitempty | string | 指定配置文件的序列化<br />可通过 \[RegisterFileSerializer] 进行添加额外的序列化方法。默认为空，可以有以下可选值：<br />  - yaml 支持 .yaml 和 .yml 两种后缀名的文件<br />  - xml 支持 .xml 后缀名的文件<br />  - json 支持 .json 后缀名的文件<br />  - toml 支持 .toml 后缀名的文件<br />  - jsonc 支持 .jsonc 后缀名的文件<br />如果为空，表示支持以上所有格式。<br /> |
 | compressions,omitempty | compressions,omitempty | compressions&gt;compression,omitempty | compressions,omitempty | [compressConfig](#compressconfig) | 压缩的相关配置<br />如果为空，那么不支持压缩功能。<br /> |
-| mimetypes,omitempty | mimetypes,omitempty | mimetypes&gt;mimetype,omitempty | mimetypes,omitempty | [mimetypeConfig](#mimetypeconfig) | 指定可用的 mimetype<br />如果为空，那么将不支持任何格式的内容输出。<br /> |
+| mediaTypes,omitempty | mediaTypes,omitempty | mediaTypes&gt;mediaType,omitempty | mediaTypes,omitempty | [mediaTypeConfig](#mediatypeconfig) | 指定可用的 mediaTypes<br />如果为空，那么将不支持任何格式的内容输出。<br /> |
 | idGenerator,omitempty | idGenerator,omitempty | idGenerator,omitempty | idGenerator,omitempty | string | 唯一 ID 生成器<br />该值由 \[RegisterIDGenerator] 注册而来，默认情况下，有以下三个选项：<br />  - date 日期格式，默认值；<br />  - string 普通的字符串；<br />  - number 数值格式；<br />NOTE: 一旦运行在生产环境，就不应该修改此属性，除非能确保新的函数生成的 ID 不与之前生成的 ID 重复。<br /> |
 | problemTypePrefix,omitempty | problemTypePrefix,omitempty | problemTypePrefix,omitempty | problemTypePrefix,omitempty | string | Problem 中 type 字段的前缀<br /> |
 | registry,omitempty | registry,omitempty | registry,omitempty | registry,omitempty | [registryConfig](#registryconfig) | 指定服务发现和注册中心<br />NOTE: 作为微服务和网关时才会有效果<br /> |
 | peer,omitempty | peer,omitempty | peer,omitempty | peer,omitempty | string | 作为微服务时的节点地址<br />NOTE: 作为微服务时才会有效果<br /> |
 | mappers,omitempty | mappers,omitempty | mappers&gt;mapper,omitempty | mappers,omitempty | [mapperConfig](#mapperconfig) | 作为微服务网关时的外部请求映射方式<br />NOTE: 作为微服务的网关时才会有效果<br /> |
-| user,omitempty | user,omitempty | user,omitempty | user,omitempty | [T](#t) | 用户自定义的配置项<br /> |
+| user,omitempty | user,omitempty | user,omitempty | user,omitempty | [T](#t) | 用户自定义的配置项<br />如果 T 实现了 \[ConfigFilter]，那么会调用该类型的方法对数据进行验证。<br /> |
 
 
 
@@ -74,11 +74,6 @@
 | requestID,omitempty | requestID,omitempty | requestID,omitempty | requestID,omitempty | string | x-request-id 的报头名称<br />如果为空，则采用 \[header.XRequestID] 作为默认值。<br /> |
 | certificates,omitempty | certificates,omitempty | certificates&gt;certificate,omitempty | certificates,omitempty | [certificateConfig](#certificateconfig) | 网站的域名证书<br />NOTE: 不能同时与 ACME 生效<br /> |
 | acme,omitempty | acme,omitempty | acme,omitempty | acme,omitempty | [acmeConfig](#acmeconfig) | ACME 协议的证书<br />NOTE: 不能同时与 Certificates 生效<br /> |
-| readTimeout,omitempty | readTimeout,omitempty | readTimeout,attr,omitempty | readTimeout,omitempty | [Duration](#duration) | ReadTimeout 对应 \[http.Server.ReadTimeout] 字段<br /> |
-| writeTimeout,omitempty | writeTimeout,omitempty | writeTimeout,attr,omitempty | writeTimeout,omitempty | [Duration](#duration) | WriteTimeout 对应 \[http.Server.WriteTimeout] 字段<br /> |
-| idleTimeout,omitempty | idleTimeout,omitempty | idleTimeout,attr,omitempty | idleTimeout,omitempty | [Duration](#duration) | IdleTimeout 对应 \[http.Server.IdleTimeout] 字段<br /> |
-| readHeaderTimeout,omitempty | readHeaderTimeout,omitempty | readHeaderTimeout,attr,omitempty | readHeaderTimeout,omitempty | [Duration](#duration) | ReadHeaderTimeout 对应 \[http.Server.ReadHeaderTimeout] 字段<br /> |
-| maxHeaderBytes,omitempty | maxHeaderBytes,omitempty | maxHeaderBytes,attr,omitempty | maxHeaderBytes,omitempty | int | MaxHeaderBytes 对应 \[http.Server.MaxHeaderBytes] 字段<br /> |
 | headers,omitempty | headers,omitempty | headers&gt;header,omitempty | headers,omitempty | [headerConfig](#headerconfig) | 自定义报头功能<br />报头会输出到包括 404 在内的所有请求返回。可以为空。<br />NOTE: 如果是与 CORS 相关的定义，则可能在 CORS 字段的定义中被修改。<br />NOTE: 报头内容可能会被后续的中间件修改。<br /> |
 | cors,omitempty | cors,omitempty | cors,omitempty | cors,omitempty | [corsConfig](#corsconfig) | 自定义[跨域请求](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/cors)设置项<br />NOTE: 这些设置对所有路径均有效，但会被 \[web.Routers.New] 的参数修改。<br /> |
 | trace,omitempty | trace,omitempty | trace,omitempty | trace,omitempty | string | Trace 是否启用 TRACE 请求<br />可以有以下几种值：<br />  - disable 禁用 TRACE 请求；<br />  - body 启用 TRACE，且在返回内容中包含了请求端的 body 内容；<br />  - nobody 启用 TRACE，但是在返回内容中不包含请求端的 body 内容；<br />默认为 disable。<br />NOTE: 这些设置对所有路径均有效，但会被 \[web.Routers.New] 的参数修改。<br /> |
@@ -109,11 +104,6 @@
 | email,omitempty | email,omitempty | email,omitempty | email,omitempty | string | 申请者邮箱<br /> |
 | renewBefore,omitempty | renewBefore,omitempty | renewBefore,attr,omitempty | renewBefore,omitempty | uint | 定义提早几天开始续订，如果为 0 表示提早 30 天。<br /> |
 
-
-
-## Duration
-
-Duration 表示时间段<br />封装 [time.Duration](/time#Duration) 以实现对 JSON、XML、TOML 和 YAML 的解析<br />
 
 
 ## headerConfig
@@ -167,16 +157,14 @@ Duration 表示时间段<br />封装 [time.Duration](/time#Duration) 以实现�
 
 
 
-## mimetypeConfig
+## mediaTypeConfig
 
 
 
 
 | JSON | YAML | XML | TOML | 类型 | 描述 |
 |------|------|-----|------|------------------|------------------|
-| type | type | type,attr | type | string | 编码名称<br />比如 application/xml 等<br /> |
-| problem,omitempty | problem,omitempty | problem,attr,omitempty | problem,omitempty | string | 返回错误代码是的 mimetype<br />比如正常情况下如果是 application/json，那么此值可以是 application/problem+json。 如果为空，表示与 Type 相同。<br /> |
-| target | target | target,attr | target | string | 实际采用的解码方法<br />由 \[RegisterMimetype] 注册而来。默认可用为：<br />  - xml<br />  - cbor<br />  - json<br />  - form<br />  - html<br />  - gob<br />  - yaml<br />  - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。<br /> |
+| target | target | target,attr | target | string | 实际采用的解码方法<br />由 \[RegisterMediaType] 注册而来。默认可用为：<br />  - xml<br />  - cbor<br />  - json<br />  - form<br />  - gob<br />  - yaml<br />  - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。<br /> |
 | accept,omitempty | accept,omitempty | accept,attr,omitempty | accept,omitempty | string | 指定 Accept 报头可出现的位置，可以有以下两个值，也可以通过逗号进行组合。<br />  - request 出现在作为客户端请求时的 Accept 报头中；<br />  - response 出现在作为服务端响应时的 Accept 报头中，一般只有 OPTIONS 会有 Accept 报头；<br /> |
 
 

@@ -445,7 +445,7 @@ func BenchmarkLocale_NewPrinter(b *testing.B) {
 	})
 }
 
-func BenchmarkHTTPServer_Serve(b *testing.B) {
+func BenchmarkServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a, false)
 	router := srv.Routers().New("srv", nil)

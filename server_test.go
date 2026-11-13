@@ -107,6 +107,24 @@ func onExitContext(ctx *Context, status int) {
 	ctx.Header().Set("exit-status", strconv.Itoa(status))
 }
 
+func TestServerContext(t *testing.T) {
+	a := assert.New(t, false)
+	srv := newTestServer(a, false)
+
+	type key struct{}
+	srv.Vars().Store(key{}, "value")
+
+	ctx, cancel := context.WithCancel(srv.Server)
+	defer cancel()
+
+	a.Equal(ctx.Value(key{}), "value").
+		NotError(ctx.Err())
+
+	srv.closeDone()
+	a.Equal(srv.Err(), context.Canceled).
+		Equal(srv.Err(), context.Canceled) // 多次调用结果一样
+}
+
 func TestOnExitContextFunc(t *testing.T) {
 	a := assert.New(t, false)
 	s := newTestServer(a, false)
@@ -333,7 +351,7 @@ func TestHTTPServer_NewContext(t *testing.T) {
 	// 正常，指定 Accept-Language，采用默认的 accept
 	router.Get("/path", func(ctx *Context) Responser {
 		a.NotNil(ctx).NotEmpty(ctx.ID())
-		a.Equal(ctx.MeidaType(false), header.JSON).
+		a.Equal(ctx.MediaType(false), header.JSON).
 			Equal(ctx.Charset(), header.UTF8).
 			Equal(ctx.LanguageTag(), language.SimplifiedChinese).
 			NotNil(ctx.LocalePrinter())

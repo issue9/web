@@ -252,7 +252,7 @@ func TestCodec_acceptEncoding(t *testing.T) {
 
 		// identity=0
 		b, err = e.acceptEncoding(header.XML, "identity;q=0,abc,def")
-		a.Equal(err, localeutil.Error("client set \"identity;q=0\"")).Nil(b)
+		a.Equal(err, localeutil.Error("client disabled identity")).Nil(b)
 	})
 }
 

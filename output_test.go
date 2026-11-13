@@ -124,7 +124,7 @@ func TestContext_Render(t *testing.T) {
 	r = rest.Get(a, "/p1").Header(header.Accept, "application/test").Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx, srv.logBuf.String()).
-		Equal(ctx.MeidaType(false), "application/test").
+		Equal(ctx.MediaType(false), "application/test").
 		Equal(ctx.Charset(), header.UTF8)
 	ctx.Render(http.StatusCreated, "任意值")
 	ctx.freeContext()
@@ -135,7 +135,7 @@ func TestContext_Render(t *testing.T) {
 	r = rest.Get(a, "/p1").Header(header.Accept, "application/test").Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx).
-		Equal(ctx.MeidaType(false), "application/test").
+		Equal(ctx.MediaType(false), "application/test").
 		Equal(ctx.Charset(), header.UTF8)
 	ctx.Render(http.StatusCreated, errors.New("error"))
 	ctx.freeContext()
