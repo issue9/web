@@ -23,8 +23,8 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/locales"
-	xj "github.com/issue9/web/mimetype/json"
 	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server/registry"
 )
@@ -196,7 +196,7 @@ func sanitizeOptions(o *Options, t int) (*Options, error) {
 	}
 
 	if o.Codec == nil {
-		o.Codec = web.NewCodec().AddMimetype(xj.Mimetype, xj.Marshal, xj.Unmarshal, xj.ProblemMimetype, true, true)
+		o.Codec = web.NewCodec().AddMediaType(codec.NewJSON(), true, true)
 	}
 
 	switch t {

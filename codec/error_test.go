@@ -1,0 +1,18 @@
+// SPDX-FileCopyrightText: 2018-2026 caixw
+//
+// SPDX-License-Identifier: MIT
+
+package codec
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/issue9/assert/v6"
+)
+
+func TestErrUnsupported(t *testing.T) {
+	a := assert.New(t, false)
+	a.ErrorIs(ErrUnsupported(), errors.ErrUnsupported)
+	a.Equal(ErrUnsupported().Error(), "unsupported serialization")
+}

@@ -27,14 +27,8 @@ import (
 	"github.com/issue9/unique/v2"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/mimetype/cbor"
-	"github.com/issue9/web/mimetype/form"
-	"github.com/issue9/web/mimetype/gob"
-	"github.com/issue9/web/mimetype/html"
-	"github.com/issue9/web/mimetype/json"
-	"github.com/issue9/web/mimetype/nop"
-	"github.com/issue9/web/mimetype/xml"
-	"github.com/issue9/web/mimetype/yaml"
+	"github.com/issue9/web/codec"
+	"github.com/issue9/web/codec/form"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/registry"
 )
@@ -71,7 +65,7 @@ var (
 	cacheFactory          = newRegister[CacheBuilder]()
 	compressorFactory     = newRegister[web.Compressor]()
 	idGeneratorFactory    = newRegister[IDGeneratorBuilder]()
-	mimetypesFactory      = newRegister[mimetype]()
+	mediaTypeFactory      = newRegister[web.MediaType]()
 	fileSerializerFactory = newRegister[fileSerializer]()
 	routerMatcherFactory  = newRegister[RouterMatcherBuilder]()
 
@@ -106,11 +100,16 @@ func RegisterCompression(id string, c web.Compressor) { compressorFactory.regist
 // id 表示唯一 ID，这将在配置文件中被引用。如果同名会被覆盖；
 func RegisterIDGenerator(id string, b IDGeneratorBuilder) { idGeneratorFactory.register(b, id) }
 
-// RegisterMimetype 注册用于序列化用户提交数据的方法
+// RegisterMediaType 注册用于序列化用户提交数据的方法
 //
 // name 为名称，这将在配置文件中被引用，如果存在同名，则会覆盖。
-func RegisterMimetype(m web.MarshalFunc, u web.UnmarshalFunc, name string) {
-	mimetypesFactory.register(mimetype{marshal: m, unmarshal: u}, name)
+func RegisterMediaType(mt web.MediaType, name string) {
+	for _, item := range mediaTypeFactory.items {
+		if item.Name() == mt.Name() {
+			panic(fmt.Sprintf("存在同名的媒体类型 %s", mt.Name()))
+		}
+	}
+	mediaTypeFactory.register(mt, name)
 }
 
 // RegisterFileSerializer 注册用于文件序列化的方法
@@ -159,22 +158,22 @@ func init() {
 
 	// RegisterCompression
 
-	RegisterCompression("deflate-default", web.NewDeflate(flate.DefaultCompression, nil))
-	RegisterCompression("deflate-best-compression", web.NewDeflate(flate.BestCompression, nil))
-	RegisterCompression("deflate-best-speed", web.NewDeflate(flate.BestSpeed, nil))
+	RegisterCompression("deflate-default", codec.NewDeflate(flate.DefaultCompression, nil))
+	RegisterCompression("deflate-best-compression", codec.NewDeflate(flate.BestCompression, nil))
+	RegisterCompression("deflate-best-speed", codec.NewDeflate(flate.BestSpeed, nil))
 
-	RegisterCompression("gzip-default", web.NewGzip(gzip.DefaultCompression))
-	RegisterCompression("gzip-best-compression", web.NewGzip(gzip.BestCompression))
-	RegisterCompression("gzip-best-speed", web.NewGzip(gzip.BestSpeed))
+	RegisterCompression("gzip-default", codec.NewGzip(gzip.DefaultCompression))
+	RegisterCompression("gzip-best-compression", codec.NewGzip(gzip.BestCompression))
+	RegisterCompression("gzip-best-speed", codec.NewGzip(gzip.BestSpeed))
 
-	RegisterCompression("compress-lsb-8", web.NewLZW(lzw.LSB, 8))
-	RegisterCompression("compress-msb-8", web.NewLZW(lzw.MSB, 8))
+	RegisterCompression("compress-lsb-8", codec.NewLZW(lzw.LSB, 8))
+	RegisterCompression("compress-msb-8", codec.NewLZW(lzw.MSB, 8))
 
-	RegisterCompression("br-default", web.NewBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
-	RegisterCompression("br-best-compression", web.NewBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
-	RegisterCompression("br-best-speed", web.NewBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
+	RegisterCompression("br-default", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
+	RegisterCompression("br-best-compression", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
+	RegisterCompression("br-best-speed", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
 
-	RegisterCompression("zstd-default", web.NewZstd())
+	RegisterCompression("zstd-default", codec.NewZstd())
 
 	// RegisterIDGenerator
 
@@ -191,16 +190,15 @@ func init() {
 		return u.String, u.Serve
 	})
 
-	// RegisterMimetype
+	// RegisterMeidaType
 
-	RegisterMimetype(json.Marshal, json.Unmarshal, "json")
-	RegisterMimetype(yaml.Marshal, yaml.Unmarshal, "yaml")
-	RegisterMimetype(cbor.Marshal, cbor.Unmarshal, "cbor")
-	RegisterMimetype(xml.Marshal, xml.Unmarshal, "xml")
-	RegisterMimetype(html.Marshal, html.Unmarshal, "html")
-	RegisterMimetype(form.Marshal, form.Unmarshal, "form")
-	RegisterMimetype(gob.Marshal, gob.Unmarshal, "gob")
-	RegisterMimetype(nop.Marshal, nop.Unmarshal, "nop")
+	RegisterMediaType(codec.NewJSON(), "json")
+	RegisterMediaType(codec.NewYAML(), "yaml")
+	RegisterMediaType(codec.NewCBOR(), "cbor")
+	RegisterMediaType(codec.NewXML(), "xml")
+	RegisterMediaType(form.New(), "form")
+	RegisterMediaType(codec.NewGOB(), "gob")
+	RegisterMediaType(codec.NewNOP("nop", "nop"), "nop")
 
 	// RegisterFileSerializer
 

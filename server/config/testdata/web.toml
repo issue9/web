@@ -3,8 +3,8 @@
 http.port = ":8082"
 http.headers = [{ key = "H1", val = "v1" }, { key = "H2", val = "v2" }]
 timezone = "Africa/Addis_Ababa"
-mimetypes = [
-    { type = "application/json", target = "json" },
-    { type = "text/xml", target = "xml" },
-    { type = "multipart/form-data", target = "nop" },
+mediaTypes = [
+    { target = "json" },
+    { target = "xml" },
+    { target = "nop" },
 ]

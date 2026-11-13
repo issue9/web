@@ -8,10 +8,9 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v6"
+	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/mimetype/cbor"
-	"github.com/issue9/web/mimetype/json"
 )
 
 func TestWithOptions(t *testing.T) {
@@ -87,14 +86,14 @@ func TestWithMediaType(t *testing.T) {
 	ss := newServer(a)
 
 	d := New(ss, web.Phrase("desc"),
-		WithMediaType(json.Mimetype),
+		WithMediaType(header.JSON),
 	)
 	a.NotNil(d).
 		Length(d.mediaTypes, 1)
 
 	a.PanicString(func() {
 		New(ss, web.Phrase("desc"),
-			WithMediaType(json.Mimetype, cbor.Mimetype),
+			WithMediaType(header.JSON, header.CBOR),
 		)
 	}, "不支持 application/cbor 媒体类型")
 }

@@ -5,26 +5,25 @@
 package openapi
 
 import (
-	stdjson "encoding/json/v2"
+	"encoding/json/v2"
 	"net/http"
 	"testing"
 	"testing/synctest"
 	"time"
 
-	stdyaml "github.com/goccy/go-yaml"
+	"github.com/goccy/go-yaml"
 	"github.com/issue9/assert/v6"
+	"github.com/issue9/mux/v10/header"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/mimetype/json"
-	"github.com/issue9/web/mimetype/yaml"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
 )
 
 var (
-	_ stdjson.Marshaler      = &renderer[int]{}
-	_ stdyaml.BytesMarshaler = &renderer[int]{}
+	_ json.Marshaler      = &renderer[int]{}
+	_ yaml.BytesMarshaler = &renderer[int]{}
 )
 
 type object struct { // 被用于多种用途，所以同时带了 XML 和 yaml。
@@ -51,11 +50,11 @@ func TestRenderer(t *testing.T) {
 		NotNil(r.obj)
 
 	// JSON
-	bs, err := stdjson.Marshal(r)
+	bs, err := json.Marshal(r)
 	a.NotError(err).Equal(string(bs), `{"$ref":"#/components/schemas/ref"}`)
 
 	// YAML
-	bs, err = stdyaml.Marshal(r)
+	bs, err = yaml.Marshal(r)
 	a.NotError(err).Equal(string(bs), "$ref: \"#/components/schemas/ref\"\n")
 
 	// ref = nil
@@ -64,11 +63,11 @@ func TestRenderer(t *testing.T) {
 	a.Nil(r.ref).NotNil(r.obj)
 
 	// JSON
-	bs, err = stdjson.Marshal(r)
+	bs, err = json.Marshal(r)
 	a.NotError(err).Equal(string(bs), `{"id":2,"Items":[]}`)
 
 	// YAML
-	bs, err = stdyaml.Marshal(r)
+	bs, err = yaml.Marshal(r)
 	a.NotError(err).Equal(string(bs), "id: 2\nitems: []\n")
 }
 
@@ -95,18 +94,18 @@ func TestDocument_Handler(t *testing.T) {
 		go s.Serve()
 		synctest.Wait()
 
-		ts.Get("/p/openapi").Header("accept", json.Mimetype).
+		ts.Get("/p/openapi").Header("accept", header.JSON).
 			Do().
 			BodyFunc(func(a *assert.Assertion, body []byte) {
 				a.NotZero(len(body))
 			})
 
-		ts.Get("/p/openapi").Header("accept", yaml.Mimetype).
+		ts.Get("/p/openapi").Header("accept", header.YAML).
 			Do().
 			Status(http.StatusNotAcceptable) // server 中未未配置 yaml
 
 		d.Disable(true)
-		ts.Get("/p/openapi").Header("accept", json.Mimetype).
+		ts.Get("/p/openapi").Header("accept", header.JSON).
 			Do().
 			Status(http.StatusNotFound)
 

@@ -20,6 +20,33 @@ import (
 	"github.com/issue9/web/internal/qheader"
 )
 
+// Compressor 压缩算法的接口
+type Compressor interface {
+	// Name 算法的名称
+	Name() string
+
+	// NewDecoder 将 r 包装成为当前压缩算法的解码器
+	NewDecoder(r io.Reader) (io.ReadCloser, error)
+
+	// NewEncoder 将 w 包装成当前压缩算法的编码器
+	NewEncoder(w io.Writer) (io.WriteCloser, error)
+}
+
+// MediaType 媒体类型需要提供的接口
+type MediaType interface {
+	// Name 获取媒体类型的名称
+	Name() string
+
+	// ProblemName 错误状态下的媒体类型
+	ProblemName() string
+
+	// Marshal 对内容进行编码
+	Marshal(ctx *Context, v any) ([]byte, error)
+
+	// Marshal 解码内容到 v
+	Unmarshal(r io.Reader, v any) error
+}
+
 // Codec 编解码工具
 //
 // 包含了压缩方法和媒体类型的处理
@@ -28,40 +55,16 @@ type Codec struct {
 	compressions         []*compression
 	acceptEncodingHeader string // 生成 AcceptEncoding 报头内容
 
-	mediaTypes         []*mediaType
+	mediaTypes         []MediaType
 	clientAcceptHeader string // 生成客户端的 Accept 报头内容
 	serverAcceptHeader string // 生成服务端的 Accept 报头内容
 }
 
-type mediaType struct {
-	// Mimetype 的名称
-	//
-	// 比如：application/json
-	Name string
-
-	// 对应的错误状态下的 mimetype 值
-	//
-	// 比如：application/problem+json。
-	// 可以为空，表示与 Type 相同。
-	Problem string
-
-	// 生成编码方法
-	Marshal MarshalFunc
-
-	// 解码方法
-	Unmarshal UnmarshalFunc
-}
-
 type compression struct {
-	compressor Compressor
-
-	types []string
-
-	// 如果是通配符，则其它配置都将不启作用。
-	wildcard bool
-
-	// 是模糊类型的，比如 text/*，只有在 Types 找不到时，才在此处查找。
-	wildcardSuffix []string
+	compressor     Compressor
+	types          []string
+	wildcard       bool     // 如果是通配符，则其它配置都将不启作用。
+	wildcardSuffix []string // 是模糊类型的，比如 text/*，只有在 types 找不到时，才在此处查找。
 }
 
 func buildCompression(c Compressor, types []string) *compression {
@@ -100,7 +103,7 @@ func buildCompression(c Compressor, types []string) *compression {
 func NewCodec() *Codec {
 	return &Codec{
 		compressions: make([]*compression, 0, 10),
-		mediaTypes:   make([]*mediaType, 0, 10),
+		mediaTypes:   make([]MediaType, 0, 10),
 	}
 }
 
@@ -126,53 +129,34 @@ func (e *Codec) AddCompressor(c Compressor, t ...string) *Codec {
 	return e
 }
 
-// AddMimetype 添加对媒体类型的编解码函数
+// AddMediaType 添加媒体类型
 //
-// name 媒体类型的名称，比如 application/json；
-// problem 媒体类型非正常状态下的子类型，比如 application/problem+json；
 // requestAccept 是否出现在客户端请求的 accept 报头中；
 // responseAccept 是否出现在服务端返回的 accept 报头中；
-func (c *Codec) AddMimetype(name string, m MarshalFunc, u UnmarshalFunc, problem string, requestAccept, responseAccept bool) *Codec {
-	if problem == "" {
-		problem = name
-	}
-
-	if name == "" {
-		panic("参数 name 不能为空")
-	}
-
-	if m == nil {
-		panic("参数 m 不能为空")
-	}
-
-	if u == nil {
-		panic("参数 u 不能为空")
+func (c *Codec) AddMediaType(mt MediaType, requestAccept, responseAccept bool) *Codec {
+	if mt == nil {
+		panic("参数 mt 不能为空")
 	}
 
 	// 检测复复值
-	if slices.IndexFunc(c.mediaTypes, func(v *mediaType) bool { return v.Name == name }) >= 0 {
-		panic(fmt.Sprintf("存在重复的项 %s", name))
+	if slices.IndexFunc(c.mediaTypes, func(v MediaType) bool { return v.Name() == mt.Name() }) >= 0 {
+		panic(fmt.Sprintf("存在重复的项 %s", mt.Name()))
 	}
 
-	c.mediaTypes = append(c.mediaTypes, &mediaType{
-		Name:      name,
-		Marshal:   m,
-		Unmarshal: u,
-		Problem:   problem,
-	})
+	c.mediaTypes = append(c.mediaTypes, mt)
 
 	if requestAccept {
 		if c.clientAcceptHeader != "" {
 			c.clientAcceptHeader += ", "
 		}
-		c.clientAcceptHeader += name
+		c.clientAcceptHeader += mt.Name()
 	}
 
 	if responseAccept {
 		if c.serverAcceptHeader != "" {
 			c.serverAcceptHeader += ", "
 		}
-		c.serverAcceptHeader += name
+		c.serverAcceptHeader += mt.Name()
 	}
 
 	return c
@@ -193,9 +177,7 @@ func (c *Codec) contentEncoding(name string, r io.Reader) (io.ReadCloser, error)
 	return nil, NewError("not found compress for %s", name)
 }
 
-func unableParse(v string) error {
-	return localeutil.Error("unable parse %s", v)
-}
+func unableParse(v string) error { return localeutil.Error("unable parse %s", v) }
 
 // 根据客户端的 Accept-Encoding 报头选择是适合的压缩方法
 //
@@ -299,22 +281,15 @@ LOOP:
 	return indexes
 }
 
-func (m *mediaType) name(problem bool) string {
-	if problem {
-		return m.Problem
-	}
-	return m.Name
-}
-
 // 从请求端提交的 Content-Type 报头中获取解码和字符集函数
 //
 // h 表示 Content-Type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
 func (e *Codec) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
-	mimetype, charset := qheader.ParseWithParam(h, "charset")
+	mt, charset := qheader.ParseWithParam(h, "charset")
 
-	item := e.searchFunc(func(s string) bool { return s == mimetype })
+	item := e.searchFunc(func(s string) bool { return s == mt })
 	if item == nil {
-		return nil, nil, NewError("not found serialization function for %s", mimetype)
+		return nil, nil, NewError("not found serialization function for %s", mt)
 	}
 
 	if charset == "" || charset == header.UTF8 {
@@ -331,7 +306,7 @@ func (e *Codec) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) 
 // 从请求端提交的 Accept 报头解析出所需要的解码函数
 //
 // 如果 h 为空，那么将被设置为默认值 ＊；
-func (c *Codec) accept(h string) (*mediaType, error) {
+func (c *Codec) accept(h string) (MediaType, error) {
 	// 规则如下：
 	//  - 按 q 从大到小进行排序；
 	//  - 忽略无法解析 q 的项；
@@ -370,7 +345,7 @@ func (c *Codec) accept(h string) (*mediaType, error) {
 	// 在 accept 中未找到符合的，且指定 */*，挑一个服务器支持且不在 deny 中的
 	if hasAny {
 		for _, mt := range c.mediaTypes {
-			if !denied(mt.Name, deny) {
+			if !denied(mt.Name(), deny) {
 				return mt, nil
 			}
 		}
@@ -379,11 +354,11 @@ func (c *Codec) accept(h string) (*mediaType, error) {
 	return nil, nil
 }
 
-func match(name string, mt *mediaType) bool {
+func match(name string, mt MediaType) bool {
 	switch {
-	case name == mt.Name:
+	case name == mt.Name():
 		return true
-	case strings.HasSuffix(name, "/*") && strings.HasPrefix(mt.Name, name[:len(name)-1]):
+	case strings.HasSuffix(name, "/*") && strings.HasPrefix(mt.Name(), name[:len(name)-1]):
 		return true
 	}
 	return false
@@ -402,8 +377,8 @@ func denied(name string, deny []string) bool {
 	return false
 }
 
-func (c *Codec) searchFunc(match func(string) bool) *mediaType {
-	item, _ := sliceutil.At(c.mediaTypes, func(i *mediaType, _ int) bool { return match(i.Name) || match(i.Problem) })
+func (c *Codec) searchFunc(match func(string) bool) MediaType {
+	item, _ := sliceutil.At(c.mediaTypes, func(i MediaType, _ int) bool { return match(i.Name()) || match(i.ProblemName()) })
 	return item
 }
 
@@ -417,13 +392,13 @@ func (c *Codec) CanCompress() bool { return !c.disableCompress }
 // NOTE: 仅对输出内容启作用，读取内容始终是按照提交的 Content-Encoding 指定算法进行解析。
 func (c *Codec) SetCompress(enable bool) { c.disableCompress = !enable }
 
-// Mimetypes 返回支持的所有媒体类型
+// MediaTypes 返回支持的所有媒体类型
 //
-// 键名为 mimetype，键值为 problem 状态下的 mimetype。
-func (c *Codec) Mimetypes() iter.Seq2[string, string] {
+// 键名和键值分别为正常和 problem 下的名称。
+func (c *Codec) MediaTypes() iter.Seq2[string, string] {
 	return func(yield func(string, string) bool) {
 		for _, v := range c.mediaTypes {
-			if !yield(v.Name, v.Problem) {
+			if !yield(v.Name(), v.ProblemName()) {
 				break
 			}
 		}

@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/issue9/sliceutil"
-
 	"github.com/issue9/web"
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
@@ -40,27 +38,15 @@ type compressConfig struct {
 	ID string `json:"id" xml:"id,attr" yaml:"id" toml:"id"`
 }
 
-type mimetypeConfig struct {
-	// 编码名称
-	//
-	// 比如 application/xml 等
-	Type string `json:"type" yaml:"type" xml:"type,attr" toml:"type"`
-
-	// 返回错误代码是的 mimetype
-	//
-	// 比如正常情况下如果是 application/json，那么此值可以是 application/problem+json。
-	// 如果为空，表示与 Type 相同。
-	Problem string `json:"problem,omitempty" yaml:"problem,omitempty" xml:"problem,attr,omitempty" toml:"problem,omitempty"`
-
+type mediaTypeConfig struct {
 	// 实际采用的解码方法
 	//
-	// 由 [RegisterMimetype] 注册而来。默认可用为：
+	// 由 [RegisterMediaType] 注册而来。默认可用为：
 	//
 	//  - xml
 	//  - cbor
 	//  - json
 	//  - form
-	//  - html
 	//  - gob
 	//  - yaml
 	//  - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。
@@ -72,13 +58,8 @@ type mimetypeConfig struct {
 	Accept string `json:"accept,omitempty" yaml:"accept,omitempty" xml:"accept,attr,omitempty" toml:"accept,omitempty"`
 }
 
-type mimetype struct {
-	marshal   web.MarshalFunc
-	unmarshal web.UnmarshalFunc
-}
-
 func (conf *configOf[T]) buildCodec(f *filter.Filter) {
-	if len(conf.Compressors) == 0 && len(conf.Mimetypes) == 0 {
+	if len(conf.Compressors) == 0 && len(conf.MediaTypes) == 0 {
 		return
 	}
 
@@ -92,19 +73,14 @@ func (conf *configOf[T]) buildCodec(f *filter.Filter) {
 		}
 	}
 
-	conf.sanitizeMimetypes(c, f)
+	conf.sanitizeMediaTypes(c, f)
 }
 
-func (conf *configOf[T]) sanitizeMimetypes(c *web.Codec, f *filter.Filter) {
-	if indexes := sliceutil.Dup(conf.Mimetypes, func(i, j *mimetypeConfig) bool { return i.Type == j.Type }); len(indexes) > 0 {
-		f.AddReason("mimetypes["+strconv.Itoa(indexes[1])+"].type", locales.DuplicateValue)
-		return
-	}
-
-	for index, item := range conf.Mimetypes {
-		m, found := mimetypesFactory.get(item.Target)
+func (conf *configOf[T]) sanitizeMediaTypes(c *web.Codec, f *filter.Filter) {
+	for index, item := range conf.MediaTypes {
+		m, found := mediaTypeFactory.get(item.Target)
 		if !found {
-			f.AddReason("mimetypes["+strconv.Itoa(index)+"].target", locales.NotFound)
+			f.AddReason("mediaTypes["+strconv.Itoa(index)+"].target", locales.NotFound)
 			return
 		}
 
@@ -112,26 +88,26 @@ func (conf *configOf[T]) sanitizeMimetypes(c *web.Codec, f *filter.Filter) {
 		if item.Accept != "" {
 			switch s := strings.Split(strings.ToLower(item.Accept), ","); {
 			case len(s) > 2:
-				f.AddReason("mimetypes["+strconv.Itoa(index)+"].accept", locales.InvalidValue)
+				f.AddReason("mediaTypes["+strconv.Itoa(index)+"].accept", locales.InvalidValue)
 				return
 			case len(s) == 2:
 				request = slices.Contains(s, "request")
 				response = slices.Contains(s, "response")
 				if !request || !response {
-					f.AddReason("mimetypes["+strconv.Itoa(index)+"].accept", locales.InvalidValue)
+					f.AddReason("mediaTypes["+strconv.Itoa(index)+"].accept", locales.InvalidValue)
 					return
 				}
 			case len(s) == 1:
 				request = slices.Contains(s, "request")
 				response = slices.Contains(s, "response")
 				if !request && !response {
-					f.AddReason("mimetypes["+strconv.Itoa(index)+"].accept", locales.InvalidValue)
+					f.AddReason("mediaTypes["+strconv.Itoa(index)+"].accept", locales.InvalidValue)
 					return
 				}
 			}
 		}
 
-		c.AddMimetype(item.Type, m.marshal, m.unmarshal, item.Problem, request, response)
+		c.AddMediaType(m, request, response)
 	}
 
 	conf.codec = c

@@ -20,9 +20,10 @@ func TestLoadConfigOf(t *testing.T) {
 	configDir := "./testdata"
 
 	valid := func(conf *configOf[empty]) {
+		a.TB().Helper()
 		a.Equal(conf.HTTP.Port, ":8082").
 			Equal(conf.Timezone, "Africa/Addis_Ababa").
-			Length(conf.Mimetypes, 3)
+			Length(conf.MediaTypes, 3)
 	}
 
 	xmlConf, err := loadConfigOf[empty](configDir, "web.xml")

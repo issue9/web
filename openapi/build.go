@@ -204,7 +204,7 @@ func (resp *Response) buildRenderer(p *message.Printer, d *Document) *responseRe
 			val := resp.Content[k] // 下面会修改 k，所以先获取值。
 
 			if resp.Problem {
-				if mt, found := d.mediaTypes[k]; found { // 找到 problem 专有的 mimetype
+				if mt, found := d.mediaTypes[k]; found { // 找到 problem 专有的 media type
 					k = mt
 				}
 			}

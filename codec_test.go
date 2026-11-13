@@ -11,27 +11,103 @@ import (
 	"compress/lzw"
 	"encoding/json/v2"
 	"encoding/xml"
+	"errors"
 	"io"
 	"testing"
 
+	"github.com/andybalholm/brotli"
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v10/header"
+	"github.com/klauspost/compress/zstd"
 
 	"github.com/issue9/web/internal/qheader"
-	"github.com/issue9/web/mimetype"
 )
+
+type (
+	gzipImpl    struct{}
+	deflateImpl struct{}
+	lzwImpl     struct{}
+	zstdImpl    struct{}
+	brotliImpl  struct{}
+
+	mediaTypeImpl struct {
+		normalName  string
+		problemName string
+		marshal     MarshalFunc
+		unmarshal   UnmarshalFunc
+	}
+)
+
+func newGzip() Compressor                                       { return &gzipImpl{} }
+func (gzipImpl) Name() string                                   { return "gzip" }
+func (gzipImpl) NewDecoder(r io.Reader) (io.ReadCloser, error)  { return gzip.NewReader(r) }
+func (gzipImpl) NewEncoder(w io.Writer) (io.WriteCloser, error) { return gzip.NewWriter(w), nil }
+
+func newLZW() Compressor     { return &lzwImpl{} }
+func (lzwImpl) Name() string { return "compress" }
+func (c lzwImpl) NewDecoder(r io.Reader) (io.ReadCloser, error) {
+	return lzw.NewReader(r, lzw.LSB, 8), nil
+}
+func (c lzwImpl) NewEncoder(w io.Writer) (io.WriteCloser, error) {
+	return lzw.NewWriter(w, lzw.LSB, 8), nil
+}
+
+func newZstd() Compressor     { return &zstdImpl{} }
+func (zstdImpl) Name() string { return "zstd" }
+func (zstdImpl) NewDecoder(r io.Reader) (io.ReadCloser, error) {
+	rr, err := zstd.NewReader(r)
+	if err != nil {
+		return nil, err
+	}
+	return io.NopCloser(rr), nil
+}
+func (zstdImpl) NewEncoder(w io.Writer) (io.WriteCloser, error) { return zstd.NewWriter(w) }
+
+func newBrotli() Compressor     { return &brotliImpl{} }
+func (brotliImpl) Name() string { return "br" }
+func (brotliImpl) NewDecoder(r io.Reader) (io.ReadCloser, error) {
+	return io.NopCloser(brotli.NewReader(r)), nil
+}
+func (c brotliImpl) NewEncoder(w io.Writer) (io.WriteCloser, error) {
+	return brotli.NewWriterOptions(w, brotli.WriterOptions{}), nil
+}
+
+func newDeflate() Compressor                                      { return &deflateImpl{} }
+func (deflateImpl) Name() string                                  { return "deflate" }
+func (deflateImpl) NewDecoder(r io.Reader) (io.ReadCloser, error) { return flate.NewReader(r), nil }
+func (deflateImpl) NewEncoder(w io.Writer) (io.WriteCloser, error) {
+	return flate.NewWriter(w, flate.DefaultCompression)
+}
+
+func newMediaType(name, problem string, m MarshalFunc, u UnmarshalFunc) MediaType {
+	if problem == "" {
+		problem = name
+	}
+
+	return &mediaTypeImpl{
+		normalName:  name,
+		problemName: problem,
+		marshal:     m,
+		unmarshal:   u,
+	}
+}
+
+func (m *mediaTypeImpl) Name() string                                { return m.normalName }
+func (m *mediaTypeImpl) ProblemName() string                         { return m.problemName }
+func (m *mediaTypeImpl) Marshal(ctx *Context, v any) ([]byte, error) { return m.marshal(ctx, v) }
+func (m *mediaTypeImpl) Unmarshal(r io.Reader, v any) error          { return m.unmarshal(r, v) }
 
 func marshalTest(_ *Context, v any) ([]byte, error) {
 	switch vv := v.(type) {
 	case error:
 		return nil, vv
 	default:
-		return nil, mimetype.ErrUnsupported()
+		return nil, errors.ErrUnsupported // 测试环境，直接返回 errors.ErrUnsupported 了
 	}
 }
 
-func unmarshalTest(io.Reader, any) error { return mimetype.ErrUnsupported() }
+func unmarshalTest(io.Reader, any) error { return errors.ErrUnsupported }
 
 func marshalJSON(_ *Context, v any) ([]byte, error) { return json.Marshal(v) }
 
@@ -45,53 +121,50 @@ func newCodec(a *assert.Assertion) *Codec {
 	c := NewCodec()
 	a.NotNil(c)
 
-	c.AddCompressor(NewGzip(gzip.BestSpeed)).
-		AddCompressor(NewDeflate(flate.DefaultCompression, nil)).
+	c.AddCompressor(newGzip()).
+		AddCompressor(newDeflate()).
 		//AddCompressor(nil).
-		AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "application/problem+json", true, true).
-		AddMimetype(header.XML, marshalXML, unmarshalXML, "application/problem+xml", true, true).
-		AddMimetype("application/test", marshalTest, unmarshalTest, "application/problem+test", true, true)
+		AddMediaType(newMediaType(header.JSON, "application/problem+json", marshalJSON, unmarshalJSON), true, true).
+		AddMediaType(newMediaType(header.XML, "application/problem+xml", marshalXML, unmarshalXML), true, true).
+		AddMediaType(newMediaType("application/test", "application/problem+test", marshalTest, unmarshalTest), true, true)
 
 	return c
 }
 
-func TestCodec_AddMimetype(t *testing.T) {
+func TestCodec_AddMediaType(t *testing.T) {
 	a := assert.New(t, false)
 	c := NewCodec()
 
-	a.PanicString(func() {
-		c.AddMimetype("", nil, nil, "", true, true)
-	}, "参数 name 不能为空")
-
-	a.PanicString(func() {
-		c.AddMimetype(header.JSON, nil, nil, "", true, true)
-	}, "参数 m 不能为空")
-
-	a.PanicString(func() {
-		c.AddMimetype(header.JSON, marshalJSON, nil, "", true, true)
-	}, "参数 u 不能为空")
-
 	a.NotPanic(func() {
-		c.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "", true, true)
+		c.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON), true, true)
 	})
 
 	a.PanicString(func() {
-		c.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "", true, true)
+		c.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON), true, true)
 	}, "存在重复的项 "+header.JSON)
+
+	a.PanicString(func() {
+		c.AddMediaType(nil, true, true)
+	}, "参数 mt 不能为空")
+
+	mt := newMediaType(header.Plain, "", marshalJSON, unmarshalJSON)
+	a.Equal(mt.ProblemName(), header.Plain)
+	e := NewCodec().AddMediaType(mt, false, true)
+	a.Equal(e.clientAcceptHeader, "").Equal(e.serverAcceptHeader, header.Plain)
 }
 
 func TestBuildCompression(t *testing.T) {
 	a := assert.New(t, false)
 
-	c := buildCompression(NewGzip(gzip.DefaultCompression), nil)
+	c := buildCompression(newGzip(), nil)
 	a.True(c.wildcard).
 		Length(c.types, 0).
 		Length(c.wildcardSuffix, 0)
 
-	c = buildCompression(NewGzip(gzip.DefaultCompression), []string{"text"})
+	c = buildCompression(newGzip(), []string{"text"})
 	a.Equal(c.types, []string{"text"})
 
-	c = buildCompression(NewGzip(gzip.DefaultCompression), []string{"text", "*"})
+	c = buildCompression(newGzip(), []string{"text", "*"})
 	a.Nil(c.types).
 		True(c.wildcard).
 		Nil(c.wildcardSuffix)
@@ -102,9 +175,10 @@ func TestCodec_contentEncoding(t *testing.T) {
 
 	e := NewCodec()
 	a.NotNil(e)
-	e.AddCompressor(NewLZW(lzw.LSB, 8), header.Plain, "application/*").
-		AddCompressor(NewGzip(gzip.BestSpeed), header.Plain).
-		AddCompressor(NewZstd(), "application/*")
+	e.AddCompressor(newLZW(), header.Plain, "application/*").
+		AddCompressor(newGzip(), header.Plain).
+		AddCompressor(newZstd(), "application/*").
+		AddCompressor(newBrotli(), "text/*")
 
 	r := &bytes.Buffer{}
 	rc, err := e.contentEncoding("zstd", r)
@@ -122,9 +196,9 @@ func TestCodec_acceptEncoding(t *testing.T) {
 
 	e := NewCodec()
 	a.NotNil(e)
-	e.AddCompressor(NewLZW(lzw.LSB, 8), header.Plain, "application/*").
-		AddCompressor(NewGzip(gzip.DefaultCompression), header.Plain).
-		AddCompressor(NewGzip(gzip.DefaultCompression), "application/*")
+	e.AddCompressor(newLZW(), header.Plain, "application/*").
+		AddCompressor(newGzip(), header.Plain).
+		AddCompressor(newGzip(), "application/*")
 
 	a.Equal(e.acceptEncodingHeader, "compress,gzip")
 
@@ -187,7 +261,7 @@ func TestCodec_contentType(t *testing.T) {
 
 	mt := NewCodec()
 	a.NotNil(mt)
-	mt.AddMimetype(header.OctetStream, marshalJSON, unmarshalJSON, "", true, true)
+	mt.AddMediaType(newMediaType(header.OctetStream, "", marshalJSON, unmarshalJSON), true, true)
 
 	f, e, err := mt.contentType(";;;")
 	a.Error(err).Nil(f).Nil(e)
@@ -242,36 +316,36 @@ func TestCodec_accept(t *testing.T) {
 
 	mt = NewCodec()
 	a.NotNil(mt)
-	mt.AddMimetype(header.JSON, marshalJSON, unmarshalJSON, "", true, true).
-		AddMimetype(header.Plain, marshalXML, unmarshalXML, "text/plain+problem", true, true)
+	mt.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON), true, true).
+		AddMediaType(newMediaType(header.Plain, "text/plain+problem", marshalXML, unmarshalXML), true, true)
 
 	item, err = mt.accept(header.JSON)
 	a.NotError(err).NotNil(item).
 		NotNil(item.Marshal).
-		Equal(item.name(false), header.JSON).
-		Equal(item.name(true), header.JSON)
+		Equal(item.Name(), header.JSON).
+		Equal(item.ProblemName(), header.JSON)
 
 	// */*
 	item, err = mt.accept("*/*")
 	a.NotError(err).NotNil(item).
 		NotNil(item.Marshal).
-		Equal(item.name(false), header.JSON)
+		Equal(item.Name(), header.JSON)
 
 	// 空参数，结果同 */*
 	item, err = mt.accept("")
 	a.NotError(err).NotNil(item).
 		NotNil(item.Marshal).
-		Equal(item.name(false), header.JSON)
+		Equal(item.Name(), header.JSON)
 
 	item, err = mt.accept("*/*,text/plain")
 	a.NotError(err).NotNil(item).
 		NotNil(item.Marshal).
-		Equal(item.name(false), header.Plain).
-		Equal(item.name(true), "text/plain+problem")
+		Equal(item.Name(), header.Plain).
+		Equal(item.ProblemName(), "text/plain+problem")
 
 	// json 被禁，但是匹配 */* 匹配了 text/plain
 	item, err = mt.accept(header.JSON + ";q=0,*/*;q=1")
-	a.NotError(err).Equal(item.Name, header.Plain)
+	a.NotError(err).Equal(item.Name(), header.Plain)
 
 	// json 被禁
 	item, err = mt.accept(header.JSON + ";q=0")

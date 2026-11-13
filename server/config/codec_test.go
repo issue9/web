@@ -10,9 +10,9 @@ import (
 	"github.com/issue9/assert/v6"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/mimetype/json"
 )
 
 func TestConfigOf_buildCodec(t *testing.T) {
@@ -40,13 +40,13 @@ func TestConfigOf_buildCodec(t *testing.T) {
 	a.True(f.HasError()).NotEmpty(e["compresses[1].id"])
 }
 
-func TestConfigOf_sanitizeMimetypes(t *testing.T) {
+func TestConfigOf_sanitizeMediaTypes(t *testing.T) {
 	a := assert.New(t, false)
 
 	conf := &configOf[empty]{
-		Mimetypes: []*mimetypeConfig{
-			{Type: "json", Target: "json"},
-			{Type: "xml", Target: "xml", Accept: "request,response"},
+		MediaTypes: []*mediaTypeConfig{
+			{Target: "json"},
+			{Target: "xml", Accept: "request,response"},
 		},
 	}
 	e, f := buildFilter()
@@ -54,70 +54,60 @@ func TestConfigOf_sanitizeMimetypes(t *testing.T) {
 	a.False(f.HasError()).NotNil(conf.codec).Empty(e)
 
 	conf = &configOf[empty]{
-		Mimetypes: []*mimetypeConfig{
-			{Type: "json", Target: "json"},
-			{Type: "json", Target: "xml"},
-		},
-	}
-	e, f = buildFilter()
-	conf.buildCodec(f)
-	a.True(f.HasError()).NotEmpty(e["mimetypes[1].type"])
-
-	conf = &configOf[empty]{
-		Mimetypes: []*mimetypeConfig{
-			{Type: "json", Target: "json"},
-			{Type: "xml", Target: "not-exists"},
+		MediaTypes: []*mediaTypeConfig{
+			{Target: "json"},
+			{Target: "not-exists"},
 		},
 	}
 	e, f = buildFilter()
 	conf.buildCodec(f)
 	a.True(f.HasError()).
-		Equal(e, filter.Map{"mimetypes[1].target": []web.LocaleStringer{locales.NotFound}})
+		Equal(e, filter.Map{"mediaTypes[1].target": []web.LocaleStringer{locales.NotFound}})
 
 	// Accept
 
 	conf = &configOf[empty]{
-		Mimetypes: []*mimetypeConfig{
-			{Type: "json", Target: "json", Accept: "req"},
+		MediaTypes: []*mediaTypeConfig{
+			{Target: "json", Accept: "req"},
 		},
 	}
 	e, f = buildFilter()
 	conf.buildCodec(f)
 	a.True(f.HasError()).
-		Equal(e, filter.Map{"mimetypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
+		Equal(e, filter.Map{"mediaTypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
 
 	conf = &configOf[empty]{
-		Mimetypes: []*mimetypeConfig{
-			{Type: "json", Target: "json", Accept: "request,resp"},
+		MediaTypes: []*mediaTypeConfig{
+			{Target: "json", Accept: "request,resp"},
 		},
 	}
 	e, f = buildFilter()
 	conf.buildCodec(f)
 	a.True(f.HasError()).
-		Equal(e, filter.Map{"mimetypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
+		Equal(e, filter.Map{"mediaTypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
 
 	conf = &configOf[empty]{
-		Mimetypes: []*mimetypeConfig{
-			{Type: "json", Target: "json", Accept: "request,response,request"},
+		MediaTypes: []*mediaTypeConfig{
+			{Target: "json", Accept: "request,response,request"},
 		},
 	}
 	e, f = buildFilter()
 	conf.buildCodec(f)
 	a.True(f.HasError()).
-		Equal(e, filter.Map{"mimetypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
+		Equal(e, filter.Map{"mediaTypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
 }
 
-func TestRegisterMimetype(t *testing.T) {
+func TestRegisterMediaType(t *testing.T) {
 	a := assert.New(t, false)
 
-	v, f := mimetypesFactory.get("json")
-	a.True(f).
-		NotNil(v).
-		NotNil(v.marshal)
+	v, f := mediaTypeFactory.get("json")
+	a.True(f).NotNil(v)
 
-	RegisterMimetype(json.Marshal, json.Unmarshal, "json")
-	v, f = mimetypesFactory.get("json")
-	a.True(f).
-		NotNil(v).
-		NotNil(v.marshal)
+	a.PanicString(func() {
+		RegisterMediaType(codec.NewJSON(), "json2")
+	}, "存在同名的媒体类型")
+
+	RegisterMediaType(codec.ForkMediaType(codec.NewJSON(), "application/jsonv2", "application/problem+jsonv2"), "json2")
+	v, f = mediaTypeFactory.get("json2")
+	a.True(f).NotNil(v)
 }

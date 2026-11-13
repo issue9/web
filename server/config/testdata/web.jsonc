@@ -15,17 +15,14 @@
 
     },
     "timezone": "Africa/Addis_Ababa",
-    "mimetypes": [
+    "mediaTypes": [
         {
-            "type": "application/json",
             "target": "json"
         },
         {
-            "type": "text/xml",
             "target": "xml"
         },
         {
-            "type": "multipart/form-data",
             "target": "nop"
         }
     ]

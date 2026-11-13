@@ -383,10 +383,10 @@ func (ctx *Context) Unmarshal(v any) error {
 		return nil
 	}
 
-	if ctx.inputMimetype == nil { // 客户端未指定 content-type，但是又有内容要输出。
+	if ctx.inputUnmarshal == nil { // 客户端未指定 content-type，但是又有内容要输出。
 		return NewError("the client miss content-type header")
 	}
-	return ctx.inputMimetype(ctx.RequestBody(), v)
+	return ctx.inputUnmarshal(ctx.RequestBody(), v)
 }
 
 // Read 从客户端读取数据并转换成 v 对象

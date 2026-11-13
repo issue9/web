@@ -8,9 +8,9 @@
         </headers>
     </http>
     <timezone>Africa/Addis_Ababa</timezone>
-    <mimetypes>
-        <mimetype type="application/json" target="json" />
-        <mimetype type="text/xml" target="xml" />
-        <mimetype type="multipart/form-data" target="nop" />
-    </mimetypes>
+    <mediaTypes>
+        <mediaType target="json" />
+        <mediaType target="xml" />
+        <mediaType target="nop" />
+    </mediaTypes>
 </web>

@@ -62,13 +62,13 @@ type Context struct {
 	outputCompressor  Compressor
 	outputCharset     encoding.Encoding
 	outputCharsetName string
-	outputMimetype    *mediaType
+	outputMediaType   MediaType
 	status            int // WriteHeader 保存的副本，非零表示已经输出。
 	wrote             bool
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
-	inputMimetype UnmarshalFunc
-	requestBody   io.Reader
+	inputUnmarshal UnmarshalFunc
+	requestBody    io.Reader
 
 	// 区域和本地相关信息
 	languageTag   language.Tag
@@ -138,7 +138,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 
 	var outputCompressor Compressor
 	if s.codec.CanCompress() {
-		if outputCompressor, err = s.codec.acceptEncoding(mt.name(false), r.Header.Get(header.AcceptEncoding)); err != nil {
+		if outputCompressor, err = s.codec.acceptEncoding(mt.Name(), r.Header.Get(header.AcceptEncoding)); err != nil {
 			warn().LocaleString(parseHeaderErr(header.AcceptEncoding, err))
 			s.errorPage(w, problems.NotAcceptable)
 			return nil
@@ -146,11 +146,11 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 
 	var inputReader io.Reader = r.Body // 作为服务端使用，Body 始终不为空，且不需要调用 Close，所以类型为 io.Reader 就可以了。
-	var inputMimetype UnmarshalFunc
+	var unmarshal UnmarshalFunc
 	if h = r.Header.Get(header.ContentType); h != "" {
 		var err error
 		var inputCharset encoding.Encoding
-		if inputMimetype, inputCharset, err = s.codec.contentType(h); err != nil {
+		if unmarshal, inputCharset, err = s.codec.contentType(h); err != nil {
 			warn().Error(err)
 			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
@@ -190,11 +190,11 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	ctx.outputCompressor = outputCompressor
 	ctx.outputCharset = outputCharset
 	ctx.outputCharsetName = outputCharsetName
-	ctx.outputMimetype = mt
+	ctx.outputMediaType = mt
 	ctx.status = 0
 	ctx.wrote = false
 
-	ctx.inputMimetype = inputMimetype
+	ctx.inputUnmarshal = unmarshal
 	ctx.requestBody = inputReader
 	ctx.languageTag = tag
 	ctx.localePrinter = s.Locale().NewPrinter(tag)
@@ -270,32 +270,37 @@ func (ctx *Context) SetCharset(charset string) {
 // Charset 输出的字符集
 func (ctx *Context) Charset() string { return ctx.outputCharsetName }
 
-// SetMimetype 设置输出的格式
+// SetMediaType 设置输出的格式
 //
 // 不会修改 [Context.Request] 中的 Accept 报头，如果需要同时修改此报头
 // 可以通过 [Server.NewContext] 构建一个新 [Context] 对象。
-func (ctx *Context) SetMimetype(mimetype string) {
+func (ctx *Context) SetMediaType(mediaType string) {
 	if ctx.Wrote() {
 		panic("已有内容输出，不可再更改！")
 	}
-	if ctx.Mimetype(false) == mimetype {
+	if ctx.MeidaType(false) == mediaType {
 		return
 	}
 
-	item, err := ctx.s.codec.accept(mimetype)
+	item, err := ctx.s.codec.accept(mediaType)
 	if err != nil {
 		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
 	}
 	if item == nil {
-		panic(fmt.Sprintf("指定的编码 %s 不存在", mimetype))
+		panic(fmt.Sprintf("指定的编码 %s 不存在", mediaType))
 	}
-	ctx.outputMimetype = item
+	ctx.outputMediaType = item
 }
 
-// Mimetype 返回输出编码名称
+// MeidaType 返回输出编码名称
 //
 // problem 表示是否返回 problem 状态时的值。
-func (ctx *Context) Mimetype(problem bool) string { return ctx.outputMimetype.name(problem) }
+func (ctx *Context) MeidaType(problem bool) string {
+	if problem {
+		return ctx.outputMediaType.ProblemName()
+	}
+	return ctx.outputMediaType.Name()
+}
 
 // SetEncoding 设置输出的压缩编码
 //
@@ -309,7 +314,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	c, err := ctx.s.codec.acceptEncoding(ctx.Mimetype(false), enc)
+	c, err := ctx.s.codec.acceptEncoding(ctx.MeidaType(false), enc)
 	if err != nil {
 		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
 	}
