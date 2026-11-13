@@ -21,7 +21,7 @@ import (
 type MediaType = web.MediaType
 
 type mediaType struct {
-	normalName  string
+	name        string
 	problemName string
 	marshal     web.MarshalFunc
 	unmarshal   web.UnmarshalFunc
@@ -37,14 +37,14 @@ func NewMediaType(name, problem string, m web.MarshalFunc, u web.UnmarshalFunc) 
 	}
 
 	return &mediaType{
-		normalName:  name,
+		name:        name,
 		problemName: problem,
 		marshal:     m,
 		unmarshal:   u,
 	}
 }
 
-func (m *mediaType) Name() string { return m.normalName }
+func (m *mediaType) Name() string { return m.name }
 
 func (m *mediaType) ProblemName() string { return m.problemName }
 
@@ -60,8 +60,8 @@ func ForkMediaType(mt MediaType, normal, problem string) MediaType {
 // NewNOP 创建一个空的 [MeidaType] 实例
 //
 // 调用创建对象的方法都将返回 [codec.ErrUnsupported] 错误，名称也都为空。
-func NewNOP() MediaType {
-	return NewMediaType("nop", "",
+func NewNOP(name, problem string) MediaType {
+	return NewMediaType(name, problem,
 		func(_ *web.Context, _ any) ([]byte, error) { return nil, ErrUnsupported() },
 		func(_ io.Reader, _ any) error { return ErrUnsupported() },
 	)

@@ -14,17 +14,18 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/codec/html"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
 )
 
-func newServer(a *assert.Assertion, lang string) (*web.Server, startuptest.Startup) {
+func newServer(a *assert.Assertion, lang string, mt codec.MediaType) (*web.Server, startuptest.Startup) {
 	ts := startuptest.NewTestServerStartup(a)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Startup:  ts,
 		Language: language.MustParse(lang),
-		Codec:    web.NewCodec().AddMediaType(html.New(), true, true),
+		Codec:    web.NewCodec().AddMediaType(mt, true, true),
 		Logs:     logs.New(logs.NewTermHandler(os.Stderr, nil)),
 	})
 	a.NotError(err).NotNil(s)
@@ -38,10 +39,11 @@ func newServer(a *assert.Assertion, lang string) (*web.Server, startuptest.Start
 	return s, ts
 }
 
-func TestInstall(t *testing.T) {
+func TestHTML_Install(t *testing.T) {
 	a := assert.New(t, false)
-	s, ts := newServer(a, "und") // und 被解析为 language.Und，将会尝试读取系统的本地化信息
-	html.Install(s, nil, nil, "*.tpl", os.DirFS("./testdata/view"))
+	h := html.New()
+	h.Install(nil, nil, "*.tpl", os.DirFS("./testdata/view"))
+	s, ts := newServer(a, "und", h) // und 被解析为 language.Und，将会尝试读取系统的本地化信息
 
 	type obj struct {
 		XMLName struct{} `html:"t"`
@@ -70,8 +72,9 @@ func TestInstall(t *testing.T) {
 func TestInstall_withLocalized(t *testing.T) {
 	localized := map[language.Tag]string{language.SimplifiedChinese: "cmn-hans", language.TraditionalChinese: "cmn-hant", language.Und: "cmn-hans"}
 	a := assert.New(t, false)
-	s, ts := newServer(a, "cmn-hans")
-	html.Install(s, nil, localized, "*.tpl", os.DirFS("./testdata/dir"))
+	h := html.New()
+	h.Install(nil, localized, "*.tpl", os.DirFS("./testdata/dir"))
+	s, ts := newServer(a, "cmn-hans", h)
 
 	type obj struct {
 		XMLName struct{} `html:"t"`

@@ -29,7 +29,6 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/codec"
 	"github.com/issue9/web/codec/form"
-	"github.com/issue9/web/codec/html"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/registry"
 )
@@ -197,10 +196,9 @@ func init() {
 	RegisterMediaType(codec.NewYAML(), "yaml")
 	RegisterMediaType(codec.NewCBOR(), "cbor")
 	RegisterMediaType(codec.NewXML(), "xml")
-	RegisterMediaType(html.New(), "html")
 	RegisterMediaType(form.New(), "form")
 	RegisterMediaType(codec.NewGOB(), "gob")
-	RegisterMediaType(codec.NewNOP(), "nop")
+	RegisterMediaType(codec.NewNOP("nop", "nop"), "nop")
 
 	// RegisterFileSerializer
 

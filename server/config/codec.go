@@ -47,7 +47,6 @@ type mediaTypeConfig struct {
 	//  - cbor
 	//  - json
 	//  - form
-	//  - html
 	//  - gob
 	//  - yaml
 	//  - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。

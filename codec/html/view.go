@@ -5,6 +5,7 @@
 package html
 
 import (
+	"fmt"
 	"html/template"
 	"io/fs"
 	"maps"
@@ -15,15 +16,6 @@ import (
 
 	"github.com/issue9/web"
 )
-
-type contextType int
-
-const viewContextKey contextType = 1
-
-type view struct {
-	tpls    map[language.Tag]*template.Template
-	matcher language.Matcher
-}
 
 // Install 安装模板
 //
@@ -37,29 +29,21 @@ type view struct {
 // fsys 表示模板目录。如果 localized 不为空，则只解析该参数中指定的目录，否则解析整个目录；
 //
 // NOTE: 可以多次调用，相同名称的模板会覆盖。
-func Install(s *web.Server, funcs template.FuncMap, localized map[language.Tag]string, glob string, fsys ...fs.FS) {
-	var v *view
-	if vv, ok := s.Vars().Load(viewContextKey); !ok {
-		v = &view{}
-		s.Vars().Store(viewContextKey, v)
-	} else {
-		v = vv.(*view)
-	}
-
+func (h *HTML) Install(funcs template.FuncMap, localized map[language.Tag]string, glob string, fsys ...fs.FS) {
 	if localized == nil {
 		localized = map[language.Tag]string{language.Und: "."}
 	}
 
-	keys := slices.AppendSeq(slices.Collect(maps.Keys(v.tpls)), maps.Keys(localized))
+	keys := slices.AppendSeq(slices.Collect(maps.Keys(h.tpls)), maps.Keys(localized))
 	keys = sliceutil.Unique(keys, func(i, j language.Tag) bool { return i == j })
-	v.matcher = language.NewMatcher(keys)
+	h.matcher = language.NewMatcher(keys)
 
 	for _, f := range fsys {
-		install(s, v, funcs, localized, glob, f)
+		h.install(funcs, localized, glob, f)
 	}
 }
 
-func install(s *web.Server, v *view, funcs template.FuncMap, localized map[language.Tag]string, glob string, fsys fs.FS) {
+func (h *HTML) install(funcs template.FuncMap, localized map[language.Tag]string, glob string, fsys fs.FS) {
 	tpls := make(map[language.Tag]*template.Template, len(localized))
 
 	for t, name := range localized {
@@ -68,11 +52,11 @@ func install(s *web.Server, v *view, funcs template.FuncMap, localized map[langu
 			panic(err)
 		}
 
-		tpl, found := v.tpls[t]
+		tpl, found := h.tpls[t]
 		if found {
 			tpl = template.Must(tpl.Funcs(funcs).ParseFS(sub, glob))
 		} else { // 首次添加
-			f := getTranslateFuncMap(s)
+			f := getTranslateFuncMap()
 			maps.Copy(f, funcs) // 用户定义的可覆盖系统自带的
 			tpl = template.Must(template.New(name).Funcs(f).ParseFS(sub, glob))
 		}
@@ -80,35 +64,37 @@ func install(s *web.Server, v *view, funcs template.FuncMap, localized map[langu
 		tpls[t] = tpl
 	}
 
-	v.tpls = tpls
-	s.Vars().Store(viewContextKey, v)
+	if h.tpls == nil {
+		h.tpls = tpls
+	} else {
+		maps.Copy(h.tpls, tpls)
+	}
 }
 
-func getTranslateFuncMap(s *web.Server) template.FuncMap {
+// 仅作为占位符使用，可以让模板编译通过。实现的实现在每一次的 [HTML.Marshal] 方法中。
+func getTranslateFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"t": func(msg string, v ...any) string {
-			return s.Locale().Printer().Sprintf(msg, v...)
-		},
-
-		"tt": func(tag, msg string, v ...any) string {
-			return s.Locale().NewPrinter(language.MustParse(tag)).Sprintf(msg, v...)
-		},
+		"t":  func(msg string, v ...any) string { return fmt.Sprintf(msg, v...) },
+		"tt": func(tag, msg string, v ...any) string { return fmt.Sprintf(msg, v...) },
 	}
 }
 
 // 生成适用当前会话的模板，这会添加一个当前语言的翻译方法 t
-func (v *view) buildCurrentTpl(ctx *web.Context) *template.Template {
-	if len(v.tpls) == 0 {
+func (h *HTML) buildCurrentTpl(ctx *web.Context) *template.Template {
+	if len(h.tpls) == 0 {
 		return nil
 	}
 
-	tag, _, _ := v.matcher.Match(ctx.LanguageTag())
-	tpl, found := v.tpls[tag]
+	tag, _, _ := h.matcher.Match(ctx.LanguageTag())
+	tpl, found := h.tpls[tag]
 	if !found && tag != language.Und {
-		tpl = v.tpls[language.Und]
+		tpl = h.tpls[language.Und]
 	}
 
 	return tpl.Funcs(template.FuncMap{
 		"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
+		"tt": func(tag, msg string, v ...any) string {
+			return ctx.Server().Locale().NewPrinter(language.MustParse(tag)).Sprintf(msg, v...)
+		},
 	})
 }

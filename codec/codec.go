@@ -2,5 +2,5 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Package codec 与 [web.Codec] 相关的实现
+// Package codec 提供与 [web.Codec] 相关的实现
 package codec

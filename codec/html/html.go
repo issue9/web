@@ -23,16 +23,17 @@
 //
 // 框架本身提供了一些数据类型的定义，比如 [web.Problem]，
 // 用户需要提供由 [web.Problem.MarshalHTML] 返回的模板定义。
-// 如果用户还使用了 [server.RenderResponse]，那么也需要提供对应的模板定义。
 package html
 
 import (
 	"bytes"
 	"fmt"
+	"html/template"
 	"io"
 	"reflect"
 
 	"github.com/issue9/mux/v10/header"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/codec"
@@ -40,7 +41,7 @@ import (
 
 // Marshaler 自定义 HTML 输出需要实现的接口
 //
-// 当前接口仅适用于由 [InstallView] 和 [InstallLocaleView] 管理的模板。
+// 当前接口仅适用于由 [HTML.Install] 管理的模板。
 type Marshaler interface {
 	// MarshalHTML 将对象转换成可用于模板的对象结构
 	//
@@ -49,55 +50,56 @@ type Marshaler interface {
 	MarshalHTML() (name string, data any)
 }
 
-// New 提供对 HTML 编码的支持
-func New() codec.MediaType {
-	return codec.NewMediaType(header.HTML, "", marshalHTML, unmarshalHTML)
+// HTML HTML 编码的 [codec.MediaType] 实现
+type HTML struct {
+	tpls    map[language.Tag]*template.Template
+	matcher language.Matcher
 }
+
+func New() *HTML { return &HTML{} }
+
+func (h *HTML) Name() string { return header.HTML }
+
+func (h *HTML) ProblemName() string { return "" }
 
 // Marshal 针对 HTML 内容的解码实现
 //
-// 参数 v 可以是以下几种可能：
+// 参数 val 可以是以下几种可能：
 //   - string 或是 []byte 将内容作为 HTML 内容直接输出；
 //   - 实现了 [Marshaler] 接口，则按 [Marshaler.MarshalHTML] 返回的查找模板名称；
 //   - 其它普通对象，将获取对象的 XMLName 的 struct tag，若不存在则直接采用类型名作为模板名；
 //   - 其它情况下则是返回 [codec.ErrUnsupported]；
-func marshalHTML(ctx *web.Context, v any) ([]byte, error) {
+func (h *HTML) Marshal(ctx *web.Context, val any) ([]byte, error) {
 	if ctx == nil {
 		panic("参数 ctx 不能为空")
 	}
 
-	switch obj := v.(type) {
+	switch obj := val.(type) {
 	case []byte:
 		return obj, nil
 	case string:
 		return []byte(obj), nil
 	default:
-		return marshal(ctx, v)
+		return h.marshal(ctx, val)
 	}
 }
 
-func marshal(ctx *web.Context, v any) ([]byte, error) {
-	tt, found := ctx.Server().Vars().Load(viewContextKey)
-	if !found {
-		return nil, codec.ErrUnsupported()
-	}
-	vv := tt.(*view)
-
-	tpl := vv.buildCurrentTpl(ctx)
+func (h *HTML) marshal(ctx *web.Context, val any) ([]byte, error) {
+	tpl := h.buildCurrentTpl(ctx)
 	if tpl == nil {
 		return nil, codec.ErrUnsupported()
 	}
 
-	name, v := getName(v)
+	name, val := getName(val)
 
 	w := new(bytes.Buffer)
-	if err := tpl.ExecuteTemplate(w, name, v); err != nil {
+	if err := tpl.ExecuteTemplate(w, name, val); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
 }
 
-func unmarshalHTML(io.Reader, any) error { return codec.ErrUnsupported() }
+func (h *HTML) Unmarshal(io.Reader, any) error { return codec.ErrUnsupported() }
 
 func getName(v any) (string, any) {
 	if m, ok := v.(Marshaler); ok {
