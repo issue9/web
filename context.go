@@ -62,7 +62,7 @@ type Context struct {
 	outputCompressor  Compressor
 	outputCharset     encoding.Encoding
 	outputCharsetName string
-	outputMediaType   *MediaType
+	outputMediaType   MediaType
 	status            int // WriteHeader 保存的副本，非零表示已经输出。
 	wrote             bool
 
@@ -138,7 +138,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 
 	var outputCompressor Compressor
 	if s.codec.CanCompress() {
-		if outputCompressor, err = s.codec.acceptEncoding(mt.Name(false), r.Header.Get(header.AcceptEncoding)); err != nil {
+		if outputCompressor, err = s.codec.acceptEncoding(mt.Name(), r.Header.Get(header.AcceptEncoding)); err != nil {
 			warn().LocaleString(parseHeaderErr(header.AcceptEncoding, err))
 			s.errorPage(w, problems.NotAcceptable)
 			return nil
@@ -295,7 +295,12 @@ func (ctx *Context) SetMediaType(mediaType string) {
 // MeidaType 返回输出编码名称
 //
 // problem 表示是否返回 problem 状态时的值。
-func (ctx *Context) MeidaType(problem bool) string { return ctx.outputMediaType.Name(problem) }
+func (ctx *Context) MeidaType(problem bool) string {
+	if problem {
+		return ctx.outputMediaType.ProblemName()
+	}
+	return ctx.outputMediaType.Name()
+}
 
 // SetEncoding 设置输出的压缩编码
 //

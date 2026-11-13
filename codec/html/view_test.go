@@ -24,7 +24,7 @@ func newServer(a *assert.Assertion, lang string) (*web.Server, startuptest.Start
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Startup:  ts,
 		Language: language.MustParse(lang),
-		Codec:    web.NewCodec().AddMediaType(html.NewHTML(), true, true),
+		Codec:    web.NewCodec().AddMediaType(html.New(), true, true),
 		Logs:     logs.New(logs.NewTermHandler(os.Stderr, nil)),
 	})
 	a.NotError(err).NotNil(s)

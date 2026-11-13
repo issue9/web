@@ -32,6 +32,21 @@ type Compressor interface {
 	NewEncoder(w io.Writer) (io.WriteCloser, error)
 }
 
+// MediaType 媒体类型需要提供的接口
+type MediaType interface {
+	// Name 获取媒体类型的名称
+	Name() string
+
+	// ProblemName 错误状态下的媒体类型
+	ProblemName() string
+
+	// Marshal 对内容进行编码
+	Marshal(ctx *Context, v any) ([]byte, error)
+
+	// Marshal 解码内容到 v
+	Unmarshal(r io.Reader, v any) error
+}
+
 // Codec 编解码工具
 //
 // 包含了压缩方法和媒体类型的处理
@@ -40,39 +55,16 @@ type Codec struct {
 	compressions         []*compression
 	acceptEncodingHeader string // 生成 AcceptEncoding 报头内容
 
-	mediaTypes         []*MediaType
+	mediaTypes         []MediaType
 	clientAcceptHeader string // 生成客户端的 Accept 报头内容
 	serverAcceptHeader string // 生成服务端的 Accept 报头内容
 }
 
-type MediaType struct {
-	// 媒体类型的名称
-	//
-	// 比如：application/json
-	normalName string
-
-	// 对应的错误状态下的值
-	//
-	// 比如：application/problem+json。如果为空则采用 normalName。
-	problemName string
-
-	// 生成编码方法
-	marshal MarshalFunc
-
-	// 解码方法
-	unmarshal UnmarshalFunc
-}
-
 type compression struct {
-	compressor Compressor
-
-	types []string
-
-	// 如果是通配符，则其它配置都将不启作用。
-	wildcard bool
-
-	// 是模糊类型的，比如 text/*，只有在 Types 找不到时，才在此处查找。
-	wildcardSuffix []string
+	compressor     Compressor
+	types          []string
+	wildcard       bool     // 如果是通配符，则其它配置都将不启作用。
+	wildcardSuffix []string // 是模糊类型的，比如 text/*，只有在 types 找不到时，才在此处查找。
 }
 
 func buildCompression(c Compressor, types []string) *compression {
@@ -111,7 +103,7 @@ func buildCompression(c Compressor, types []string) *compression {
 func NewCodec() *Codec {
 	return &Codec{
 		compressions: make([]*compression, 0, 10),
-		mediaTypes:   make([]*MediaType, 0, 10),
+		mediaTypes:   make([]MediaType, 0, 10),
 	}
 }
 
@@ -137,47 +129,18 @@ func (e *Codec) AddCompressor(c Compressor, t ...string) *Codec {
 	return e
 }
 
-// NewMediaType 声明一个媒体类型
-//
-// name 媒体类型的名称，比如 application/json；
-// problem 媒体类型非正常状态下的子类型，比如 application/problem+json；
-func NewMediaType(name, problem string, m MarshalFunc, u UnmarshalFunc) *MediaType {
-	if problem == "" {
-		problem = name
-	}
-
-	if name == "" {
-		panic("参数 name 不能为空")
-	}
-
-	if m == nil {
-		panic("参数 m 不能为空")
-	}
-
-	if u == nil {
-		panic("参数 u 不能为空")
-	}
-
-	return &MediaType{
-		normalName:  name,
-		problemName: problem,
-		marshal:     m,
-		unmarshal:   u,
-	}
-}
-
 // AddMediaType 添加媒体类型
 //
 // requestAccept 是否出现在客户端请求的 accept 报头中；
 // responseAccept 是否出现在服务端返回的 accept 报头中；
-func (c *Codec) AddMediaType(mt *MediaType, requestAccept, responseAccept bool) *Codec {
+func (c *Codec) AddMediaType(mt MediaType, requestAccept, responseAccept bool) *Codec {
 	if mt == nil {
 		panic("参数 mt 不能为空")
 	}
 
 	// 检测复复值
-	if slices.IndexFunc(c.mediaTypes, func(v *MediaType) bool { return v.normalName == mt.normalName }) >= 0 {
-		panic(fmt.Sprintf("存在重复的项 %s", mt.normalName))
+	if slices.IndexFunc(c.mediaTypes, func(v MediaType) bool { return v.Name() == mt.Name() }) >= 0 {
+		panic(fmt.Sprintf("存在重复的项 %s", mt.Name()))
 	}
 
 	c.mediaTypes = append(c.mediaTypes, mt)
@@ -186,14 +149,14 @@ func (c *Codec) AddMediaType(mt *MediaType, requestAccept, responseAccept bool) 
 		if c.clientAcceptHeader != "" {
 			c.clientAcceptHeader += ", "
 		}
-		c.clientAcceptHeader += mt.normalName
+		c.clientAcceptHeader += mt.Name()
 	}
 
 	if responseAccept {
 		if c.serverAcceptHeader != "" {
 			c.serverAcceptHeader += ", "
 		}
-		c.serverAcceptHeader += mt.normalName
+		c.serverAcceptHeader += mt.Name()
 	}
 
 	return c
@@ -330,20 +293,20 @@ func (e *Codec) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) 
 	}
 
 	if charset == "" || charset == header.UTF8 {
-		return item.unmarshal, nil, nil
+		return item.Unmarshal, nil, nil
 	}
 	c, err := htmlindex.Get(charset)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return item.unmarshal, c, nil
+	return item.Unmarshal, c, nil
 }
 
 // 从请求端提交的 Accept 报头解析出所需要的解码函数
 //
 // 如果 h 为空，那么将被设置为默认值 ＊；
-func (c *Codec) accept(h string) (*MediaType, error) {
+func (c *Codec) accept(h string) (MediaType, error) {
 	// 规则如下：
 	//  - 按 q 从大到小进行排序；
 	//  - 忽略无法解析 q 的项；
@@ -382,7 +345,7 @@ func (c *Codec) accept(h string) (*MediaType, error) {
 	// 在 accept 中未找到符合的，且指定 */*，挑一个服务器支持且不在 deny 中的
 	if hasAny {
 		for _, mt := range c.mediaTypes {
-			if !denied(mt.normalName, deny) {
+			if !denied(mt.Name(), deny) {
 				return mt, nil
 			}
 		}
@@ -391,11 +354,11 @@ func (c *Codec) accept(h string) (*MediaType, error) {
 	return nil, nil
 }
 
-func match(name string, mt *MediaType) bool {
+func match(name string, mt MediaType) bool {
 	switch {
-	case name == mt.normalName:
+	case name == mt.Name():
 		return true
-	case strings.HasSuffix(name, "/*") && strings.HasPrefix(mt.normalName, name[:len(name)-1]):
+	case strings.HasSuffix(name, "/*") && strings.HasPrefix(mt.Name(), name[:len(name)-1]):
 		return true
 	}
 	return false
@@ -414,8 +377,8 @@ func denied(name string, deny []string) bool {
 	return false
 }
 
-func (c *Codec) searchFunc(match func(string) bool) *MediaType {
-	item, _ := sliceutil.At(c.mediaTypes, func(i *MediaType, _ int) bool { return match(i.normalName) || match(i.problemName) })
+func (c *Codec) searchFunc(match func(string) bool) MediaType {
+	item, _ := sliceutil.At(c.mediaTypes, func(i MediaType, _ int) bool { return match(i.Name()) || match(i.ProblemName()) })
 	return item
 }
 
@@ -435,23 +398,9 @@ func (c *Codec) SetCompress(enable bool) { c.disableCompress = !enable }
 func (c *Codec) MediaTypes() iter.Seq2[string, string] {
 	return func(yield func(string, string) bool) {
 		for _, v := range c.mediaTypes {
-			if !yield(v.normalName, v.problemName) {
+			if !yield(v.Name(), v.ProblemName()) {
 				break
 			}
 		}
 	}
 }
-
-// Name 获取媒体类型的名称
-func (m *MediaType) Name(problem bool) string {
-	if problem {
-		return m.problemName
-	}
-	return m.normalName
-}
-
-// Marshal 对内容进行编码
-func (m *MediaType) Marshal(ctx *Context, v any) ([]byte, error) { return m.marshal(ctx, v) }
-
-// Marshal 解码内容到 v
-func (m *MediaType) Unmarshal(r io.Reader, v any) error { return m.unmarshal(r, v) }

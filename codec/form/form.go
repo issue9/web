@@ -65,9 +65,9 @@ type Unmarshaler interface {
 	UnmarshalForm([]byte) error
 }
 
-// NewForm 提供对 www-form-urlencoded 编码的支持
-func NewForm() *codec.MediaType {
-	return web.NewMediaType(header.FormData, "", marshalForm, umarshalForm)
+// New 提供对 www-form-urlencoded 编码的支持
+func New() codec.MediaType {
+	return codec.NewMediaType(header.FormData, "", marshalForm, umarshalForm)
 }
 
 // marshalForm 针对 www-form-urlencoded 内容的解码实现

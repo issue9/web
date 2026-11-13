@@ -66,7 +66,7 @@ var (
 	cacheFactory          = newRegister[CacheBuilder]()
 	compressorFactory     = newRegister[web.Compressor]()
 	idGeneratorFactory    = newRegister[IDGeneratorBuilder]()
-	mediaTypeFactory      = newRegister[*web.MediaType]()
+	mediaTypeFactory      = newRegister[web.MediaType]()
 	fileSerializerFactory = newRegister[fileSerializer]()
 	routerMatcherFactory  = newRegister[RouterMatcherBuilder]()
 
@@ -104,10 +104,10 @@ func RegisterIDGenerator(id string, b IDGeneratorBuilder) { idGeneratorFactory.r
 // RegisterMediaType 注册用于序列化用户提交数据的方法
 //
 // name 为名称，这将在配置文件中被引用，如果存在同名，则会覆盖。
-func RegisterMediaType(mt *web.MediaType, name string) {
+func RegisterMediaType(mt web.MediaType, name string) {
 	for _, item := range mediaTypeFactory.items {
-		if item.Name(false) == mt.Name(false) {
-			panic(fmt.Sprintf("存在同名的媒体类型 %s", mt.Name(false)))
+		if item.Name() == mt.Name() {
+			panic(fmt.Sprintf("存在同名的媒体类型 %s", mt.Name()))
 		}
 	}
 	mediaTypeFactory.register(mt, name)
@@ -197,8 +197,8 @@ func init() {
 	RegisterMediaType(codec.NewYAML(), "yaml")
 	RegisterMediaType(codec.NewCBOR(), "cbor")
 	RegisterMediaType(codec.NewXML(), "xml")
-	RegisterMediaType(html.NewHTML(), "html")
-	RegisterMediaType(form.NewForm(), "form")
+	RegisterMediaType(html.New(), "html")
+	RegisterMediaType(form.New(), "form")
 	RegisterMediaType(codec.NewGOB(), "gob")
 	RegisterMediaType(codec.NewNOP(), "nop")
 

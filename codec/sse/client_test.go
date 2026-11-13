@@ -58,7 +58,7 @@ func TestOnMessage(t *testing.T) {
 	ts := startuptest.NewHTTPServerStartup(a, false)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Startup: ts,
-		Codec:   web.NewCodec().AddMediaType(codec.NewMediaType(codec.NewNOP(), Mimetype, Mimetype), true, true),
+		Codec:   web.NewCodec().AddMediaType(codec.ForkMediaType(codec.NewNOP(), Mimetype, Mimetype), true, true),
 		Logs:    logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout)),
 	})
 	a.NotError(err).NotNil(s)

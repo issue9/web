@@ -13,14 +13,14 @@ import (
 	"github.com/issue9/web/codec/mediatypetest"
 )
 
-func TestNewMeidaType(t *testing.T) {
+func TestForkMediaType(t *testing.T) {
 	a := assert.New(t, false)
 
 	mt1 := NewCBOR()
-	mt2 := NewMediaType(mt1, "mt2", "")
-	a.Equal(mt2.Name(false), "mt2").
-		Equal(mt2.Name(true), "mt2").
-		NotEqual(mt1.Name(false), mt2.Name(false))
+	mt2 := ForkMediaType(mt1, "mt2", "")
+	a.Equal(mt2.Name(), "mt2").
+		Equal(mt2.ProblemName(), "mt2").
+		NotEqual(mt1.Name(), mt2.Name())
 }
 
 func TestNewCBOR(t *testing.T) {

@@ -31,9 +31,7 @@ type httpServerStartup struct {
 }
 
 // NewHTTPServerStartup 声明一个基于 [http.Server] 的启动器
-func NewHTTPServerStartup(hs *http.Server) Startup {
-	return &httpServerStartup{hs: hs}
-}
+func NewHTTPServerStartup(hs *http.Server) Startup { return &httpServerStartup{hs: hs} }
 
 func (b *httpServerStartup) Init(h http.Handler) { b.hs.Handler = h }
 

@@ -5,9 +5,7 @@
 package startuptest
 
 import (
-	"encoding/json/v2"
 	"encoding/xml"
-	"io"
 	"net/http"
 	"time"
 
@@ -20,6 +18,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/codec"
 	"github.com/issue9/web/locales"
 )
 
@@ -32,17 +31,10 @@ func newServer(a *assert.Assertion, ts Startup) *web.Server {
 	cc := memory.New()
 	u := unique.NewNumber(100)
 
-	codec := web.NewCodec()
-	codec.AddMediaType(web.NewMediaType("application/json", "",
-		func(ctx *web.Context, a any) ([]byte, error) {
-			return json.Marshal(a)
-		}, func(r io.Reader, ref any) error {
-			data, err := io.ReadAll(r)
-			a.NotError(err).NotNil(data)
-			return json.Unmarshal(data, ref)
-		}), true, true)
+	codecInst := web.NewCodec()
+	codecInst.AddMediaType(codec.NewJSON(), true, true)
 
-	s := web.NewServer("id", "1.0.0", conf, ts, time.Local, language.SimplifiedChinese, logs.New(logs.NewNopHandler()), u.String, cc, codec, header.XRequestID)
+	s := web.NewServer("id", "1.0.0", conf, ts, time.Local, language.SimplifiedChinese, logs.New(logs.NewNopHandler()), u.String, cc, codecInst, header.XRequestID)
 	a.NotNil(s)
 	s.Services().Add(locales.UniqueIdentityGenerator, u.Serve)
 

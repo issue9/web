@@ -287,7 +287,7 @@ func BenchmarkCodec_accept(b *testing.B) {
 	mt := newCodec(a)
 	b.ReportAllocs()
 
-	var item *MediaType
+	var item MediaType
 	for b.Loop() {
 		item, _ = mt.accept("application/json;q=0.9")
 	}

@@ -31,7 +31,7 @@ var inst = &web.Problem{
 	Instance: "instance",
 }
 
-func Test(a *assert.Assertion, mt *web.MediaType) {
+func Test(a *assert.Assertion, mt web.MediaType) {
 	ts := startuptest.NewTestServerStartup(a)
 	conf := config.Dir(nil, "./")
 	log := logs.New(logs.NewNopHandler())

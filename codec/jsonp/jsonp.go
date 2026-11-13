@@ -21,38 +21,23 @@ import (
 	"github.com/issue9/web/problems"
 )
 
-type contextKeyType int
-
-const contextKey contextKeyType = 1
-
 // ProblemCallbackUnset 表示查询参数中没有 key 指定的参数或是参数值为空时的应该返回的 [web.Problem]
 var ProblemCallbackUnset = unique.Make("callback-unset")
 
 var once = &sync.Once{}
 
-// NewJSONP 提供对 JSONP 编码的支持
-func NewJSONP() *codec.MediaType { return web.NewMediaType(header.Javascript, "", marshal, unmarshal) }
+type jsonp string
 
-// Install 安装 JSONP 的处理方式
+// New 提供对 JSONP 编码的支持
 //
-// key 用于指定回函数名称的查询参数名称；
-func Install(s *web.Server, key string) {
-	if key == "" {
-		panic("key 不能为空")
-	}
+// key 用于指定回调函数在地址中的名称
+func New(key string) codec.MediaType { return jsonp(key) }
 
-	once.Do(func() {
-		s.Vars().Store(contextKey, key)
-		s.Problems().Add("", &problems.Item{
-			ID:     ProblemCallbackUnset,
-			Type:   "callback-unset",
-			Status: http.StatusBadRequest,
-			Title:  web.Phrase("the jsonp callback is unset"),
-		})
-	})
-}
+func (j jsonp) Name() string { return header.Javascript }
 
-func marshal(ctx *web.Context, v any) ([]byte, error) {
+func (j jsonp) ProblemName() string { return header.Javascript }
+
+func (j jsonp) Marshal(ctx *web.Context, v any) ([]byte, error) {
 	if ctx == nil {
 		panic("ctx 不能为空")
 	}
@@ -62,20 +47,14 @@ func marshal(ctx *web.Context, v any) ([]byte, error) {
 		return nil, err
 	}
 
-	ctxKey, found := ctx.Server().Vars().Load(contextKey)
-	if !found {
-		return data, nil
-	}
-
 	q, err := ctx.Queries(true)
 	if err != nil {
 		return data, err
 	}
 
-	key := ctxKey.(string)
-	callback := q.String(key, "")
+	callback := q.String(string(j), "")
 	if callback == "" {
-		return nil, web.NewProblemError(ProblemCallbackUnset, locales.NewFieldError(key, web.StringPhrase("can not be empty")))
+		return nil, web.NewProblemError(ProblemCallbackUnset, locales.NewFieldError(string(j), web.StringPhrase("can not be empty")))
 	}
 
 	b := errwrap.StringBuilder{}
@@ -83,4 +62,16 @@ func marshal(ctx *web.Context, v any) ([]byte, error) {
 	return []byte(b.String()), b.Err
 }
 
-func unmarshal(r io.Reader, v any) error { return json.UnmarshalRead(r, v) }
+func (j jsonp) Unmarshal(r io.Reader, v any) error { return json.UnmarshalRead(r, v) }
+
+// Install 安装 JSONP 需要的基本环境
+func Install(s *web.Server) {
+	once.Do(func() {
+		s.Problems().Add("", &problems.Item{
+			ID:     ProblemCallbackUnset,
+			Type:   "callback-unset",
+			Status: http.StatusBadRequest,
+			Title:  web.Phrase("the jsonp callback is unset"),
+		})
+	})
+}

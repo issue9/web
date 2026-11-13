@@ -19,15 +19,16 @@ import (
 
 func TestJSONP(t *testing.T) {
 	once = &sync.Once{} // 防止 go test 在 -count 大于 1 的情况下失败
+	jsonp := New("callback")
 
 	a := assert.New(t, false)
 	ts := startuptest.NewTestServerStartup(a)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		Codec:   web.NewCodec().AddMediaType(NewJSONP(), true, true),
+		Codec:   web.NewCodec().AddMediaType(jsonp, true, true),
 		Startup: ts,
 	})
 	a.NotError(err).NotNil(s)
-	Install(s, "callback")
+	Install(s)
 
 	s.Routers().New("def", nil).Get("/jsonp", func(ctx *web.Context) web.Responser {
 		return web.OK("jsonp")

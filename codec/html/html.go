@@ -49,9 +49,9 @@ type Marshaler interface {
 	MarshalHTML() (name string, data any)
 }
 
-// NewHTML 提供对 HTML 编码的支持
-func NewHTML() *codec.MediaType {
-	return web.NewMediaType(header.HTML, "", marshalHTML, unmarshalHTML)
+// New 提供对 HTML 编码的支持
+func New() codec.MediaType {
+	return codec.NewMediaType(header.HTML, "", marshalHTML, unmarshalHTML)
 }
 
 // Marshal 针对 HTML 内容的解码实现
