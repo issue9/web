@@ -32,18 +32,26 @@ type (
 		wait      *sync.WaitGroup
 
 		mux      sync.RWMutex
-		services []*Service
+		services []*service
 	}
 
-	// Service 单个服务对象
-	Service struct {
+	service struct {
 		s       *Services
 		title   LocaleStringer
 		service ServiceFunc
 
+		// 以下内容需要上锁
+
 		mux   sync.RWMutex
 		err   error // 保存上次的出错内容，不会清空该值。
 		state State
+	}
+
+	// Service 单个服务对象的快照信息
+	Service struct {
+		Err   error
+		Title LocaleStringer
+		State State
 	}
 
 	// ServiceFunc 服务函数
@@ -67,7 +75,7 @@ func (s *Server) Services() *Services { return s.services }
 func (s *Server) initServices() {
 	s.services = &Services{
 		server:    s,
-		services:  make([]*Service, 0, 5),
+		services:  make([]*service, 0, 5),
 		scheduled: scheduled.NewServer(s.Location(), s.Logs().ERROR(), s.Logs().INFO()),
 		wait:      &sync.WaitGroup{},
 	}
@@ -76,45 +84,29 @@ func (s *Server) initServices() {
 	s.Services().Add(StringPhrase("scheduler jobs"), f)
 }
 
-// Title 服务的描述信息
-func (srv *Service) Title() LocaleStringer { return srv.title }
-
-// Err 服务的出错时的错误信息
-func (srv *Service) Err() error {
-	srv.mux.RLock()
-	err := srv.err
-	srv.mux.RUnlock()
-	return err
-}
-
-// State 服务的当前状态
-func (srv *Service) State() State {
-	srv.mux.RLock()
-	s := srv.state
-	srv.mux.RUnlock()
-	return s
-}
-
-func (srv *Service) setState(s State) {
+func (srv *service) setState(s State) {
 	srv.mux.Lock()
 	srv.state = s
 	srv.mux.Unlock()
 }
 
-func (srv *Service) setError(err error) {
+func (srv *service) setError(err error) {
 	srv.mux.Lock()
 	srv.err = err
 	srv.mux.Unlock()
 }
 
-func (srv *Service) goServe(ctx context.Context) {
-	if srv.State() != Running {
-		srv.setState(Running)
+func (srv *service) goServe(ctx context.Context) {
+	srv.mux.Lock()
+	defer srv.mux.Unlock()
+
+	if srv.state != Running {
+		srv.state = Running
 		srv.s.wait.Go(func() { srv.serve(ctx) })
 	}
 }
 
-func (srv *Service) serve(ctx context.Context) {
+func (srv *service) serve(ctx context.Context) {
 	defer func() {
 		if msg := recover(); msg != nil {
 			err := fmt.Errorf("panic:%v", msg)
@@ -145,7 +137,7 @@ func (srv *Services) Add(title LocaleStringer, f ServiceFunc) context.CancelFunc
 		panic("服务已经停止，不能再添加新服务")
 	}
 
-	s := &Service{
+	s := &service{
 		s:       srv,
 		title:   title,
 		service: f,
@@ -162,7 +154,7 @@ func (srv *Services) Add(title LocaleStringer, f ServiceFunc) context.CancelFunc
 		s.setState(Stopped)
 		cancel()
 		srv.mux.Lock()
-		srv.services = slices.DeleteFunc(srv.services, func(e *Service) bool { return e == s })
+		srv.services = slices.DeleteFunc(srv.services, func(e *service) bool { return e == s })
 		srv.mux.Unlock()
 	}
 }
@@ -182,38 +174,48 @@ func (srv *Services) AddCron(title LocaleStringer, f JobFunc, spec string) conte
 
 // AddTicker 添加新的定时任务
 //
-// title 是对该服务的简要说明；
-// dur 时间间隔；
-// imm 是否先执行一次该任务，如果为 true 将会排在任务执行任务队列的前列，而不是立即执行；
+// 具体说明可参考 [scheduled.Server.Tick]
 func (srv *Services) AddTicker(title LocaleStringer, job JobFunc, dur time.Duration, imm bool) context.CancelFunc {
 	return srv.scheduled.Tick(title, job, dur, imm)
 }
 
 // AddAt 添加在某个时间点执行的任务
 //
-// title 是对该服务的简要说明；
-// at 指定的时间点；
+// 具体说明可参考 [scheduled.Server.At]
 func (srv *Services) AddAt(title LocaleStringer, job JobFunc, at time.Time) context.CancelFunc {
 	return srv.scheduled.At(title, job, at)
 }
 
+// AddEarliest 添加 Earliest 计划任务
+//
+// 具体说明可参考 [scheduled.Server.Earliest]
+func (srv *Services) AddEarliest(title LocaleStringer, job JobFunc, s ...scheduled.Scheduler) context.CancelFunc {
+	return srv.scheduled.Earliest(title, job, s...)
+}
+
 // AddJob 添加新的计划任务
 //
-// title 是对该服务的简要说明；
-// scheduler 计划任务的时间调度算法实现；
-func (srv *Services) AddJob(title LocaleStringer, job JobFunc, scheduler Scheduler) context.CancelFunc {
-	return srv.scheduled.New(title, job, scheduler)
+// 具体说明可参考 [scheduled.Server.Earliest]
+func (srv *Services) AddJob(title LocaleStringer, job JobFunc, scheduler Scheduler, imm bool) context.CancelFunc {
+	return srv.scheduled.New(title, job, scheduler, imm)
 }
 
 // Jobs 访问所有的计划任务
 func (srv *Services) Jobs() []*scheduled.Job { return srv.scheduled.Jobs() }
 
-// All 返回所有的服务对象
+// All 返回所有服务对象的当前快照
 func (srv *Services) All() []*Service {
 	srv.mux.RLock()
-	srvs := slices.Clone(srv.services)
+	ss := make([]*Service, 0, len(srv.services))
+	for _, s := range srv.services {
+		ss = append(ss, &Service{
+			Err:   s.err,
+			State: s.state,
+			Title: s.title,
+		})
+	}
 	srv.mux.RUnlock()
-	return srvs
+	return ss
 }
 
 func (srv *Services) waitExit() { srv.wait.Wait() }

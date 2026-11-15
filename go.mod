@@ -14,12 +14,12 @@ require (
 	github.com/issue9/config v0.11.0
 	github.com/issue9/conv v1.4.0
 	github.com/issue9/errwrap v0.4.1
-	github.com/issue9/localeutil v0.35.0
+	github.com/issue9/localeutil v0.35.2
 	github.com/issue9/logs/v7 v7.8.0
-	github.com/issue9/messages v0.1.0
+	github.com/issue9/messages v0.2.0
 	github.com/issue9/mux/v10 v10.0.0-beta.4
 	github.com/issue9/query/v3 v3.2.0
-	github.com/issue9/scheduled v0.25.0
+	github.com/issue9/scheduled v0.26.0
 	github.com/issue9/sliceutil v0.19.0
 	github.com/issue9/source v0.13.1
 	github.com/issue9/term/v3 v3.5.1

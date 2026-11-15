@@ -73,7 +73,7 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 
 ## 错误处理
 
-框架根据 [RFC7807](https://datatracker.ietf.org/doc/html/rfc7807) 提供了一种输出错误信息内容的机制。
+框架根据 [RFC7807](https://datatracker.ietf.org/doc/html/rfc7807) 和  和 [RFC9457](https://datatracker.ietf.org/doc/html/rfc9457) 提供了一种输出错误信息内容的机制。
 
 在处理出错时，调用 Context.Problem 即可：
 

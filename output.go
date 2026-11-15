@@ -286,11 +286,7 @@ func OK(v any) Responser { return Response(http.StatusOK, v) }
 func NoContent() Responser { return Status(http.StatusNoContent) }
 
 // Redirect 重定向至新的 URL
-func Redirect(status int, url string) Responser {
-	return Status(status, header.Location, url)
-}
+func Redirect(status int, url string) Responser { return Status(status, header.Location, url) }
 
 // KeepAlive 保持当前会话不退出
-func KeepAlive(ctx context.Context) Responser {
-	return ResponserFunc(func(*Context) { <-ctx.Done() })
-}
+func KeepAlive(ctx context.Context) Responser { return ResponserFunc(func(*Context) { <-ctx.Done() }) }

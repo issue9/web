@@ -15,6 +15,20 @@ import (
 	"golang.org/x/text/language"
 )
 
+func (srv *service) getErr() error {
+	srv.mux.RLock()
+	err := srv.err
+	srv.mux.RUnlock()
+	return err
+}
+
+func (srv *service) getState() State {
+	srv.mux.RLock()
+	s := srv.state
+	srv.mux.RUnlock()
+	return s
+}
+
 // start 表示服务协程运行成功；
 // p 用于触发 panic；
 // err 用于触发 error；
@@ -66,32 +80,32 @@ func TestServer_service(t *testing.T) {
 	srv1 := srv.services[2]
 	<-start1
 	a.Equal(srv1.service, s1). // 并不会改变状态
-					Equal(srv1.State(), Running).
-					Equal(sched.State(), Running)
+					Equal(srv1.getState(), Running).
+					Equal(sched.getState(), Running)
 
 	s2, start2, _, _ := buildService()
 	srv.Add(Phrase("srv2"), s2)
 	a.Equal(4, len(srv.services))
 	srv2 := srv.services[3]
 	<-start2
-	a.Equal(Running, srv2.State()) // 运行中添加自动运行服务
+	a.Equal(Running, srv2.getState()) // 运行中添加自动运行服务
 
 	s3, start3, _, _ := buildService()
 	del := srv.Add(Phrase("srv3"), s3)
 	a.Equal(5, len(srv.services))
 	srv3 := srv.services[4]
 	<-start3
-	a.Equal(Running, srv3.State())
+	a.Equal(Running, srv3.getState())
 	del()                          // 删除 s3
 	a.Equal(4, len(srv.services)). // 确定删除
-					Equal(Running, srv2.State()). // 确定不会改变其它服务的状态
-					Equal(srv3.State(), Stopped)
+					Equal(Running, srv2.getState()). // 确定不会改变其它服务的状态
+					Equal(srv3.getState(), Stopped)
 
 	s.Close(0)
 	time.Sleep(1000 * time.Millisecond) // 等待主服务设置状态值
-	a.Equal(srv1.State(), Stopped).
-		Equal(sched.State(), Stopped).
-		Equal(srv2.State(), Stopped)
+	a.Equal(srv1.getState(), Stopped).
+		Equal(sched.getState(), Stopped).
+		Equal(srv2.getState(), Stopped)
 }
 
 func TestServer_scheduled(t *testing.T) {
@@ -111,7 +125,7 @@ func TestServer_scheduled(t *testing.T) {
 	for _, j := range srv.Jobs() {
 		p := s.Locale().NewPrinter(language.SimplifiedChinese)
 		if !found {
-			found = j.Title().LocaleString(p) == "cn"
+			found = j.Title.LocaleString(p) == "cn"
 		}
 	}
 	a.True(found)
@@ -128,11 +142,11 @@ func TestService_state(t *testing.T) {
 		<-start
 		ss := ts.Services().services
 		s := ss[len(ss)-1]
-		a.Equal(s.State(), Running)
+		a.Equal(s.getState(), Running)
 
 		ts.Close(0)                        // 触发 context.WithCancel
 		time.Sleep(200 * time.Millisecond) // 等待 context.Context 链路完成
-		a.Equal(s.State(), Stopped)
+		a.Equal(s.getState(), Stopped)
 	})
 
 	t.Run("panic", func(t *testing.T) {
@@ -145,11 +159,11 @@ func TestService_state(t *testing.T) {
 		<-start
 		ss := ts.Services().services
 		s := ss[len(ss)-1]
-		a.StrictEqual(s.State(), Running)
+		a.StrictEqual(s.getState(), Running)
 
 		p <- struct{}{}
 		time.Sleep(200 * time.Millisecond) // 等待 p 被取出且 s 的状态设置完成
-		a.StrictEqual(s.State(), Failed).ErrorString(s.Err(), "service panic")
+		a.StrictEqual(s.getState(), Failed).ErrorString(s.getErr(), "service panic")
 
 		ts.Close(0)
 	})
@@ -164,11 +178,11 @@ func TestService_state(t *testing.T) {
 		<-start
 		ss := ts.Services().services
 		s := ss[len(ss)-1]
-		a.StrictEqual(s.State(), Running).Equal(s.Title(), Phrase("error service"))
+		a.StrictEqual(s.getState(), Running).Equal(s.title, Phrase("error service"))
 
 		err <- struct{}{}
 		time.Sleep(200 * time.Millisecond) // 等待 err 被取出且 s 的状态设置完成
-		a.StrictEqual(s.State(), Failed).NotNil(s.Err()).ErrorString(s.Err(), "service error")
+		a.StrictEqual(s.getState(), Failed).NotNil(s.getErr()).ErrorString(s.getErr(), "service error")
 
 		ts.Close(0)
 	})

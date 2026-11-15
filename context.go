@@ -389,7 +389,9 @@ func (ctx *Context) IsXHR() bool {
 	return strings.ToLower(ctx.Request().Header.Get(header.XRequestedWith)) == "xmlhttprequest"
 }
 
-var idempotentMethods = []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodDelete, http.MethodOptions, http.MethodTrace}
+var idempotentMethods = []string{
+	http.MethodGet, http.MethodHead, http.MethodPut, http.MethodDelete, http.MethodOptions, http.MethodTrace,
+}
 
 // IsIdempotent 请求方法是否为[幂等]
 //
