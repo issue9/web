@@ -31,13 +31,13 @@ func BenchmarkMarshalPeers(b *testing.B) {
 		}
 	})
 
-	data, err := marshalPeers(peers)
-	a.NotError(err).NotEmpty(data)
+	buf, err := marshalPeers(peers)
+	a.NotError(err).NotEmpty(buf)
 	nb := func() selector.Peer { return selector.NewPeer("") }
 
 	b.Run("unmarshalPeers", func(b *testing.B) {
 		for b.Loop() {
-			if _, err := unmarshalPeers(nb, data); err != nil {
+			if _, err := unmarshalPeers(nb, buf.Bytes()); err != nil {
 				b.Fatal(err)
 			}
 		}

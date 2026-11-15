@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/cache"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/internal/bufpool"
 	"github.com/issue9/web/selector"
 )
 
@@ -48,12 +49,13 @@ func (c *cacheRegistry) Register(name string, p selector.Peer) (DeregisterFunc, 
 		return c.buildDeregisterFunc(name, p), nil
 	}
 
-	data, err := marshalPeers(append(peers, p))
+	peersBuf, err := marshalPeers(append(peers, p))
 	if err != nil {
 		return nil, err
 	}
+	defer bufpool.Put(peersBuf)
 
-	if err := c.c.Set(name, string(data), cache.Forever); err != nil {
+	if err := c.c.Set(name, peersBuf.String(), cache.Forever); err != nil {
 		return nil, err
 	}
 
@@ -80,12 +82,13 @@ func (c *cacheRegistry) buildDeregisterFunc(name string, p selector.Peer) Deregi
 			return nil
 		}
 
-		data, err := marshalPeers(slices.Delete(peers, index, index+1))
+		peersBuf, err := marshalPeers(slices.Delete(peers, index, index+1))
 		if err != nil {
 			return err
 		}
 
-		return c.c.Set(name, string(data), cache.Forever)
+		defer bufpool.Put(peersBuf)
+		return c.c.Set(name, peersBuf.String(), cache.Forever)
 	}
 }
 

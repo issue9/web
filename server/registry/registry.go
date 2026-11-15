@@ -78,22 +78,23 @@ func Selector2Director(s selector.Selector) func(r *http.Request) {
 	}
 }
 
-func marshalPeers(peers []selector.Peer) ([]byte, error) {
+// 返回的 bytes.Buffer 可通过 bufpool.Put 回收
+func marshalPeers(peers []selector.Peer) (*bytes.Buffer, error) {
 	// TODO 改用 JSON 序列化，性能会差一些，但是不用手动用分号进行分隔，减少出错的可能性。
 
 	buf := bufpool.New()
-	defer bufpool.Put(buf)
 
 	for _, p := range peers {
 		data, err := p.MarshalText()
 		if err != nil {
+			bufpool.Put(buf)
 			return nil, err
 		}
 		buf.Write(data)
 		buf.WriteByte(';')
 	}
 
-	return buf.Bytes(), nil
+	return buf, nil
 }
 
 func unmarshalPeers(n func() selector.Peer, data []byte) ([]selector.Peer, error) {

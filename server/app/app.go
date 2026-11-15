@@ -8,6 +8,7 @@ package app
 import (
 	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/issue9/localeutil"
@@ -42,7 +43,7 @@ type app struct {
 	srvLock sync.RWMutex
 	exit    chan struct{} // 保证只有在前一个 srv 退出之后才会让 RestartServer 退出
 
-	restart           bool
+	restart           atomic.Bool
 	restartServerLock sync.Mutex
 }
 
@@ -81,15 +82,17 @@ func (app *app) setServer(s *web.Server) {
 
 // Exec 运行服务
 func (app *app) Exec() (err error) {
-	if app.srv, err = app.newServer(); err != nil {
+	srv, err := app.newServer()
+	if err != nil {
 		return err
 	}
+	app.setServer(srv)
 
 RESTART:
-	app.restart = false
+	app.restart.Store(false)
 	err = app.getServer().Serve()
 	app.exit <- struct{}{} // 在 Serve 返回之后再通知 RestartServer 可以返回了。
-	if app.restart {       // 等待 Serve 过程中，如果调用 RestartServer，会将 app.restart 设置为 true。
+	if app.restart.Load() { // 等待 Serve 过程中，如果调用 RestartServer，会将 app.restart 设置为 true。
 		goto RESTART
 	}
 	return err
@@ -102,7 +105,7 @@ func (app *app) Restart() {
 	app.restartServerLock.Lock()
 	defer app.restartServerLock.Unlock()
 
-	app.restart = true
+	app.restart.Store(true)
 
 	old := app.getServer()
 

@@ -195,7 +195,7 @@ func (srv *Services) AddEarliest(title LocaleStringer, job JobFunc, s ...schedul
 
 // AddJob 添加新的计划任务
 //
-// 具体说明可参考 [scheduled.Server.Earliest]
+// 具体说明可参考 [scheduled.Server.New]
 func (srv *Services) AddJob(title LocaleStringer, job JobFunc, scheduler Scheduler, imm bool) context.CancelFunc {
 	return srv.scheduled.New(title, job, scheduler, imm)
 }
@@ -206,15 +206,19 @@ func (srv *Services) Jobs() []*scheduled.Job { return srv.scheduled.Jobs() }
 // All 返回所有服务对象的当前快照
 func (srv *Services) All() []*Service {
 	srv.mux.RLock()
+	defer srv.mux.RUnlock()
+
 	ss := make([]*Service, 0, len(srv.services))
 	for _, s := range srv.services {
+		s.mux.RLock()
 		ss = append(ss, &Service{
 			Err:   s.err,
 			State: s.state,
 			Title: s.title,
 		})
+		s.mux.RUnlock()
 	}
-	srv.mux.RUnlock()
+
 	return ss
 }
 
