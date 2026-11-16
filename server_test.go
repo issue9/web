@@ -6,6 +6,7 @@ package web
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/json/v2"
@@ -138,7 +139,7 @@ func TestOnExitContextFunc(t *testing.T) {
 	a.Equal(ctx.Header().Get("exit-status"), "202")
 }
 
-func TestHTTPServer_Serve(t *testing.T) {
+func TestServer_Serve(t *testing.T) {
 	a := assert.New(t, false)
 
 	srv := newTestServer(a, false)
@@ -178,7 +179,7 @@ func TestHTTPServer_Serve(t *testing.T) {
 	srv.Get("/mux/test").Do().Status(http.StatusAccepted)
 }
 
-func TestHTTPServer_Serve_HTTPS(t *testing.T) {
+func TestServer_Serve_HTTPS(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, true)
 
@@ -200,7 +201,7 @@ func TestHTTPServer_Serve_HTTPS(t *testing.T) {
 	a.NotError(err).Equal(resp.StatusCode, http.StatusBadRequest)
 }
 
-func TestHTTPServer_Close(t *testing.T) {
+func TestServer_Close(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, false)
 	router := srv.Routers().New("def", nil)
@@ -244,7 +245,7 @@ func TestHTTPServer_Close(t *testing.T) {
 	a.Error(err).Nil(resp)
 }
 
-func TestHTTPServer_CloseWithTimeout(t *testing.T) {
+func TestServer_CloseWithTimeout(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, false)
 	router := srv.Routers().New("def", nil)
@@ -277,7 +278,52 @@ func TestHTTPServer_CloseWithTimeout(t *testing.T) {
 	a.Error(err).Nil(resp)
 }
 
-func TestHTTPServer_NewClient(t *testing.T) {
+func TestServer_encoding(t *testing.T) {
+	a := assert.New(t, false)
+
+	s := newTestServer(a, false)
+	s.Routers().New("default", nil).
+		Post("/post", func(ctx *Context) Responser {
+			obj := &object{}
+			if resp := ctx.Read(true, obj, problems.BadRequest); resp != nil {
+				return resp
+			}
+			obj.Age++
+			return OK(obj)
+		})
+
+	defer s.Run()()
+	defer s.Close(500 * time.Millisecond)
+
+	var compressed bytes.Buffer
+	writer := gzip.NewWriter(&compressed)
+	if _, err := writer.Write([]byte(`{"name":"name"}`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	s.NewRequest(http.MethodPost, "/post").
+		Body(compressed.Bytes()).
+		Header(header.Accept, header.JSON).
+		Header(header.AcceptEncoding, "identity").
+		Header(header.ContentType, header.JSON).
+		Header(header.ContentEncoding, "gzip").
+		Do().
+		Status(http.StatusOK).
+		EncodingBody(&object{Name: "name", Age: 1}, func(b []byte, a any) error { return json.Unmarshal(b, a) })
+
+	s.NewRequest(http.MethodPost, "/post").
+		Body([]byte(`{"name":"name"}`)).
+		Header(header.Accept, header.JSON).
+		Header(header.ContentType, header.JSON).
+		Header(header.ContentEncoding, "br"). // 服务端未配置 br
+		Do().
+		Status(http.StatusUnsupportedMediaType)
+}
+
+func TestServer_NewClient(t *testing.T) {
 	a := assert.New(t, false)
 
 	s := newTestServer(a, false)

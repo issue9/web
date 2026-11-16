@@ -140,19 +140,29 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 		}
 	}
 
-	var inputReader io.Reader = r.Body // 作为服务端使用，Body 始终不为空，且不需要调用 Close，所以类型为 io.Reader 就可以了。
+	var inputReader io.Reader = r.Body // 作为服务端不需要关闭 Request.Body，所以直接使用 io.Reader
 	var unmarshal UnmarshalFunc
+	var inputCharset encoding.Encoding
 	if h = r.Header.Get(header.ContentType); h != "" {
-		var err error
-		var inputCharset encoding.Encoding
 		if unmarshal, inputCharset, err = s.codec.contentType(h); err != nil {
 			warn().Error(err)
 			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
 		}
-		if !qheader.CharsetIsNop(inputCharset) {
-			inputReader = transform.NewReader(inputReader, inputCharset.NewDecoder())
+	}
+
+	var inputEncoding io.ReadCloser
+	if h = r.Header.Get(header.ContentEncoding); h != "" {
+		if inputEncoding, err = s.codec.contentEncoding(h, inputReader); err != nil {
+			warn().Error(err)
+			s.errorPage(w, problems.UnsupportedMediaType)
+			return nil
 		}
+		inputReader = inputEncoding
+	}
+
+	if !qheader.CharsetIsNop(inputCharset) {
+		inputReader = transform.NewReader(inputReader, inputCharset.NewDecoder())
 	}
 
 	tag := acceptLanguage(s, r.Header.Get(header.AcceptLanguage))
@@ -178,6 +188,13 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	ctx.route = route
 	ctx.request = r
 	ctx.exits = ctx.exits[:0]
+	if inputEncoding != nil {
+		ctx.OnExit(func(ctx *Context, _ int) {
+			if err := inputEncoding.Close(); err != nil {
+				ctx.Logs().ERROR().Error(err)
+			}
+		})
+	}
 	ctx.id = id
 	ctx.begin = s.Now()
 	ctx.queries = nil

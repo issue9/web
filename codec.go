@@ -139,7 +139,7 @@ func (c *Codec) AddMediaType(mt MediaType, requestAccept, responseAccept bool) *
 	}
 
 	// 检测复复值
-	if slices.IndexFunc(c.mediaTypes, func(v MediaType) bool { return v.Name() == mt.Name() }) >= 0 {
+	if slices.ContainsFunc(c.mediaTypes, func(v MediaType) bool { return v.Name() == mt.Name() }) {
 		panic(fmt.Sprintf("存在重复的项 %s", mt.Name()))
 	}
 
