@@ -1,0 +1,50 @@
+name: 缺陷报告
+description: 报告可复现的问题
+title: "缺陷："
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 问题描述
+      description: 简要说明遇到的问题。
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境信息
+      description: 请提供 Go 版本、操作系统及相关依赖或配置。
+      placeholder: "Go 版本：\n操作系统："
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 请提供尽可能精简、可重复的步骤或代码示例。
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 补充信息
+      description: 日志、截图或其他有助于定位问题的信息。请勿粘贴凭据或个人敏感信息。
+    validations:
+      required: false
