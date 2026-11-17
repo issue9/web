@@ -4,7 +4,7 @@
 
 //go:generate go run ./generate_problems.go
 
-// Package problems 对 [RFC7807] 和 [RFC9457] 实现和管理
+// Package problems 对 [RFC7807] 和 [RFC9457] 的实现和管理
 //
 // [RFC7807]: https://www.rfc-editor.org/info/rfc7807
 // [RFC9457]: https://www.rfc-editor.org/info/rfc9457
