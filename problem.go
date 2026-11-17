@@ -6,8 +6,6 @@ package web
 
 import (
 	"errors"
-	"slices"
-	"sync"
 	"unique"
 
 	"github.com/issue9/localeutil"
@@ -15,54 +13,8 @@ import (
 	"github.com/issue9/web/problems"
 )
 
-var problemPool = &sync.Pool{New: func() any { return &Problem{} }}
-
 type (
-	// Problem 基于 [RFC7807] 和 [RFC9457] 用于描述错误信息的对象
-	//
-	// 这是一个提供给客户端的信息，不能将敏感信息放于其中。
-	//
-	// [RFC7807]: https://www.rfc-editor.org/info/rfc7807
-	// [RFC9457]: https://www.rfc-editor.org/info/rfc9457
-	Problem struct {
-		XMLName struct{} `xml:"urn:ietf:rfc:7807 problem" form:"-" cbor:"-" json:"-" html:"-" yaml:"-"`
-
-		// 错误 ID
-		//
-		// 如果该值为 about:blank，则表示 HTTP 状态码本身语义已经可以表达此错误。
-		Type string `json:"type" xml:"type" form:"type" cbor:"type" yaml:"type" comment:"problem type"`
-
-		// 对错误的简要描述
-		Title string `json:"title" xml:"title" form:"title" cbor:"title" yaml:"title" comment:"problem title"`
-
-		// 对错误的详细说明
-		Detail string `json:"detail,omitempty" xml:"detail,omitempty" form:"detail,omitempty" cbor:"detail,omitempty" yaml:"detail,omitempty" comment:"problem detail"`
-
-		// 指向错误发生的实例
-		Instance string `json:"instance,omitempty" xml:"instance,omitempty" form:"instance,omitempty" cbor:"instance,omitempty" yaml:"instance,omitempty" comment:"problem instance"`
-
-		// 原始的错误状态码
-		//
-		// 根据定义此值是可选的字段，但是服务端发放的是始终有此值的。
-		Status int `json:"status,omitempty" xml:"status,omitempty" form:"status,omitempty" cbor:"status,omitempty" yaml:"status,omitempty" comment:"problem status"`
-
-		// 用户提交对象各个字段的错误信息
-		Params []ProblemParam `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty" cbor:"params,omitempty" yaml:"params,omitempty" comment:"problem params"`
-
-		// 反馈给用户的信息
-		Extensions any `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty" cbor:"extensions,omitempty" yaml:"extensions,omitempty" comment:"problem extensions"`
-
-		// 是否已经通过 [Problem.Apply] 放回对象池中。
-		// Apply 是公开对象，如果多次调用可能会被放回多次，
-		// 此标记可以记录是否已经放回对象池。
-		isFree bool
-	}
-
-	// ProblemParam 单个错误字段的描述
-	ProblemParam struct {
-		Name    string   `json:"name" xml:"name" form:"name" cbor:"name" yaml:"name"`                // 出错字段的名称
-		Reasons []string `json:"reasons" xml:"reasons" form:"reasons" cbor:"reasons" yaml:"reasons"` // 出错信息
-	}
+	Problem = problems.Problem[*Context]
 
 	problemError struct {
 		err error
@@ -70,68 +22,9 @@ type (
 	}
 )
 
-func newProblem() *Problem {
-	p := problemPool.Get().(*Problem)
-	if p.Params != nil {
-		p.Params = p.Params[:0]
-	}
-	p.Extensions = nil
-	p.Instance = ""
-	p.Detail = ""
-	p.Type = ""
-	p.Title = ""
-	p.Status = 0
-	p.isFree = false
-	return p
-}
-
-// MarshalHTML 实现 [codec/html.Marshaler] 接口
-func (p *Problem) MarshalHTML() (string, any) { return "problem", p }
-
-func (p *Problem) Apply(ctx *Context) {
-	ctx.Render(p.Status, p)
-	p.free()
-}
-
-func (p *Problem) free() {
-	if len(p.Params) < 30 && !p.isFree {
-		p.isFree = true
-		problemPool.Put(p)
-	}
-}
-
-// WithParam 添加具体的错误字段及描述信息
-func (p *Problem) WithParam(name, reason string) *Problem {
-	if idx := slices.IndexFunc(p.Params, func(pp ProblemParam) bool { return pp.Name == name }); idx > -1 {
-		param := p.Params[idx]
-		param.Reasons = append(param.Reasons, reason)
-		p.Params[idx] = param
-	} else {
-		p.Params = append(p.Params, ProblemParam{Name: name, Reasons: []string{reason}})
-	}
-
-	return p
-}
-
-// WithExtensions 指定扩展对象信息
-//
-// 多次调用将会覆盖之前的内容。
-func (p *Problem) WithExtensions(ext any) *Problem {
-	p.Extensions = ext
-	return p
-}
-
-// WithInstance 指定发生错误的实例
-//
-// 多次调用将会覆盖之前的内容。默认为 [Context.ID]。
-func (p *Problem) WithInstance(instance string) *Problem {
-	p.Instance = instance
-	return p
-}
-
 // Problem 返回指定 id 的 [Problem]
 func (ctx *Context) Problem(id unique.Handle[string]) *Problem {
-	return ctx.initProblem(newProblem(), id)
+	return ctx.initProblem(ctx.Server().Problems().NewProblem(), id)
 }
 
 func (ctx *Context) initProblem(p *Problem, id unique.Handle[string]) *Problem {
@@ -180,7 +73,7 @@ func (ctx *Context) NotFound() *Problem { return ctx.Problem(problems.NotFound) 
 func (ctx *Context) NotImplemented() *Problem { return ctx.Problem(problems.NotImplemented) }
 
 // Problems 提供 [Problem] 管理
-func (s *Server) Problems() *problems.Problems { return s.problems }
+func (s *Server) Problems() *problems.Problems[*Context] { return s.problems }
 
 // NewProblemError 将 err 以指定的 problemID 进行包装
 //

@@ -58,7 +58,7 @@ type (
 		requestIDKey string
 		codec        *Codec
 		services     *Services
-		problems     *problems.Problems
+		problems     *problems.Problems[*Context]
 		routers      *Routers
 		vars         *sync.Map
 		idgen        func() string
@@ -102,7 +102,7 @@ func NewServer(
 		config:       conf,
 		requestIDKey: requestIDKey,
 		codec:        codec,
-		problems:     problems.New(),
+		problems:     problems.New[*Context](),
 		vars:         &sync.Map{},
 		idgen:        idgen,
 		logs:         logs,

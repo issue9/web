@@ -56,7 +56,7 @@ func (ctx *Context) newFilter(p *Problem, exitAtError bool) *filter.Filter {
 //
 // 返回对象的生命周期在 [Context] 结束时也随之结束。
 func (ctx *Context) Paths(exitAtError bool) *Paths {
-	p := newProblem()
+	p := ctx.Server().Problems().NewProblem()
 
 	pp := pathPool.Get().(*Paths)
 	if pp.filter == nil {
@@ -209,7 +209,7 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 		return nil, err
 	}
 
-	p := newProblem()
+	p := ctx.Server().Problems().NewProblem()
 	q := queryPool.Get().(*Queries)
 	if q.filter == nil {
 		q.filter = ctx.newFilter(p, exitAtError)
@@ -399,13 +399,13 @@ func (ctx *Context) Read(exitAtError bool, v any, id unique.Handle[string]) Resp
 	}
 
 	if vv, ok := v.(ContextFilter); ok {
-		p := newProblem()
+		p := ctx.Server().Problems().NewProblem()
 		f := ctx.newFilter(p, exitAtError)
 		vv.FilterContext(f, ctx)
 		if f.HasError() {
 			return ctx.initProblem(p, id)
 		}
-		p.free()
+		ctx.Server().Problems().Free(p)
 	}
 	return nil
 }

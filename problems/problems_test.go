@@ -16,7 +16,7 @@ import (
 func TestProblems_Add(t *testing.T) {
 	a := assert.New(t, false)
 
-	ps := New()
+	ps := New[render]()
 	a.NotNil(ps)
 	l := len(ps.problems)
 
@@ -55,13 +55,13 @@ func TestProblems_Add(t *testing.T) {
 func TestProblems_Get(t *testing.T) {
 	a := assert.New(t, false)
 
-	ps := New()
+	ps := New[render]()
 	a.NotNil(ps)
 	ps.Add("", &Item{Status: 400, ID: unique.Make("40010"), Title: localeutil.Phrase("title"), Detail: localeutil.Phrase("detail")})
 	item := ps.Get(unique.Make("40010"))
 	a.Equal(item.Type, AboutBlank)
 
-	ps = New()
+	ps = New[render]()
 	a.NotNil(ps)
 	ps.Add("", &Item{Status: 400, ID: unique.Make("40011"), Type: "https://example.com/qa#40011", Title: localeutil.Phrase("title"), Detail: localeutil.Phrase("detail")})
 	ps.Add("https://example.com/qa#", &Item{Status: 400, ID: unique.Make("40012"), Type: "40012", Title: localeutil.Phrase("title"), Detail: localeutil.Phrase("detail")})

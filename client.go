@@ -153,7 +153,7 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 
 	if problems.IsProblem(rsp.StatusCode) {
 		var e E
-		p = newProblem()
+		p = &Problem{} // TODO
 		p.Extensions = e
 		if err = unmarshal(reader, p); err != nil {
 			return

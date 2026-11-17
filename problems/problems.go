@@ -15,14 +15,17 @@ import (
 	"iter"
 	"slices"
 	"strings"
+	"sync"
 	"unique"
 
 	"github.com/issue9/localeutil"
 )
 
 // Problems 管理 Problem 对象
-type Problems struct {
+type Problems[T renderer] struct {
 	problems []*Item // 需保证元素的顺序相同
+
+	problemPool *sync.Pool
 }
 
 type Item struct {
@@ -38,9 +41,11 @@ type Item struct {
 // New 新建 [Problems] 对象
 //
 // build 提供构建 problem 对象的方法
-func New() *Problems {
-	ps := &Problems{
+func New[T renderer]() *Problems[T] {
+	ps := &Problems[T]{
 		problems: make([]*Item, 0, 100),
+
+		problemPool: &sync.Pool{New: func() any { return &Problem[T]{} }},
 	}
 	ps.initProblems()
 	return ps
@@ -51,7 +56,7 @@ func New() *Problems {
 // 在 p.Type 不是绝对 URL 的情况下，typePrefix 会自动加在其前部.做为前缀。
 //
 // NOTE: 已添加的内容无法修改，如果确实有需求，只能通过修改翻译项的方式间接进行修改。
-func (ps *Problems) Add(typePrefix string, p ...*Item) *Problems {
+func (ps *Problems[T]) Add(typePrefix string, p ...*Item) *Problems[T] {
 	for _, pp := range p {
 		if pp.Type != AboutBlank && typePrefix != "" &&
 			!strings.HasPrefix(pp.Type, "https://") && !strings.HasPrefix(pp.Type, "http://") {
@@ -63,7 +68,7 @@ func (ps *Problems) Add(typePrefix string, p ...*Item) *Problems {
 	return ps
 }
 
-func (ps *Problems) add(p *Item) {
+func (ps *Problems[T]) add(p *Item) {
 	if !IsProblem(p.Status) { // 只需验证大于 400 的状态码。
 		panic("status 必须是一个有效的状态码")
 	}
@@ -93,12 +98,12 @@ func (ps *Problems) add(p *Item) {
 }
 
 // Exists 查看指定 id 是否已经存在
-func (ps *Problems) Exists(id unique.Handle[string]) bool {
+func (ps *Problems[T]) Exists(id unique.Handle[string]) bool {
 	return slices.ContainsFunc(ps.problems, func(p *Item) bool { return p.ID == id })
 }
 
 // All 所有已注册的错误代码
-func (ps *Problems) All() iter.Seq[*Item] {
+func (ps *Problems[T]) All() iter.Seq[*Item] {
 	return func(yield func(*Item) bool) {
 		for _, p := range ps.problems {
 			if !yield(p) {
@@ -111,7 +116,7 @@ func (ps *Problems) All() iter.Seq[*Item] {
 // Get 查找 id 对应的 [Item] 对象
 //
 // 如果找不到 id 对应的项会 panic
-func (ps *Problems) Get(id unique.Handle[string]) *Item {
+func (ps *Problems[T]) Get(id unique.Handle[string]) *Item {
 	if i := slices.IndexFunc(ps.problems, func(lp *Item) bool { return lp.ID == id }); i > -1 {
 		return ps.problems[i]
 	}
