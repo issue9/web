@@ -109,8 +109,8 @@ func withRecovery(s *Server) RouterOption {
 		status := http.StatusInternalServerError
 		err, isErr := msg.(error)
 		if isErr {
-			if pe, ok := errors.AsType[*problemError](err); ok {
-				status = s.Problems().Get(pe.id).Status
+			if pe, ok := errors.AsType[*problems.Error](err); ok {
+				status = s.Problems().Get(pe.ID()).Status
 			}
 		}
 

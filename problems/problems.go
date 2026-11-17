@@ -21,7 +21,12 @@ import (
 	"github.com/issue9/localeutil"
 )
 
-// Problems 管理 Problem 对象
+// 这是对根包中 Context 的抽象。主要是为了将 problem 相关功能与主包解耦。
+type renderer interface {
+	Render(int, any)
+}
+
+// Problems 管理 [Problem] 对象
 type Problems[T renderer] struct {
 	problems []*Item // 需保证元素的顺序相同
 

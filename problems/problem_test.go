@@ -10,11 +10,15 @@ import (
 	"github.com/issue9/assert/v6"
 )
 
+type render struct{}
+
+func (r render) Render(int, any) {}
+
 func TestProblem(t *testing.T) {
 	a := assert.New(t, false)
 	ps := New[render]()
 
-	p := ps.NewProblem()
+	p := ps.New()
 	a.NotNil(p)
 
 	t.Run("WithParam", func(t *testing.T) {
@@ -58,7 +62,7 @@ func TestProblem(t *testing.T) {
 		ps.Free(p)
 		a.True(p.isFree)
 
-		p = ps.NewProblem()
+		p = ps.New()
 		a.False(p.isFree)
 	})
 }

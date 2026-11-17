@@ -4,7 +4,12 @@
 
 package problems
 
-import "slices"
+import (
+	"slices"
+	"unique"
+
+	"github.com/issue9/localeutil"
+)
 
 type (
 	// Problem 基于 [RFC7807] 和 [RFC9457] 用于描述错误信息的对象
@@ -36,7 +41,7 @@ type (
 		Status int `json:"status,omitempty" xml:"status,omitempty" form:"status,omitempty" cbor:"status,omitempty" yaml:"status,omitempty" comment:"problem status"`
 
 		// 用户提交对象各个字段的错误信息
-		Params []ProblemParam `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty" cbor:"params,omitempty" yaml:"params,omitempty" comment:"problem params"`
+		Params []Param `json:"params,omitempty" xml:"params>i,omitempty" form:"params,omitempty" cbor:"params,omitempty" yaml:"params,omitempty" comment:"problem params"`
 
 		// 反馈给用户的信息
 		Extensions any `json:"extensions,omitempty" xml:"extensions,omitempty" form:"extensions,omitempty" cbor:"extensions,omitempty" yaml:"extensions,omitempty" comment:"problem extensions"`
@@ -48,23 +53,15 @@ type (
 		ps     *Problems[T]
 	}
 
-	// 这是对根包中 Context 的抽象。主要是为了将 Problem 功能与主包解耦。
-	renderer interface {
-		Render(int, any)
-	}
-
-	// ProblemParam 单个错误字段的描述
-	ProblemParam struct {
+	// Param 单个错误字段的描述
+	Param struct {
 		Name    string   `json:"name" xml:"name" form:"name" cbor:"name" yaml:"name"`                // 出错字段的名称
 		Reasons []string `json:"reasons" xml:"reasons" form:"reasons" cbor:"reasons" yaml:"reasons"` // 出错信息
 	}
-
-	render struct{}
 )
 
-func (r render) Render(int, any) {}
-
-func (ps *Problems[T]) NewProblem() *Problem[T] {
+// New 创建一个 [Problem] 对象
+func (ps *Problems[T]) New() *Problem[T] {
 	p := ps.problemPool.Get().(*Problem[T])
 	if p.Params != nil {
 		p.Params = p.Params[:0]
@@ -77,6 +74,19 @@ func (ps *Problems[T]) NewProblem() *Problem[T] {
 	p.Status = 0
 	p.isFree = false
 	p.ps = ps
+
+	return p
+}
+
+// Init 初始化 p
+func (ps *Problems[T]) Init(p *Problem[T], id unique.Handle[string], printer *localeutil.Printer) *Problem[T] {
+	item := ps.Get(id)
+	p.Type = item.Type
+	p.Title = item.Title.LocaleString(printer)
+	p.Status = item.Status
+	if item.Detail != nil {
+		p.Detail = item.Detail.LocaleString(printer)
+	}
 	return p
 }
 
@@ -88,6 +98,7 @@ func (p *Problem[T]) Apply(ctx T) {
 	p.ps.Free(p)
 }
 
+// Free 回收 [Problem] 对象
 func (ps *Problems[T]) Free(p *Problem[T]) {
 	if len(p.Params) < 30 && !p.isFree {
 		p.isFree = true
@@ -97,12 +108,12 @@ func (ps *Problems[T]) Free(p *Problem[T]) {
 
 // WithParam 添加具体的错误字段及描述信息
 func (p *Problem[T]) WithParam(name, reason string) *Problem[T] {
-	if idx := slices.IndexFunc(p.Params, func(pp ProblemParam) bool { return pp.Name == name }); idx > -1 {
+	if idx := slices.IndexFunc(p.Params, func(pp Param) bool { return pp.Name == name }); idx > -1 {
 		param := p.Params[idx]
 		param.Reasons = append(param.Reasons, reason)
 		p.Params[idx] = param
 	} else {
-		p.Params = append(p.Params, ProblemParam{Name: name, Reasons: []string{reason}})
+		p.Params = append(p.Params, Param{Name: name, Reasons: []string{reason}})
 	}
 
 	return p

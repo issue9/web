@@ -43,7 +43,7 @@ func TestContext_Log(t *testing.T) {
 		w = httptest.NewRecorder()
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx = srv.NewContext(w, r, types.NewRoute())
-		ctx.Log(NewProblemError(problems.BadRequest, errors.New("log1 log2")), problems.Empty).Apply(ctx)
+		ctx.Log(problems.NewError(problems.BadRequest, errors.New("log1 log2")), problems.Empty).Apply(ctx)
 		a.Contains(srv.logBuf.String(), "problem_test.go:46"). // NOTE: 此测试依赖上一行的行号
 									Contains(srv.logBuf.String(), "log1 log2").
 									Contains(srv.logBuf.String(), header.XRequestID). // 包含 x-request-id 值
@@ -68,7 +68,7 @@ func TestContext_Log(t *testing.T) {
 		w = httptest.NewRecorder()
 		r = httptest.NewRequest(http.MethodGet, "/path", nil)
 		ctx = srv.NewContext(w, r, types.NewRoute())
-		ctx.Log(NewProblemError(problems.BadRequest, errors.New("log1 log2")), unique.Make("41110")).Apply(ctx)
+		ctx.Log(problems.NewError(problems.BadRequest, errors.New("log1 log2")), unique.Make("41110")).Apply(ctx)
 		a.Contains(srv.logBuf.String(), "problem_test.go:71") // NOTE: 此测试依赖上一行的行号
 	})
 }

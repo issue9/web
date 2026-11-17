@@ -33,7 +33,7 @@ func BenchmarkNewProblem(b *testing.B) {
 	ps := New[render]()
 	b.ReportAllocs()
 	for b.Loop() {
-		p := ps.NewProblem()
+		p := ps.New()
 		p.WithExtensions(&object{Name: "n1", Age: 11}).WithParam("p1", "v1")
 		ps.Free(p)
 	}
@@ -55,7 +55,7 @@ func benchProblem_marshal_unmarshal(b *testing.B, marshal func(any) ([]byte, err
 	a := assert.New(b, false)
 	ps := New[render]()
 
-	p := ps.NewProblem()
+	p := ps.New()
 	p.Type = "https://iana.org/assignments/http-problem-types#date"
 	p.Title = "http-problem-types#date"
 	p.Detail = "https://iana.org/assignments/http-problem-types#date"
@@ -74,7 +74,7 @@ func benchProblem_marshal_unmarshal(b *testing.B, marshal func(any) ([]byte, err
 		}
 	})
 
-	out := ps.NewProblem()
+	out := ps.New()
 	b.Run("unmarshal", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {

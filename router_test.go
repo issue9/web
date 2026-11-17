@@ -44,7 +44,7 @@ func TestRouters_Handle(t *testing.T) {
 		return OK("ok")
 	})
 	router.Get("/panic-new-problem-error", func(ctx *Context) Responser {
-		panic(NewProblemError(problems.ServiceUnavailable, errors.New("ProblemServiceUnavailable")))
+		panic(problems.NewError(problems.ServiceUnavailable, errors.New("ProblemServiceUnavailable")))
 	})
 	router.Get("/panic-error", func(ctx *Context) Responser {
 		panic(errors.New("panic"))

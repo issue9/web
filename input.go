@@ -56,7 +56,7 @@ func (ctx *Context) newFilter(p *Problem, exitAtError bool) *filter.Filter {
 //
 // 返回对象的生命周期在 [Context] 结束时也随之结束。
 func (ctx *Context) Paths(exitAtError bool) *Paths {
-	p := ctx.Server().Problems().NewProblem()
+	p := ctx.Server().Problems().New()
 
 	pp := pathPool.Get().(*Paths)
 	if pp.filter == nil {
@@ -154,7 +154,8 @@ func (p *Paths) Float64(key string) float64 {
 // Problem 如果有错误信息转换成 [Problem] 否则返回 nil
 func (p *Paths) Problem(id unique.Handle[string]) Responser {
 	if p.filter.HasError() {
-		return p.Context().initProblem(p.problem, id)
+		return p.Context().Server().Problems().Init(p.problem, id, p.Context().LocalePrinter()).
+			WithInstance(p.Context().ID())
 	}
 	return nil
 }
@@ -209,7 +210,7 @@ func (ctx *Context) Queries(exitAtError bool) (*Queries, error) {
 		return nil, err
 	}
 
-	p := ctx.Server().Problems().NewProblem()
+	p := ctx.Server().Problems().New()
 	q := queryPool.Get().(*Queries)
 	if q.filter == nil {
 		q.filter = ctx.newFilter(p, exitAtError)
@@ -334,7 +335,8 @@ func (q *Queries) Float64(key string, def float64) float64 {
 // Problem 如果有错误信息转换成 Problem 否则返回 nil
 func (q *Queries) Problem(id unique.Handle[string]) Responser {
 	if q.filter.HasError() {
-		return q.Context().initProblem(q.problem, id)
+		ctx := q.Context()
+		return ctx.Server().Problems().Init(q.problem, id, ctx.LocalePrinter()).WithInstance(ctx.ID())
 	}
 	return nil
 }
@@ -399,11 +401,11 @@ func (ctx *Context) Read(exitAtError bool, v any, id unique.Handle[string]) Resp
 	}
 
 	if vv, ok := v.(ContextFilter); ok {
-		p := ctx.Server().Problems().NewProblem()
+		p := ctx.Problem(id)
 		f := ctx.newFilter(p, exitAtError)
 		vv.FilterContext(f, ctx)
 		if f.HasError() {
-			return ctx.initProblem(p, id)
+			return p
 		}
 		ctx.Server().Problems().Free(p)
 	}
