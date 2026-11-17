@@ -18,8 +18,8 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/negotiation"
 )
 
 func newServer(a *assert.Assertion, ts Startup) *web.Server {
@@ -31,10 +31,10 @@ func newServer(a *assert.Assertion, ts Startup) *web.Server {
 	cc := memory.New()
 	u := unique.NewNumber(100)
 
-	codecInst := web.NewCodec()
-	codecInst.AddMediaType(codec.NewJSON(), true, true)
+	negoInst := web.NewNegotiation(language.SimplifiedChinese, conf)
+	negoInst.AddMediaType(negotiation.NewJSON(), true, true)
 
-	s := web.NewServer("id", "1.0.0", conf, ts, time.Local, language.SimplifiedChinese, logs.New(logs.NewNopHandler()), u.String, cc, codecInst, header.XRequestID)
+	s := web.NewServer("id", "1.0.0", ts, time.Local, logs.New(logs.NewNopHandler()), u.String, cc, negoInst, header.XRequestID)
 	a.NotNil(s)
 	s.Services().Add(locales.UniqueIdentityGenerator, u.Serve)
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/mux/v10/header"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
@@ -24,8 +25,8 @@ func TestJSONP(t *testing.T) {
 	a := assert.New(t, false)
 	ts := startuptest.NewTestServerStartup(a)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		Codec:   web.NewCodec().AddMediaType(jsonp, true, true),
-		Startup: ts,
+		Negotiation: web.NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(jsonp, true, true),
+		Startup:     ts,
 	})
 	a.NotError(err).NotNil(s)
 	Install(s)

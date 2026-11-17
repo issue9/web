@@ -123,7 +123,7 @@ func TestServer_scheduled(t *testing.T) {
 	// 查找翻译项是否正确
 	var found bool
 	for _, j := range srv.Jobs() {
-		p := s.Locale().NewPrinter(language.SimplifiedChinese)
+		p := s.Negotiation().NewLocalePrinter(language.SimplifiedChinese)
 		if !found {
 			found = j.Title.LocaleString(p) == "cn"
 		}

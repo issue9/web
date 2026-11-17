@@ -13,13 +13,17 @@ import (
 	"encoding/xml"
 	"errors"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/andybalholm/brotli"
+	"github.com/goccy/go-yaml"
 	"github.com/issue9/assert/v6"
+	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v10/header"
 	"github.com/klauspost/compress/zstd"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web/internal/qheader"
 )
@@ -117,8 +121,8 @@ func marshalXML(_ *Context, v any) ([]byte, error) { return xml.Marshal(v) }
 
 func unmarshalXML(r io.Reader, v any) error { return xml.NewDecoder(r).Decode(v) }
 
-func newCodec(a *assert.Assertion) *Codec {
-	c := NewCodec()
+func newNegotiation(a *assert.Assertion, conf *config.Config) *Negotiation {
+	c := NewNegotiation(language.SimplifiedChinese, conf)
 	a.NotNil(c)
 
 	c.AddCompressor(newGzip()).
@@ -131,9 +135,9 @@ func newCodec(a *assert.Assertion) *Codec {
 	return c
 }
 
-func TestCodec_AddMediaType(t *testing.T) {
+func TestNegotiation_AddMediaType(t *testing.T) {
 	a := assert.New(t, false)
-	c := NewCodec()
+	c := NewNegotiation(language.SimplifiedChinese, nil)
 
 	a.NotPanic(func() {
 		c.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON), true, true)
@@ -149,7 +153,7 @@ func TestCodec_AddMediaType(t *testing.T) {
 
 	mt := newMediaType(header.Plain, "", marshalJSON, unmarshalJSON)
 	a.Equal(mt.ProblemName(), header.Plain)
-	e := NewCodec().AddMediaType(mt, false, true)
+	e := NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt, false, true)
 	a.Equal(e.clientAcceptHeader, "").Equal(e.serverAcceptHeader, header.Plain)
 }
 
@@ -170,10 +174,10 @@ func TestBuildCompression(t *testing.T) {
 		Nil(c.wildcardSuffix)
 }
 
-func TestCodec_contentEncoding(t *testing.T) {
+func TestNegotiation_contentEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
-	e := NewCodec()
+	e := NewNegotiation(language.SimplifiedChinese, nil)
 	a.NotNil(e)
 	e.AddCompressor(newLZW(), header.Plain, "application/*").
 		AddCompressor(newGzip(), header.Plain).
@@ -191,10 +195,10 @@ func TestCodec_contentEncoding(t *testing.T) {
 	a.NotError(err).Equal(string(data), "123")
 }
 
-func TestCodec_acceptEncoding(t *testing.T) {
+func TestNegotiation_acceptEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
-	e := NewCodec()
+	e := NewNegotiation(language.SimplifiedChinese, nil)
 	a.NotNil(e)
 	e.AddCompressor(newLZW(), header.Plain, "application/*").
 		AddCompressor(newGzip(), header.Plain).
@@ -208,7 +212,7 @@ func TestCodec_acceptEncoding(t *testing.T) {
 		b, err := e.acceptEncoding(header.JSON, "gzip;q=0.9,br")
 		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
-		// gzip 无法解析，br 能解析但是未添加到 Codec
+		// gzip 无法解析，br 能解析但是未添加到 Negotiation
 		b, err = e.acceptEncoding(header.JSON, "gzip;q=x.9,br")
 		a.NotError(err).Nil(b)
 
@@ -256,10 +260,10 @@ func TestCodec_acceptEncoding(t *testing.T) {
 	})
 }
 
-func TestCodec_contentType(t *testing.T) {
+func TestNegotiation_contentType(t *testing.T) {
 	a := assert.New(t, false)
 
-	mt := NewCodec()
+	mt := NewNegotiation(language.SimplifiedChinese, nil)
 	a.NotNil(mt)
 	mt.AddMediaType(newMediaType(header.OctetStream, "", marshalJSON, unmarshalJSON), true, true)
 
@@ -303,9 +307,9 @@ func TestCodec_contentType(t *testing.T) {
 	a.NotError(err).NotNil(f).Nil(e)
 }
 
-func TestCodec_accept(t *testing.T) {
+func TestNegotiation_accept(t *testing.T) {
 	a := assert.New(t, false)
-	mt := NewCodec()
+	mt := NewNegotiation(language.SimplifiedChinese, nil)
 	a.NotNil(mt)
 
 	item, err := mt.accept(header.JSON)
@@ -314,7 +318,7 @@ func TestCodec_accept(t *testing.T) {
 	item, err = mt.accept("")
 	a.NotError(err).Nil(item)
 
-	mt = NewCodec()
+	mt = NewNegotiation(language.SimplifiedChinese, nil)
 	a.NotNil(mt)
 	mt.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON), true, true).
 		AddMediaType(newMediaType(header.Plain, "text/plain+problem", marshalXML, unmarshalXML), true, true)
@@ -360,4 +364,87 @@ func TestCodec_accept(t *testing.T) {
 
 	item, err = mt.accept("font/wottf")
 	a.NotError(err).Nil(item)
+}
+
+func TestNegotiation_Sprintf(t *testing.T) {
+	a := assert.New(t, false)
+
+	l := NewNegotiation(language.SimplifiedChinese, nil)
+	a.NotError(l.SetString(language.SimplifiedChinese, "lang", "hans")).
+		NotNil(l).Equal(l.Sprintf("lang"), "hans").
+		NotError(l.SetString(language.SimplifiedChinese, "lang", "hans-2")).
+		Equal(l.Sprintf("lang"), "hans-2")
+
+	// ID 不存在于 catalog
+
+	l = NewNegotiation(language.Afrikaans, nil)
+	a.NotNil(l).
+		NotError(l.SetString(language.SimplifiedChinese, "lang", "hans")).
+		Equal(l.Sprintf("lang"), "lang"). // 找不到对应的翻译项，返回原值
+		NotError(l.SetString(language.Afrikaans, "lang", "afrik")).
+		Equal(l.Sprintf("lang"), "afrik")
+}
+
+func TestNegotiation_acceptLanguage(t *testing.T) {
+	a := assert.New(t, false)
+	s := make(config.Serializer, 2)
+	s.Add(xml.Marshal, xml.Unmarshal, ".xml")
+	s.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
+
+	l := NewNegotiation(language.SimplifiedChinese, config.Dir(s, "./"))
+	a.Equal(l.acceptLanguage, "zh-Hans")
+
+	a.NotError(l.LoadMessages("*.yaml", os.DirFS("./internal/locale/testdata"))).
+		Equal(l.acceptLanguage, "zh-Hans, cmn-Hans")
+
+	a.NotError(l.LoadMessages("*.xml", os.DirFS("./internal/locale/testdata"))).
+		Equal(l.acceptLanguage, "zh-Hans, cmn-Hans, zh-Hant")
+}
+
+func TestNegotiation_NewPrinter(t *testing.T) {
+	a := assert.New(t, false)
+	s := make(config.Serializer, 2)
+	s.Add(xml.Marshal, xml.Unmarshal, ".xml").
+		Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
+
+	l := NewNegotiation(language.MustParse("cmn-Hans"), config.Dir(s, "./"))
+	a.NotNil(l).Equal(l.Language(), language.MustParse("cmn-Hans"))
+
+	// language.MustParse("cmn-Hans") 是默认的 ID，初始化 l 时即已存在。
+
+	p1 := l.NewLocalePrinter(language.MustParse("cmn-Hans"))
+	a.NotError(l.SetString(language.MustParse("cmn-Hans"), "lang", "hans"))
+
+	a.NotError(l.LoadMessages("*.yaml", os.DirFS("./internal/locale/testdata")))
+	p2 := l.NewLocalePrinter(language.MustParse("cmn-Hans"))
+	a.Equal(p1.Sprintf("lang"), p2.Sprintf("lang"))
+	a.Equal(p2.Sprintf("k1"), "zh")
+
+	a.Equal(p2.Sprintf("k2", 1), "msg-1")
+	a.Equal(p2.Sprintf("k2", 3), "msg-3")
+	a.Equal(p2.Sprintf("k2", 5), "msg-other")
+
+	a.Equal(p2.Sprintf("k3", 1, 1), "1-一")
+	a.Equal(p2.Sprintf("k3", 1, 2), "2-一")
+	a.Equal(p2.Sprintf("k3", 2, 2), "2-二")
+
+	// language.TraditionalChinese 在调用 SetString 之前不存在，
+	// 所以 p1 会匹配成其它相似的值，p2 则会准确匹配到 TraditionalChinese。
+
+	p1 = l.NewLocalePrinter(language.TraditionalChinese)
+	a.NotError(l.SetString(language.TraditionalChinese, "lang", "hant"))
+
+	a.NotError(l.LoadMessages("*.xml", os.DirFS("./internal/locale/testdata")))
+	p2 = l.NewLocalePrinter(language.TraditionalChinese)
+	a.NotEqual(p1.Sprintf("lang"), p2.Sprintf("lang"))
+
+	a.Equal(p2.Sprintf("k1"), "zh-hant")
+
+	a.Equal(p2.Sprintf("k2", 1), "msg-1")
+	a.Equal(p2.Sprintf("k2", 3), "msg-3")
+	a.Equal(p2.Sprintf("k2", 5), "msg-other")
+
+	a.Equal(p2.Sprintf("k3", 1, 1), "1-壹")
+	a.Equal(p2.Sprintf("k3", 1, 2), "2-壹")
+	a.Equal(p2.Sprintf("k3", 2, 2), "2-贰")
 }

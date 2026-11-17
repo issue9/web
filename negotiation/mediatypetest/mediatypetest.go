@@ -37,7 +37,7 @@ func Test(a *assert.Assertion, mt web.MediaType) {
 	log := logs.New(logs.NewNopHandler())
 	unique := func() string { return "" }
 	cc := memory.New()
-	s := web.NewServer("test", "1.0.0", conf, ts, time.Local, language.SimplifiedChinese, log, unique, cc, web.NewCodec(), header.XRequestID)
+	s := web.NewServer("test", "1.0.0", ts, time.Local, log, unique, cc, web.NewNegotiation(language.SimplifiedChinese, conf), header.XRequestID)
 	a.NotNil(s)
 
 	w := httptest.NewRecorder()

@@ -10,12 +10,12 @@ import (
 	"github.com/issue9/assert/v6"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec"
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/negotiation"
 )
 
-func TestConfigOf_buildCodec(t *testing.T) {
+func TestConfigOf_buildNegotiation(t *testing.T) {
 	a := assert.New(t, false)
 
 	conf := &configOf[empty]{
@@ -26,7 +26,7 @@ func TestConfigOf_buildCodec(t *testing.T) {
 		},
 	}
 	e, f := buildFilter()
-	conf.buildCodec(f)
+	conf.buildNegotiation(f)
 	a.False(f.HasError()).Empty(e)
 
 	conf = &configOf[empty]{
@@ -36,7 +36,7 @@ func TestConfigOf_buildCodec(t *testing.T) {
 		},
 	}
 	e, f = buildFilter()
-	conf.buildCodec(f)
+	conf.buildNegotiation(f)
 	a.True(f.HasError()).NotEmpty(e["compresses[1].id"])
 }
 
@@ -50,8 +50,8 @@ func TestConfigOf_sanitizeMediaTypes(t *testing.T) {
 		},
 	}
 	e, f := buildFilter()
-	conf.buildCodec(f)
-	a.False(f.HasError()).NotNil(conf.codec).Empty(e)
+	conf.buildNegotiation(f)
+	a.False(f.HasError()).NotNil(conf.negotiation).Empty(e)
 
 	conf = &configOf[empty]{
 		MediaTypes: []*mediaTypeConfig{
@@ -60,7 +60,7 @@ func TestConfigOf_sanitizeMediaTypes(t *testing.T) {
 		},
 	}
 	e, f = buildFilter()
-	conf.buildCodec(f)
+	conf.buildNegotiation(f)
 	a.True(f.HasError()).
 		Equal(e, filter.Map{"mediaTypes[1].target": []web.LocaleStringer{locales.NotFound}})
 
@@ -72,7 +72,7 @@ func TestConfigOf_sanitizeMediaTypes(t *testing.T) {
 		},
 	}
 	e, f = buildFilter()
-	conf.buildCodec(f)
+	conf.buildNegotiation(f)
 	a.True(f.HasError()).
 		Equal(e, filter.Map{"mediaTypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
 
@@ -82,7 +82,7 @@ func TestConfigOf_sanitizeMediaTypes(t *testing.T) {
 		},
 	}
 	e, f = buildFilter()
-	conf.buildCodec(f)
+	conf.buildNegotiation(f)
 	a.True(f.HasError()).
 		Equal(e, filter.Map{"mediaTypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
 
@@ -92,7 +92,7 @@ func TestConfigOf_sanitizeMediaTypes(t *testing.T) {
 		},
 	}
 	e, f = buildFilter()
-	conf.buildCodec(f)
+	conf.buildNegotiation(f)
 	a.True(f.HasError()).
 		Equal(e, filter.Map{"mediaTypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
 }
@@ -104,10 +104,10 @@ func TestRegisterMediaType(t *testing.T) {
 	a.True(f).NotNil(v)
 
 	a.PanicString(func() {
-		RegisterMediaType(codec.NewJSON(), "json2")
+		RegisterMediaType(negotiation.NewJSON(), "json2")
 	}, "存在同名的媒体类型")
 
-	RegisterMediaType(codec.ForkMediaType(codec.NewJSON(), "application/jsonv2", "application/problem+jsonv2"), "json2")
+	RegisterMediaType(negotiation.ForkMediaType(negotiation.NewJSON(), "application/jsonv2", "application/problem+jsonv2"), "json2")
 	v, f = mediaTypeFactory.get("json2")
 	a.True(f).NotNil(v)
 }

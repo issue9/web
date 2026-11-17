@@ -20,11 +20,10 @@ import (
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/unique/v2"
-	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server/registry"
 )
@@ -42,12 +41,6 @@ type (
 	//
 	// NOTE: 这些参数都有默认值，且无法在 [web.Server] 初始化之后进行更改。
 	Options struct {
-		// 项目的配置文件管理
-		//
-		// 如果为空，则采用 [DefaultConfigDir] 作为配置文件的目录，
-		// 同时加载 YAML、XML、TOML 和 JSON 几种文件类型的序列化方法。
-		Config *config.Config
-
 		// 服务器的时区
 		//
 		// 默认值为 [time.Local]
@@ -92,18 +85,7 @@ type (
 		// 编码方式
 		//
 		// 如果为空，则仅支持 JSON 编码，不支持压缩方式。
-		Codec *web.Codec
-
-		// 默认的语言标签
-		//
-		// 在用户请求的报头中没有匹配的语言标签时，会采用此值作为该用户的本地化语言，
-		// 同时也用来初始化 [Server.Locale.Printer]。
-		//
-		// 框架中的日志输出时，如果该信息实现了 [web.LocaleStringer] 接口，
-		// 将会转换成此设置项的语言。
-		//
-		// 如果为空，即 [language.Und]，则会尝试读取当前系统的本地化信息。
-		Language language.Tag
+		Negotiation *web.Negotiation
 
 		// 指定对 [web.Server] 进行初始化的插件
 		//
@@ -144,20 +126,12 @@ func sanitizeOptions(o *Options, t int) (*Options, error) {
 		o = &Options{}
 	}
 
-	if o.Config == nil {
-		s := make(config.Serializer, 4)
-		s.Add(jsonMarshal, jsonUnmarshal, ".json").
-			Add(JSONCMarshal, JSONCUnmarshal, ".jsonc").
-			Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml").
-			Add(xml.Marshal, xml.Unmarshal, ".xml").
-			Add(toml.Marshal, toml.Unmarshal, ".toml")
-
-		c, err := config.BuildDir(s, DefaultConfigDir)
-		if err != nil {
-			return nil, locales.NewFieldError("Config", err)
-		}
-		o.Config = c
-	}
+	s := make(config.Serializer, 4)
+	s.Add(jsonMarshal, jsonUnmarshal, ".json").
+		Add(JSONCMarshal, JSONCUnmarshal, ".jsonc").
+		Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml").
+		Add(xml.Marshal, xml.Unmarshal, ".xml").
+		Add(toml.Marshal, toml.Unmarshal, ".toml")
 
 	if o.Location == nil {
 		o.Location = time.Local
@@ -179,12 +153,13 @@ func sanitizeOptions(o *Options, t int) (*Options, error) {
 		o.Cache = memory.New()
 	}
 
-	if o.Language == language.Und {
-		tag, err := localeutil.DetectUserLanguageTag()
-		if err != nil {
-			return nil, locales.NewFieldError("Language", err)
-		}
-		o.Language = tag
+	c, err := config.BuildDir(s, DefaultConfigDir)
+	if err != nil {
+		return nil, locales.NewFieldError("Config", err)
+	}
+	tag, err := localeutil.DetectUserLanguageTag()
+	if err != nil {
+		return nil, locales.NewFieldError("Language", err)
 	}
 
 	if o.Logs == nil {
@@ -195,8 +170,8 @@ func sanitizeOptions(o *Options, t int) (*Options, error) {
 		o.RequestIDKey = header.XRequestID
 	}
 
-	if o.Codec == nil {
-		o.Codec = web.NewCodec().AddMediaType(codec.NewJSON(), true, true)
+	if o.Negotiation == nil {
+		o.Negotiation = web.NewNegotiation(tag, c).AddMediaType(negotiation.NewJSON(), true, true)
 	}
 
 	switch t {
@@ -223,9 +198,8 @@ func sanitizeOptions(o *Options, t int) (*Options, error) {
 }
 
 func (o *Options) newServer(id, version string) *web.Server {
-	srv := web.NewServer(id, version, o.Config, o.Startup,
-		o.Location, o.Language, o.Logs, o.IDGenerator,
-		o.Cache, o.Codec, o.RequestIDKey, o.RoutersOptions...)
+	srv := web.NewServer(id, version, o.Startup, o.Location, o.Logs, o.IDGenerator,
+		o.Cache, o.Negotiation, o.RequestIDKey, o.RoutersOptions...)
 
 	for _, plugin := range o.Plugins { // NOTE: 需要保证在最后
 		plugin.Plugin(srv)

@@ -23,20 +23,20 @@ import (
 
 func TestClient_NewRequest(t *testing.T) {
 	a := assert.New(t, false)
-	codec := newCodec(a)
+	nego := newNegotiation(a, nil)
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("https://example.com"))
-	c := NewClient(nil, codec, sel, header.JSON, func(v any) ([]byte, error) { return json.Marshal(v) }, header.XRequestID, func() string { return "123" })
+	c := NewClient(nil, nego, sel, header.JSON, func(v any) ([]byte, error) { return json.Marshal(v) }, header.XRequestID, func() string { return "123" })
 	a.NotNil(c).
 		NotNil(c.marshal).
 		NotNil(c.Client())
 
 	req, err := c.NewRequest(http.MethodPost, "/post", &object{Age: 11})
 	a.NotError(err).NotNil(req).
-		Equal(req.Header.Get(header.Accept), codec.clientAcceptHeader).
+		Equal(req.Header.Get(header.Accept), nego.clientAcceptHeader).
 		Equal(req.Header.Get(header.XRequestID), "123").
-		Equal(req.Header.Get(header.AcceptEncoding), codec.acceptEncodingHeader).
+		Equal(req.Header.Get(header.AcceptEncoding), nego.acceptEncodingHeader).
 		Equal(req.Header.Get(header.ContentType), qheader.BuildContentType(header.JSON, header.UTF8))
 }
 
@@ -44,11 +44,11 @@ func jsonM(v any) ([]byte, error) { return json.Marshal(v) }
 
 func TestClient_ParseResponse(t *testing.T) {
 	a := assert.New(t, false)
-	codec := newCodec(a)
+	nego := newNegotiation(a, nil)
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("https://example.com"))
-	c := NewClient(nil, codec, sel, header.JSON, jsonM, "", nil)
+	c := NewClient(nil, nego, sel, header.JSON, jsonM, "", nil)
 	a.NotNil(c).
 		NotNil(c.marshal)
 

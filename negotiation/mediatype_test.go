@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package codec
+package negotiation
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/issue9/assert/v6"
 
-	"github.com/issue9/web/codec/mediatypetest"
+	"github.com/issue9/web/negotiation/mediatypetest"
 )
 
 func TestForkMediaType(t *testing.T) {

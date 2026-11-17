@@ -18,10 +18,10 @@ import (
 )
 
 //go:embed cert.pem
-var cert []byte
+var Cert []byte
 
 //go:embed key.pem
-var key []byte
+var Key []byte
 
 type Server struct {
 	URL    string
@@ -67,7 +67,7 @@ func NewServer(a *assert.Assertion, sec bool) *Server {
 			},
 		}
 
-		cert, err := tls.X509KeyPair(cert, key)
+		cert, err := tls.X509KeyPair(Cert, Key)
 		a.NotError(err).NotNil(cert)
 		certs = []tls.Certificate{cert}
 	}

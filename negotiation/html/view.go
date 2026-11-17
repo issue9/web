@@ -94,7 +94,7 @@ func (h *HTML) buildCurrentTpl(ctx *web.Context) *template.Template {
 	return tpl.Funcs(template.FuncMap{
 		"t": func(msg string, v ...any) string { return ctx.Sprintf(msg, v...) },
 		"tt": func(tag, msg string, v ...any) string {
-			return ctx.Server().Locale().NewPrinter(language.MustParse(tag)).Sprintf(msg, v...)
+			return ctx.Server().Negotiation().NewLocalePrinter(language.MustParse(tag)).Sprintf(msg, v...)
 		},
 	})
 }

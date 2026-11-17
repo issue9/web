@@ -57,7 +57,7 @@ func getGroups(ctx *web.Context) web.Responser {
 
 ## 编码
 
-编码相关的功能由 `Codec` 结构体管理，总体上分为以下几个类型：
+编码相关的功能由 `Negotiation` 结构体管理，总体上分为以下几个类型：
 
 ### 字符集和文档类型
 
@@ -76,7 +76,7 @@ func handler(ctx *web.Context) web.Responser {
 可以根据客户端的 Accept 报头提供客户端最需要的格式，
 比如客户端的 Accept 为 `application/json;q=1` 那么会返回 JSON 格式，
 如果 Accept 为 `application/json;q=0.5,application/xml;q=1` 那么会返回 XML 格式。
-服务端只需要在初始化服务时配置对应的 `web.Codec` 对象就可以了。
+服务端只需要在初始化服务时配置对应的 `web.Negotiation` 对象就可以了。
 
 字符集也是如此，甚至不需要服务端做配置，本身就支持在 <https://www.iana.org/assignments/character-sets/character-sets.xhtml> 中列出的所有字符集。
 
@@ -84,15 +84,15 @@ func handler(ctx *web.Context) web.Responser {
 import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
-	"github.com/issue9/web/codec"
+	"github.com/issue9/web/negotiation"
 )
 
 func newServer() (*web.Server, error) {
-	c := web.NewCodec().
-		AddMediaType(codec.NewJSON(), true, true).
-		AddMediaType(codec.NewXML(), true, true)
+	nego := web.NewNegotiation().
+		AddMediaType(negotiation.NewJSON(), true, true).
+		AddMediaType(negotiation.NewXML(), true, true)
 
-	return server.NewHTTP("app", "1.0.0", &server.Options{Codec: c})
+	return server.NewHTTP("app", "1.0.0", &server.Options{Negotiation: nego})
 }
 ```
 
@@ -101,7 +101,7 @@ Content-Type 则可以有向服务器指定提交内容的文档类型和字符�
 
 ### 压缩
 
-通过 `web.Codec.AddCompressor` 可以添加需要支持压缩算法。`codec` 提供大部分目前浏览器支持的压缩算法。
+通过 `web.Negotiation.AddCompressor` 可以添加需要支持压缩算法。`Negotiation` 提供大部分目前浏览器支持的压缩算法。
 使用方法也同媒体类型，通过客户端的 `Accept-Encoding` 自动匹配压缩算法。
 
 ## 错误处理

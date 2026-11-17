@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package codec
+package negotiation
 
 import (
 	"errors"

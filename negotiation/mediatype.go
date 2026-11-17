@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package codec
+package negotiation
 
 import (
 	"bytes"
@@ -59,7 +59,7 @@ func ForkMediaType(mt MediaType, normal, problem string) MediaType {
 
 // NewNOP 创建一个空的 [MediaType] 实例
 //
-// 调用创建对象的方法都将返回 [codec.ErrUnsupported] 错误，名称也都为空。
+// 调用创建对象的方法都将返回 [negotiation.ErrUnsupported] 错误，名称也都为空。
 func NewNOP(name, problem string) MediaType {
 	return NewMediaType(name, problem,
 		func(_ *web.Context, _ any) ([]byte, error) { return nil, ErrUnsupported() },

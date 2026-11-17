@@ -14,24 +14,23 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec"
-	"github.com/issue9/web/codec/html"
+	"github.com/issue9/web/negotiation"
+	"github.com/issue9/web/negotiation/html"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
 )
 
-func newServer(a *assert.Assertion, lang string, mt codec.MediaType) (*web.Server, startuptest.Startup) {
+func newServer(a *assert.Assertion, lang string, mt negotiation.MediaType) (*web.Server, startuptest.Startup) {
 	ts := startuptest.NewTestServerStartup(a)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		Startup:  ts,
-		Language: language.MustParse(lang),
-		Codec:    web.NewCodec().AddMediaType(mt, true, true),
-		Logs:     logs.New(logs.NewTermHandler(os.Stderr, nil)),
+		Startup:     ts,
+		Negotiation: web.NewNegotiation(language.MustParse(lang), nil).AddMediaType(mt, true, true),
+		Logs:        logs.New(logs.NewTermHandler(os.Stderr, nil)),
 	})
 	a.NotError(err).NotNil(s)
 
 	// locale
-	b := s.Locale()
+	b := s.Negotiation()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "lang", "hans"))
 	a.NotError(b.SetString(language.MustParse("cmn-hant"), "lang", "hant"))

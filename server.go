@@ -16,7 +16,6 @@ import (
 	"github.com/issue9/cache"
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v10"
-	"golang.org/x/text/language"
 
 	"github.com/issue9/web/problems"
 )
@@ -50,13 +49,12 @@ type (
 		id      string
 		version string
 
-		locale   *Locale
 		location *time.Location
 		uptime   time.Time
 
 		config       *config.Config
 		requestIDKey string
-		codec        *Codec
+		nego         *Negotiation
 		services     *Services
 		problems     *problems.Problems[*Context]
 		routers      *Routers
@@ -74,14 +72,12 @@ type (
 // requestIDKey 表示客户端提交的 X-Request-ID 报头名；
 func NewServer(
 	id, ver string,
-	conf *config.Config,
 	startup Startup,
 	loc *time.Location,
-	lang language.Tag,
 	logs *Logs,
 	idgen func() string,
 	cache cache.Driver,
-	codec *Codec,
+	nego *Negotiation,
 	requestIDKey string,
 	o ...RouterOption,
 ) *Server {
@@ -95,13 +91,11 @@ func NewServer(
 		id:      id,
 		version: ver,
 
-		locale:   newLocale(lang, conf.Serializer()),
 		location: loc,
 		uptime:   time.Now().In(loc),
 
-		config:       conf,
 		requestIDKey: requestIDKey,
-		codec:        codec,
+		nego:         nego,
 		problems:     problems.New[*Context](),
 		vars:         &sync.Map{},
 		idgen:        idgen,
@@ -111,7 +105,7 @@ func NewServer(
 		exitContexts: make([]OnExitContextFunc, 0, 10),
 	}
 	srv.initServices()
-	srv.Logs().SetLocale(srv.Locale().Printer())
+	srv.Logs().SetLocale(srv.Negotiation().LocalePrinter())
 
 	o = append(o, withRecovery(srv))
 	srv.routers = &Routers{
@@ -129,9 +123,6 @@ func NewServer(
 
 // Config 当前项目配置文件的管理
 func (s *Server) Config() *config.Config { return s.config }
-
-// Locale 提供本地化相关功能
-func (s *Server) Locale() *Locale { return s.locale }
 
 // ID 应用的 ID
 func (s *Server) ID() string { return s.id }
@@ -159,7 +150,7 @@ func (s *Server) Uptime() time.Time { return s.uptime }
 // 该类型提供了 [cache.Driver.Driver] 方法可以获得相应的对象。
 func (s *Server) Cache() cache.Cleanable { return s.cache }
 
-func (s *Server) Codec() *Codec { return s.codec }
+func (s *Server) Negotiation() *Negotiation { return s.nego }
 
 // ParseTime 分析基于当前时区的时间
 func (s *Server) ParseTime(layout, value string) (time.Time, error) {

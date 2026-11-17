@@ -16,8 +16,8 @@ import (
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/problems"
 )
 
@@ -31,7 +31,7 @@ type jsonp string
 // New 提供对 JSONP 编码的支持
 //
 // key 用于指定回调函数在地址中的名称
-func New(key string) codec.MediaType { return jsonp(key) }
+func New(key string) negotiation.MediaType { return jsonp(key) }
 
 func (j jsonp) Name() string { return header.Javascript }
 

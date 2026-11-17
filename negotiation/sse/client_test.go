@@ -14,9 +14,10 @@ import (
 
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/logs/v7"
+	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/problems"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
@@ -57,9 +58,9 @@ func TestOnMessage(t *testing.T) {
 	a := assert.New(t, false)
 	ts := startuptest.NewHTTPServerStartup(a, false)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		Startup: ts,
-		Codec:   web.NewCodec().AddMediaType(codec.NewNOP(Mimetype, Mimetype), true, true),
-		Logs:    logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout)),
+		Startup:     ts,
+		Negotiation: web.NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(negotiation.NewNOP(Mimetype, Mimetype), true, true),
+		Logs:        logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout)),
 	})
 	a.NotError(err).NotNil(s)
 	e := NewServer[int64](s, 50*time.Millisecond, 5*time.Second, 10, web.StringPhrase("sse"))

@@ -74,7 +74,7 @@ func newTestServer(a *assert.Assertion, sec bool) *testServer {
 	u := xu.NewNumber(100)
 	hs := &http.Server{Addr: srv.st.Port}
 	if sec {
-		cert, err := tls.LoadX509KeyPair("./server/config/testdata/cert.pem", "./server/config/testdata/key.pem")
+		cert, err := tls.X509KeyPair(servertest.Cert, servertest.Key)
 		a.NotError(err).NotNil(cert)
 		hs.TLSConfig = &tls.Config{
 			Certificates: []tls.Certificate{cert},
@@ -82,11 +82,11 @@ func newTestServer(a *assert.Assertion, sec bool) *testServer {
 	}
 	startup := NewHTTPServerStartup(hs)
 
-	srv.Server = NewServer("test", "1.0.0", conf, startup, time.Local, language.SimplifiedChinese, log, u.String, cc, newCodec(a), header.XRequestID)
+	srv.Server = NewServer("test", "1.0.0", startup, time.Local, log, u.String, cc, newNegotiation(a, conf), header.XRequestID)
 	srv.Services().Add(Phrase("unique"), u.Serve)
 
-	a.NotError(srv.Locale().SetString(language.SimplifiedChinese, "lang", "cn")).
-		NotError(srv.Locale().SetString(language.TraditionalChinese, "lang", "tw"))
+	a.NotError(srv.Negotiation().SetString(language.SimplifiedChinese, "lang", "cn")).
+		NotError(srv.Negotiation().SetString(language.TraditionalChinese, "lang", "tw"))
 
 	srv.Problems().Add("", &problems.Item{Status: 411, ID: unique.Make("41110"), Type: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
 

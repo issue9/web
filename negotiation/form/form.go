@@ -52,7 +52,7 @@ import (
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec"
+	"github.com/issue9/web/negotiation"
 )
 
 // Marshaler 将一个普通对象转换成 form 类型
@@ -66,8 +66,8 @@ type Unmarshaler interface {
 }
 
 // New 提供对 www-form-urlencoded 编码的支持
-func New() codec.MediaType {
-	return codec.NewMediaType(header.FormData, "", marshalForm, umarshalForm)
+func New() negotiation.MediaType {
+	return negotiation.NewMediaType(header.FormData, "", marshalForm, umarshalForm)
 }
 
 // marshalForm 针对 www-form-urlencoded 内容的解码实现

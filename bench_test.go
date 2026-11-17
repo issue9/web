@@ -224,9 +224,9 @@ func BenchmarkContext_Object_withHeader(b *testing.B) {
 	}
 }
 
-func BenchmarkCodec_accept(b *testing.B) {
+func BenchmarkNegotiation_accept(b *testing.B) {
 	a := assert.New(b, false)
-	mt := newCodec(a)
+	mt := newNegotiation(a, nil)
 	b.ReportAllocs()
 
 	var item MediaType
@@ -236,9 +236,9 @@ func BenchmarkCodec_accept(b *testing.B) {
 	a.NotNil(item)
 }
 
-func BenchmarkCodec_contentType(b *testing.B) {
+func BenchmarkNegotiation_contentType(b *testing.B) {
 	a := assert.New(b, false)
-	mt := newCodec(a)
+	mt := newNegotiation(a, nil)
 
 	b.Run("charset=utf-8", func(b *testing.B) {
 		a := assert.New(b, false)
@@ -261,11 +261,11 @@ func BenchmarkCodec_contentType(b *testing.B) {
 	})
 }
 
-func BenchmarkCodec_contentEncoding(b *testing.B) {
+func BenchmarkNegotiation_contentEncoding(b *testing.B) {
 	b.Run("1", func(b *testing.B) {
 		a := assert.New(b, false)
 
-		c := NewCodec()
+		c := NewNegotiation(language.SimplifiedChinese, nil)
 		a.NotNil(c)
 		c.AddCompressor(newZstd(), "application/*")
 		b.ReportAllocs()
@@ -283,7 +283,7 @@ func BenchmarkCodec_contentEncoding(b *testing.B) {
 		a := assert.New(b, false)
 		b.ReportAllocs()
 
-		c := NewCodec()
+		c := NewNegotiation(language.SimplifiedChinese, nil)
 		a.NotNil(c)
 		c.AddCompressor(newGzip(), "application/*").
 			AddCompressor(newBrotli(), "text/*").
@@ -301,12 +301,12 @@ func BenchmarkCodec_contentEncoding(b *testing.B) {
 	})
 }
 
-func BenchmarkCodec_acceptEncoding(b *testing.B) {
+func BenchmarkNegotiation_acceptEncoding(b *testing.B) {
 	b.Run("1", func(b *testing.B) {
 		a := assert.New(b, false)
 		b.ReportAllocs()
 
-		c := NewCodec()
+		c := NewNegotiation(language.SimplifiedChinese, nil)
 		a.NotNil(c)
 		c.AddCompressor(newZstd(), "application/*")
 
@@ -321,7 +321,7 @@ func BenchmarkCodec_acceptEncoding(b *testing.B) {
 		a := assert.New(b, false)
 		b.ReportAllocs()
 
-		c := NewCodec()
+		c := NewNegotiation(language.SimplifiedChinese, nil)
 		a.NotNil(c)
 		c.AddCompressor(newGzip(), "application/*").
 			AddCompressor(newBrotli(), "text/*").
@@ -337,11 +337,11 @@ func BenchmarkCodec_acceptEncoding(b *testing.B) {
 	})
 }
 
-func BenchmarkCodec_getMatchCompresses(b *testing.B) {
+func BenchmarkNegotiation_getMatchCompresses(b *testing.B) {
 	a := assert.New(b, false)
 	b.ReportAllocs()
 
-	c := NewCodec()
+	c := NewNegotiation(language.SimplifiedChinese, nil)
 	a.NotNil(c)
 	c.AddCompressor(newGzip(), "application/*").
 		AddCompressor(newBrotli(), "text/*").
@@ -355,19 +355,19 @@ func BenchmarkCodec_getMatchCompresses(b *testing.B) {
 }
 
 func BenchmarkLocale_NewPrinter(b *testing.B) {
-	l := newLocale(language.SimplifiedChinese, nil)
+	l := NewNegotiation(language.SimplifiedChinese, nil)
 
 	b.Run("equal Locale.id", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {
-			l.NewPrinter(language.SimplifiedChinese)
+			l.NewLocalePrinter(language.SimplifiedChinese)
 		}
 	})
 
 	b.Run("not equal Locale.id", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {
-			l.NewPrinter(language.TraditionalChinese)
+			l.NewLocalePrinter(language.TraditionalChinese)
 		}
 	})
 
@@ -382,7 +382,7 @@ func BenchmarkLocale_NewPrinter(b *testing.B) {
 		b.ReportAllocs()
 		size := len(langs)
 		for i := range b.N {
-			l.NewPrinter(langs[i%size])
+			l.NewLocalePrinter(langs[i%size])
 		}
 	})
 }

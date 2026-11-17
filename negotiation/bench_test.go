@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package codec
+package negotiation
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"github.com/issue9/assert/v6"
 )
 
-func BenchmarkCodec_NewEncoder(b *testing.B) {
+func BenchmarkNegotiation_NewEncoder(b *testing.B) {
 	b.ReportAllocs()
 
 	b.Run("gzip", func(b *testing.B) {
@@ -37,7 +37,7 @@ func BenchmarkCodec_NewEncoder(b *testing.B) {
 	})
 }
 
-func BenchmarkCodec_NewDecoder(b *testing.B) {
+func BenchmarkNegotiation_NewDecoder(b *testing.B) {
 	a := assert.New(b, false)
 
 	b.Run("gzip", func(b *testing.B) {

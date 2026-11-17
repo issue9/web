@@ -83,7 +83,7 @@ func parseHeaderErr(header string, err error) LocaleStringer {
 // 在 Context 未初始化成功时，可以使用此方法
 func (s *Server) errorPage(w http.ResponseWriter, id problems.ID) {
 	item := s.Problems().Get(id)
-	txt := item.Title.LocaleString(s.Locale().Printer())
+	txt := item.Title.LocaleString(s.Negotiation().LocalePrinter())
 	http.Error(w, txt, item.Status)
 }
 
@@ -105,7 +105,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 
 	h := r.Header.Get(header.Accept)
-	mt, err := s.codec.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
+	mt, err := s.nego.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
 	if err != nil {
 		warn().LocaleString(parseHeaderErr(header.Accept, err))
 		s.errorPage(w, problems.NotAcceptable)
@@ -131,8 +131,8 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 
 	var outputCompressor Compressor
-	if s.codec.CanCompress() {
-		if outputCompressor, err = s.codec.acceptEncoding(mt.Name(), r.Header.Get(header.AcceptEncoding)); err != nil {
+	if s.nego.CanCompress() {
+		if outputCompressor, err = s.nego.acceptEncoding(mt.Name(), r.Header.Get(header.AcceptEncoding)); err != nil {
 			warn().LocaleString(parseHeaderErr(header.AcceptEncoding, err))
 			s.errorPage(w, problems.NotAcceptable)
 			return nil
@@ -143,7 +143,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	var unmarshal UnmarshalFunc
 	var inputCharset encoding.Encoding
 	if h = r.Header.Get(header.ContentType); h != "" {
-		if unmarshal, inputCharset, err = s.codec.contentType(h); err != nil {
+		if unmarshal, inputCharset, err = s.nego.contentType(h); err != nil {
 			warn().LocaleString(parseHeaderErr(header.ContentType, err))
 			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
@@ -152,7 +152,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 
 	var inputEncoding io.ReadCloser
 	if h = r.Header.Get(header.ContentEncoding); h != "" {
-		if inputEncoding, err = s.codec.contentEncoding(h, inputReader); err != nil {
+		if inputEncoding, err = s.nego.contentEncoding(h, inputReader); err != nil {
 			warn().LocaleString(parseHeaderErr(header.ContentEncoding, err))
 			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
@@ -210,7 +210,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	ctx.inputUnmarshal = unmarshal
 	ctx.requestBody = inputReader
 	ctx.languageTag = tag
-	ctx.localePrinter = s.Locale().NewPrinter(tag)
+	ctx.localePrinter = s.Negotiation().NewLocalePrinter(tag)
 	clear(ctx.vars)
 	ctx.logs = s.Logs().New(map[string]any{s.requestIDKey: id})
 
@@ -295,7 +295,7 @@ func (ctx *Context) SetMediaType(mediaType string) {
 		return
 	}
 
-	item, err := ctx.s.codec.accept(mediaType)
+	item, err := ctx.s.nego.accept(mediaType)
 	if err != nil {
 		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
 	}
@@ -327,7 +327,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	c, err := ctx.s.codec.acceptEncoding(ctx.MediaType(false), enc)
+	c, err := ctx.s.nego.acceptEncoding(ctx.MediaType(false), enc)
 	if err != nil {
 		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
 	}
@@ -350,7 +350,7 @@ func (ctx *Context) SetLanguage(tag language.Tag) {
 	// 不判断是否有内容已经输出，允许中途改变语言。
 	if ctx.languageTag != tag {
 		ctx.languageTag = tag
-		ctx.localePrinter = ctx.Server().Locale().NewPrinter(tag)
+		ctx.localePrinter = ctx.Server().Negotiation().NewLocalePrinter(tag)
 	}
 }
 
@@ -382,9 +382,9 @@ func (ctx *Context) OnExit(f OnExitContextFunc) { ctx.exits = append(ctx.exits, 
 
 func acceptLanguage(s *Server, h string) language.Tag {
 	if h == "" {
-		return s.Locale().ID()
+		return s.Negotiation().Language()
 	}
-	tag, _ := language.MatchStrings(s.Locale().Matcher(), h)
+	tag, _ := language.MatchStrings(s.Negotiation().Matcher(), h)
 	return tag
 }
 

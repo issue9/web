@@ -5,7 +5,7 @@
 // Package html 提供输出 HTML 内容的解码函数
 //
 //	srv := server.New("", "", &server.Options{
-//		Codec: web.NewCodec().AddMediaType(web.NewMediaType("text/html", html.Marshal, html.Unmarshal, ""), true, true)
+//		Negotiation: web.NewNegotiation().AddMediaType(web.NewMediaType("text/html", html.Marshal, html.Unmarshal, ""), true, true)
 //	})
 //
 //	html.Init(...)
@@ -36,7 +36,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec"
+	"github.com/issue9/web/negotiation"
 )
 
 // Marshaler 自定义 HTML 输出需要实现的接口
@@ -50,7 +50,7 @@ type Marshaler interface {
 	MarshalHTML() (name string, data any)
 }
 
-// HTML HTML 编码的 [codec.MediaType] 实现
+// HTML HTML 编码的 [negotiation.MediaType] 实现
 type HTML struct {
 	tpls    map[language.Tag]*template.Template
 	matcher language.Matcher
@@ -68,7 +68,7 @@ func (h *HTML) ProblemName() string { return "" }
 //   - string 或是 []byte 将内容作为 HTML 内容直接输出；
 //   - 实现了 [Marshaler] 接口，则按 [Marshaler.MarshalHTML] 返回的查找模板名称；
 //   - 其它普通对象，将获取对象的 XMLName 的 struct tag，若不存在则直接采用类型名作为模板名；
-//   - 其它情况下则是返回 [codec.ErrUnsupported]；
+//   - 其它情况下则是返回 [negotiation.ErrUnsupported]；
 func (h *HTML) Marshal(ctx *web.Context, val any) ([]byte, error) {
 	if ctx == nil {
 		panic("参数 ctx 不能为空")
@@ -87,7 +87,7 @@ func (h *HTML) Marshal(ctx *web.Context, val any) ([]byte, error) {
 func (h *HTML) marshal(ctx *web.Context, val any) ([]byte, error) {
 	tpl := h.buildCurrentTpl(ctx)
 	if tpl == nil {
-		return nil, codec.ErrUnsupported()
+		return nil, negotiation.ErrUnsupported()
 	}
 
 	name, val := getName(val)
@@ -99,7 +99,7 @@ func (h *HTML) marshal(ctx *web.Context, val any) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func (h *HTML) Unmarshal(io.Reader, any) error { return codec.ErrUnsupported() }
+func (h *HTML) Unmarshal(io.Reader, any) error { return negotiation.ErrUnsupported() }
 
 func getName(v any) (string, any) {
 	if m, ok := v.(Marshaler); ok {

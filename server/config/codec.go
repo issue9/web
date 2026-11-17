@@ -58,12 +58,12 @@ type mediaTypeConfig struct {
 	Accept string `json:"accept,omitempty" yaml:"accept,omitempty" xml:"accept,attr,omitempty" toml:"accept,omitempty"`
 }
 
-func (conf *configOf[T]) buildCodec(f *filter.Filter) {
+func (conf *configOf[T]) buildNegotiation(f *filter.Filter) {
 	if len(conf.Compressors) == 0 && len(conf.MediaTypes) == 0 {
 		return
 	}
 
-	c := web.NewCodec()
+	c := web.NewNegotiation(conf.languageTag, conf.config)
 
 	for index, e := range conf.Compressors {
 		if enc, found := compressorFactory.get(e.ID); !found {
@@ -76,7 +76,7 @@ func (conf *configOf[T]) buildCodec(f *filter.Filter) {
 	conf.sanitizeMediaTypes(c, f)
 }
 
-func (conf *configOf[T]) sanitizeMediaTypes(c *web.Codec, f *filter.Filter) {
+func (conf *configOf[T]) sanitizeMediaTypes(c *web.Negotiation, f *filter.Filter) {
 	for index, item := range conf.MediaTypes {
 		m, found := mediaTypeFactory.get(item.Target)
 		if !found {
@@ -110,5 +110,5 @@ func (conf *configOf[T]) sanitizeMediaTypes(c *web.Codec, f *filter.Filter) {
 		c.AddMediaType(m, request, response)
 	}
 
-	conf.codec = c
+	conf.negotiation = c
 }

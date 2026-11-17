@@ -4,5 +4,5 @@
 
 //go:generate go run ./generate_compressors.go
 
-// Package codec 提供与 [web.Codec] 相关的实现
-package codec
+// Package negotiation 提供与 [web.Negotiation] 相关的实现
+package negotiation

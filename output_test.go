@@ -212,7 +212,7 @@ func TestContext_LocalePrinter(t *testing.T) {
 	a := assert.New(t, false)
 	srv := newTestServer(a, false)
 
-	b := srv.Locale()
+	b := srv.Negotiation()
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "test", "测试"))
 	a.NotError(b.SetString(language.MustParse("cmn-hant"), "test", "測試"))
 

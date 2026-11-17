@@ -90,7 +90,7 @@ func (ps *Problems[T]) Init(p *Problem[T], id ID, printer *localeutil.Printer) *
 	return p
 }
 
-// MarshalHTML 实现 [codec/html.Marshaler] 接口
+// MarshalHTML 实现 [negotiation/html.Marshaler] 接口
 func (p *Problem[T]) MarshalHTML() (string, any) { return "problem", p }
 
 func (p *Problem[T]) Apply(ctx T) {

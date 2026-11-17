@@ -36,7 +36,7 @@ type object struct { // 被用于多种用途，所以同时带了 XML 和 yaml�
 func TestRenderer(t *testing.T) {
 	a := assert.New(t, false)
 	ss := newServer(a)
-	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
+	p := ss.Negotiation().NewLocalePrinter(language.SimplifiedChinese)
 
 	a.PanicString(func() {
 		newRenderer[int](nil, nil)

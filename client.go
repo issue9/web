@@ -24,7 +24,7 @@ import (
 // NOTE: 远程如果不是 [Server] 实现的服务，可能无法正确处理返回对象。
 type Client struct {
 	client   *http.Client
-	codec    *Codec
+	nego     *Negotiation
 	selector selector.Selector
 
 	marshal     func(any) ([]byte, error)
@@ -42,7 +42,7 @@ type Client struct {
 // requestIDGen 表示生成 x-request-id 值的方法；
 func NewClient(
 	client *http.Client,
-	codec *Codec,
+	nego *Negotiation,
 	s selector.Selector,
 	marshalName string,
 	marshal func(any) ([]byte, error),
@@ -59,7 +59,7 @@ func NewClient(
 
 	return &Client{
 		client:   client,
-		codec:    codec,
+		nego:     nego,
 		selector: s,
 
 		marshalName: marshalName,
@@ -119,7 +119,7 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 
 	var reader io.Reader = rsp.Body
 	encName := rsp.Header.Get(header.ContentEncoding)
-	encodingReader, err := c.codec.contentEncoding(encName, reader)
+	encodingReader, err := c.nego.contentEncoding(encName, reader)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -134,7 +134,7 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 	var unmarshal UnmarshalFunc
 	var inputCharset encoding.Encoding
 	if h := rsp.Header.Get(header.ContentType); h != "" {
-		if unmarshal, inputCharset, err = c.codec.contentType(h); err != nil {
+		if unmarshal, inputCharset, err = c.nego.contentType(h); err != nil {
 			return
 		}
 
@@ -200,8 +200,8 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 		r.Header.Set(header.ContentType, qheader.BuildContentType(c.marshalName, header.UTF8))
 	}
 
-	r.Header.Set(header.Accept, c.codec.clientAcceptHeader)
-	r.Header.Set(header.AcceptEncoding, c.codec.acceptEncodingHeader)
+	r.Header.Set(header.Accept, c.nego.clientAcceptHeader)
+	r.Header.Set(header.AcceptEncoding, c.nego.acceptEncodingHeader)
 	if c.requestIDKey != "" {
 		r.Header.Set(c.requestIDKey, c.requestIDGen())
 	}
@@ -224,5 +224,5 @@ func (c *Client) Client() *http.Client { return c.client }
 //
 // 功能与 [NewClient] 相同，缺少的参数直接采用 [Server] 关联的字段。
 func (s *Server) NewClient(c *http.Client, sel selector.Selector, m string, marshal func(any) ([]byte, error)) *Client {
-	return NewClient(c, s.Codec(), sel, m, marshal, s.requestIDKey, s.UniqueID)
+	return NewClient(c, s.Negotiation(), sel, m, marshal, s.requestIDKey, s.UniqueID)
 }
