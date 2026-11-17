@@ -145,7 +145,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	var inputCharset encoding.Encoding
 	if h = r.Header.Get(header.ContentType); h != "" {
 		if unmarshal, inputCharset, err = s.codec.contentType(h); err != nil {
-			warn().Error(err)
+			warn().LocaleString(parseHeaderErr(header.ContentType, err))
 			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
 		}
@@ -154,7 +154,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	var inputEncoding io.ReadCloser
 	if h = r.Header.Get(header.ContentEncoding); h != "" {
 		if inputEncoding, err = s.codec.contentEncoding(h, inputReader); err != nil {
-			warn().Error(err)
+			warn().LocaleString(parseHeaderErr(header.ContentEncoding, err))
 			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
 		}

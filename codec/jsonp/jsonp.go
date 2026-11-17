@@ -54,7 +54,7 @@ func (j jsonp) Marshal(ctx *web.Context, v any) ([]byte, error) {
 
 	callback := q.String(string(j), "")
 	if callback == "" {
-		return nil, web.NewProblemError(ProblemCallbackUnset, locales.NewFieldError(string(j), web.StringPhrase("can not be empty")))
+		return nil, web.NewProblemError(ProblemCallbackUnset, locales.NewFieldError(string(j), locales.CanNotBeEmpty))
 	}
 
 	b := errwrap.StringBuilder{}
