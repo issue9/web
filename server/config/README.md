@@ -37,10 +37,10 @@
 |------|------|-----|------|------------------|------------------|
 | location,omitempty | location,omitempty | location,attr,omitempty | location,omitempty | bool | 是否在日志中显示调用位置<br /> |
 | created,omitempty | created,omitempty | created,omitempty | created,omitempty | string | 日志显示的时间格式<br />Go 的时间格式字符串，如果为空表示不显示；<br /> |
-| levels,omitempty | levels,omitempty | levels&gt;level,omitempty | levels,omitempty | [logs.Level](#logslevel) | 允许开启的通道<br />为空表示采用 \[AllLevels]<br /> |
+| levels,omitempty | levels,omitempty | levels&gt;level,omitempty | levels,omitempty | [logs.Level](#logslevel) | 允许开启的通道<br />为空表示采用 \[logs.AllLevels]<br /> |
 | std,omitempty | std,omitempty | std,attr,omitempty | std,omitempty | bool | 是否接管标准库的日志<br /> |
 | stackError,omitempty | stackError,omitempty | stackError,attr,omitempty | stackError,omitempty | bool | 是否显示错误日志的调用堆栈<br /> |
-| handlers | handlers | handlers&gt;handler | handlers | [logHandlerConfig](#loghandlerconfig) | 日志输出对象的配置<br />为空表示 \[NewNopHandler] 返回的对象。<br /> |
+| handlers | handlers | handlers&gt;handler | handlers | [logHandlerConfig](#loghandlerconfig) | 日志输出对象的配置<br />为空表示 \[logs.NewNopHandler] 返回的对象。<br /> |
 
 
 
@@ -153,7 +153,7 @@
 | JSON | YAML | XML | TOML | 类型 | 描述 |
 |------|------|-----|------|------------------|------------------|
 | types | types | type | types | string | Type content-type 的值<br />可以带通配符，比如 text/\* 表示所有 text/ 开头的 content-type 都采用此压缩方法。<br /> |
-| id | id | id,attr | id | string | IDs 压缩方法的 ID 列表<br />这些 ID 值必须是由 \[RegisterCompress] 注册的，否则无效，默认情况下支持以下类型：<br />  - deflate-default<br />  - deflate-best-compression<br />  - deflate-best-speed<br />  - gzip-default<br />  - gzip-best-compression<br />  - gzip-best-speed<br />  - compress-lsb-8<br />  - compress-msb-8<br />  - br-default<br />  - br-best-compression<br />  - br-best-speed<br />  - zstd-default<br /> |
+| id | id | id,attr | id | string | IDs 压缩方法的 ID 列表<br />这些 ID 值必须是由 \[RegisterCompressor] 注册的，否则无效，默认情况下支持以下类型：<br />  - deflate-default<br />  - deflate-best-compression<br />  - deflate-best-speed<br />  - gzip-default<br />  - gzip-best-compression<br />  - gzip-best-speed<br />  - compress-lsb-8<br />  - compress-msb-8<br />  - br-default<br />  - br-best-compression<br />  - br-best-speed<br />  - zstd-default<br /> |
 
 
 

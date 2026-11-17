@@ -35,7 +35,7 @@ type logsConfig struct {
 
 	// 允许开启的通道
 	//
-	// 为空表示采用 [AllLevels]
+	// 为空表示采用 [logs.AllLevels]
 	Levels []logs.Level `xml:"levels>level,omitempty" json:"levels,omitempty" yaml:"levels,omitempty" toml:"levels,omitempty"`
 
 	// 是否接管标准库的日志
@@ -46,7 +46,7 @@ type logsConfig struct {
 
 	// 日志输出对象的配置
 	//
-	// 为空表示 [NewNopHandler] 返回的对象。
+	// 为空表示 [logs.NewNopHandler] 返回的对象。
 	Handlers []*logHandlerConfig `xml:"handlers>handler" json:"handlers" yaml:"handlers" toml:"handlers"`
 
 	logs    *logs.Logs

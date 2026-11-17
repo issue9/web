@@ -19,7 +19,7 @@ import (
 	"github.com/issue9/web/selector"
 )
 
-// Client 用于访问远程的客户端
+// Client 用于访问由 [Server] 提供服务的客户端
 //
 // NOTE: 远程如果不是 [Server] 实现的服务，可能无法正确处理返回对象。
 type Client struct {
@@ -219,3 +219,10 @@ func (c *Client) URL(path string) (string, error) {
 }
 
 func (c *Client) Client() *http.Client { return c.client }
+
+// NewClient 基于当前对象的相关字段创建 [Client] 对象
+//
+// 功能与 [NewClient] 相同，缺少的参数直接采用 [Server] 关联的字段。
+func (s *Server) NewClient(c *http.Client, sel selector.Selector, m string, marshal func(any) ([]byte, error)) *Client {
+	return NewClient(c, s.Codec(), sel, m, marshal, s.requestIDKey, s.UniqueID)
+}

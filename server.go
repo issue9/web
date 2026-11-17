@@ -19,7 +19,6 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web/problems"
-	"github.com/issue9/web/selector"
 )
 
 type (
@@ -126,13 +125,6 @@ func NewServer(
 	srv.startup.Init(srv.routers.g)
 
 	return srv
-}
-
-// NewClient 基于当前对象的相关字段创建 [Client] 对象
-//
-// 功能与 [NewClient] 相同，缺少的参数直接采用 [Server] 关联的字段。
-func (s *Server) NewClient(c *http.Client, sel selector.Selector, m string, marshal func(any) ([]byte, error)) *Client {
-	return NewClient(c, s.Codec(), sel, m, marshal, s.requestIDKey, s.UniqueID)
 }
 
 // Config 当前项目配置文件的管理

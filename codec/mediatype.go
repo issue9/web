@@ -57,7 +57,7 @@ func ForkMediaType(mt MediaType, normal, problem string) MediaType {
 	return NewMediaType(normal, problem, mt.Marshal, mt.Unmarshal)
 }
 
-// NewNOP 创建一个空的 [MeidaType] 实例
+// NewNOP 创建一个空的 [MediaType] 实例
 //
 // 调用创建对象的方法都将返回 [codec.ErrUnsupported] 错误，名称也都为空。
 func NewNOP(name, problem string) MediaType {

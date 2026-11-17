@@ -90,10 +90,10 @@ func RegisterLogsHandler(b LogsHandlerBuilder, name ...string) {
 // name 为缓存的名称，这将在配置文件中被引用，如果存在同名，则会覆盖。
 func RegisterCache(b CacheBuilder, name ...string) { cacheFactory.register(b, name...) }
 
-// RegisterCompression 注册压缩方法
+// RegisterCompressor 注册压缩方法
 //
 // id 表示此压缩方法的唯一 ID，这将在配置文件中被引用；
-func RegisterCompression(id string, c web.Compressor) { compressorFactory.register(c, id) }
+func RegisterCompressor(id string, c web.Compressor) { compressorFactory.register(c, id) }
 
 // RegisterIDGenerator 注册唯一 ID 生成器
 //
@@ -158,22 +158,22 @@ func init() {
 
 	// RegisterCompression
 
-	RegisterCompression("deflate-default", codec.NewDeflate(flate.DefaultCompression, nil))
-	RegisterCompression("deflate-best-compression", codec.NewDeflate(flate.BestCompression, nil))
-	RegisterCompression("deflate-best-speed", codec.NewDeflate(flate.BestSpeed, nil))
+	RegisterCompressor("deflate-default", codec.NewDeflate(flate.DefaultCompression, nil))
+	RegisterCompressor("deflate-best-compression", codec.NewDeflate(flate.BestCompression, nil))
+	RegisterCompressor("deflate-best-speed", codec.NewDeflate(flate.BestSpeed, nil))
 
-	RegisterCompression("gzip-default", codec.NewGzip(gzip.DefaultCompression))
-	RegisterCompression("gzip-best-compression", codec.NewGzip(gzip.BestCompression))
-	RegisterCompression("gzip-best-speed", codec.NewGzip(gzip.BestSpeed))
+	RegisterCompressor("gzip-default", codec.NewGzip(gzip.DefaultCompression))
+	RegisterCompressor("gzip-best-compression", codec.NewGzip(gzip.BestCompression))
+	RegisterCompressor("gzip-best-speed", codec.NewGzip(gzip.BestSpeed))
 
-	RegisterCompression("compress-lsb-8", codec.NewLZW(lzw.LSB, 8))
-	RegisterCompression("compress-msb-8", codec.NewLZW(lzw.MSB, 8))
+	RegisterCompressor("compress-lsb-8", codec.NewLZW(lzw.LSB, 8))
+	RegisterCompressor("compress-msb-8", codec.NewLZW(lzw.MSB, 8))
 
-	RegisterCompression("br-default", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
-	RegisterCompression("br-best-compression", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
-	RegisterCompression("br-best-speed", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
+	RegisterCompressor("br-default", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
+	RegisterCompressor("br-best-compression", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
+	RegisterCompressor("br-best-speed", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
 
-	RegisterCompression("zstd-default", codec.NewZstd())
+	RegisterCompressor("zstd-default", codec.NewZstd())
 
 	// RegisterIDGenerator
 

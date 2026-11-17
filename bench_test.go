@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/goccy/go-yaml"
@@ -457,7 +456,6 @@ func BenchmarkServer_Serve(b *testing.B) {
 
 	defer srv.Run()()
 	defer srv.Close(0)
-	time.Sleep(500 * time.Millisecond)
 
 	b.Run("charset", func(b *testing.B) {
 		b.ReportAllocs()

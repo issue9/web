@@ -22,7 +22,7 @@ type compressConfig struct {
 
 	// IDs 压缩方法的 ID 列表
 	//
-	// 这些 ID 值必须是由 [RegisterCompress] 注册的，否则无效，默认情况下支持以下类型：
+	// 这些 ID 值必须是由 [RegisterCompressor] 注册的，否则无效，默认情况下支持以下类型：
 	//  - deflate-default
 	//  - deflate-best-compression
 	//  - deflate-best-speed

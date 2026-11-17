@@ -173,7 +173,7 @@ type configOf[T comparable] struct {
 // # 注册函数
 //
 // 当前包提供大量的注册函数，以用将某些无法直接采用序列化的内容转换可序列化的。
-// 比如通过 [RegisterCompression] 将 `gzip-default` 等字符串表示成压缩算法，
+// 比如通过 [RegisterCompressor] 将 `gzip-default` 等字符串表示成压缩算法，
 // 以便在配置文件进行指定。
 //
 // 所有的注册函数处理逻辑上都相似，碰上同名的会覆盖，否则是添加。
