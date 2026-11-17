@@ -12,6 +12,8 @@ import (
 )
 
 type (
+	ID = unique.Handle[string]
+
 	// Problem 基于 [RFC7807] 和 [RFC9457] 用于描述错误信息的对象
 	//
 	// 这是一个提供给客户端的信息，不能将敏感信息放于其中。
@@ -79,7 +81,7 @@ func (ps *Problems[T]) New() *Problem[T] {
 }
 
 // Init 初始化 p
-func (ps *Problems[T]) Init(p *Problem[T], id unique.Handle[string], printer *localeutil.Printer) *Problem[T] {
+func (ps *Problems[T]) Init(p *Problem[T], id ID, printer *localeutil.Printer) *Problem[T] {
 	item := ps.Get(id)
 	p.Type = item.Type
 	p.Title = item.Title.LocaleString(printer)

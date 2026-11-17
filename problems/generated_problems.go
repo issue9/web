@@ -111,7 +111,7 @@ func (p *Problems[T]) initProblems() {
 	p.add(&Item{Type: "https://iana.org/assignments/http-problem-types#digest-mismatched-values", ID: DigestMismatchedValues, Title: localeutil.StringPhrase("Mismatched Digest Values"), Status: 400})
 }
 
-var problemStatuses = map[int]unique.Handle[string]{
+var problemStatuses = map[int]ID{
 	http.StatusBadRequest:                    BadRequest,
 	http.StatusUnauthorized:                  Unauthorized,
 	http.StatusPaymentRequired:               PaymentRequired,

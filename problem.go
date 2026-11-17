@@ -6,7 +6,6 @@ package web
 
 import (
 	"errors"
-	"unique"
 
 	"github.com/issue9/web/problems"
 )
@@ -14,7 +13,7 @@ import (
 type Problem = problems.Problem[*Context]
 
 // Problem 返回指定 id 的 [Problem]
-func (ctx *Context) Problem(id unique.Handle[string]) *Problem {
+func (ctx *Context) Problem(id problems.ID) *Problem {
 	ps := ctx.Server().Problems()
 	p := ps.New()
 	return ps.Init(p, id, ctx.LocalePrinter()).WithInstance(ctx.ID())
@@ -27,7 +26,7 @@ func (ctx *Context) Problem(id unique.Handle[string]) *Problem {
 // 若 problemID 为空则使用默认值 [problems.ProblemInternalServerError]。
 //
 // problemID 同时也是日志分类的依据，比如所有 4xx 的日志会写入 WARN，其它的才会写入 ERROR。
-func (ctx *Context) Log(err error, problemID unique.Handle[string]) *Problem {
+func (ctx *Context) Log(err error, problemID problems.ID) *Problem {
 	if pe, ok := errors.AsType[*problems.Error](err); ok {
 		problemID = pe.ID()
 	} else {

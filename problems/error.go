@@ -4,16 +4,14 @@
 
 package problems
 
-import "unique"
-
 // Error 与指定的 Problem id 关联的错误对象
 type Error struct {
 	error
-	id unique.Handle[string]
+	id ID
 }
 
 // NewError 返回 [Error] 错误对象
-func NewError(problemID unique.Handle[string], err error) error {
+func NewError(problemID ID, err error) error {
 	if err == nil {
 		panic("参数 err 不能为空")
 	}
@@ -21,7 +19,7 @@ func NewError(problemID unique.Handle[string], err error) error {
 	return &Error{id: problemID, error: err}
 }
 
-func (err *Error) ID() unique.Handle[string] { return err.id }
+func (err *Error) ID() ID { return err.id }
 
 func (err *Error) Unwrap() error { return err.error }
 

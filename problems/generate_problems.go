@@ -138,7 +138,7 @@ func makeInitProblems(buf *errwrap.Buffer, kvs []status.Status, ianaRecords [][]
 
 // 生成 problemStatuses 变量
 func makeStatuses(buf *errwrap.Buffer, kvs []status.Status, ianaSize int) {
-	buf.WString("var problemStatuses=map[int]unique.Handle[string]{\n")
+	buf.WString("var problemStatuses=map[int]ID{\n")
 
 	for _, item := range kvs[:len(kvs)-ianaSize] {
 		buf.Printf("%s:%s,\n", "http."+item.Name, item.ID())

@@ -13,7 +13,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"unique"
 
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v10/header"
@@ -82,7 +81,7 @@ func parseHeaderErr(header string, err error) LocaleStringer {
 
 // 输出降级的错误页面
 // 在 Context 未初始化成功时，可以使用此方法
-func (s *Server) errorPage(w http.ResponseWriter, id unique.Handle[string]) {
+func (s *Server) errorPage(w http.ResponseWriter, id problems.ID) {
 	item := s.Problems().Get(id)
 	txt := item.Title.LocaleString(s.Locale().Printer())
 	http.Error(w, txt, item.Status)

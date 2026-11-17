@@ -16,7 +16,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"unique"
 
 	"github.com/issue9/localeutil"
 )
@@ -34,7 +33,7 @@ type Problems[T renderer] struct {
 }
 
 type Item struct {
-	ID unique.Handle[string] // 用于查找的唯一 ID
+	ID ID // 用于查找的唯一 ID
 
 	Type          string
 	Title, Detail localeutil.Stringer
@@ -103,7 +102,7 @@ func (ps *Problems[T]) add(p *Item) {
 }
 
 // Exists 查看指定 id 是否已经存在
-func (ps *Problems[T]) Exists(id unique.Handle[string]) bool {
+func (ps *Problems[T]) Exists(id ID) bool {
 	return slices.ContainsFunc(ps.problems, func(p *Item) bool { return p.ID == id })
 }
 
@@ -121,7 +120,7 @@ func (ps *Problems[T]) All() iter.Seq[*Item] {
 // Get 查找 id 对应的 [Item] 对象
 //
 // 如果找不到 id 对应的项会 panic
-func (ps *Problems[T]) Get(id unique.Handle[string]) *Item {
+func (ps *Problems[T]) Get(id ID) *Item {
 	if i := slices.IndexFunc(ps.problems, func(lp *Item) bool { return lp.ID == id }); i > -1 {
 		return ps.problems[i]
 	}
@@ -135,7 +134,7 @@ func IsProblem(status int) bool {
 }
 
 // FromStatus 将一个 HTTP 状态码转换为 Problem 的 ID
-func FromStatus(status int) (unique.Handle[string], bool) {
+func FromStatus(status int) (ID, bool) {
 	v, f := problemStatuses[status]
 	return v, f
 }
