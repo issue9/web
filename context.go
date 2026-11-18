@@ -51,14 +51,12 @@ type Context struct {
 	begin   time.Time
 	queries *Queries
 
-	originResponse    http.ResponseWriter // 原始的 http.ResponseWriter
-	writer            io.Writer
-	outputCompressor  Compressor
-	outputCharset     encoding.Encoding
-	outputCharsetName string
-	outputMediaType   MediaType
-	status            int // WriteHeader 保存的副本，非零表示已经输出。
-	wrote             bool
+	originResponse   http.ResponseWriter // 原始的 http.ResponseWriter
+	writer           io.Writer
+	outputCompressor Compressor
+	outputMediaType  MediaType
+	status           int // WriteHeader 保存的副本，非零表示已经输出。
+	wrote            bool
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
 	inputUnmarshal UnmarshalFunc
@@ -113,19 +111,6 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 	if mt == nil {
 		warn().LocaleString(Phrase("not found serialization for %s", h))
-		s.errorPage(w, problems.NotAcceptable)
-		return nil
-	}
-
-	h = r.Header.Get(header.AcceptCharset)
-	outputCharsetName, outputCharset, errs := qheader.ParseAcceptCharset(h)
-	if len(errs) > 0 {
-		warn().LocaleString(parseHeaderErr(header.AcceptCharset, unableParse(strings.Join(errs, ","))))
-		s.errorPage(w, problems.NotAcceptable)
-		return nil
-	}
-	if outputCharsetName == "" {
-		warn().LocaleString(Phrase("not found charset for %s", h))
 		s.errorPage(w, problems.NotAcceptable)
 		return nil
 	}
@@ -201,8 +186,6 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	ctx.originResponse = w
 	ctx.writer = w
 	ctx.outputCompressor = outputCompressor
-	ctx.outputCharset = outputCharset
-	ctx.outputCharsetName = outputCharsetName
 	ctx.outputMediaType = mt
 	ctx.status = 0
 	ctx.wrote = false
@@ -256,32 +239,6 @@ func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
 //
 // 一般源自客户端的 X-Request-ID 报头，如果不存在，则由 [Server.UniqueID] 生成。
 func (ctx *Context) ID() string { return ctx.id }
-
-// SetCharset 设置输出的字符集
-//
-// 不会修改 [Context.Request] 中的 Accept-Charset 报头，如果需要同时修改此报头
-// 可以通过 [Server.NewContext] 构建一个新 [Context] 对象。
-func (ctx *Context) SetCharset(charset string) {
-	if ctx.Wrote() {
-		panic("已有内容输出，不可再更改！")
-	}
-	if ctx.Charset() == charset {
-		return
-	}
-
-	outputCharsetName, outputCharset, errs := qheader.ParseAcceptCharset(charset)
-	if len(errs) > 0 {
-		panic(fmt.Sprintf("无法解析以下内容：%s", strings.Join(errs, ",")))
-	}
-	if outputCharsetName == "" {
-		panic(fmt.Sprintf("指定的字符集 %s 不存在", charset))
-	}
-	ctx.outputCharset = outputCharset
-	ctx.outputCharsetName = outputCharsetName
-}
-
-// Charset 输出的字符集
-func (ctx *Context) Charset() string { return ctx.outputCharsetName }
 
 // SetMediaType 设置输出的格式
 //

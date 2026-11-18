@@ -72,44 +72,13 @@ func BenchmarkContext_Render(b *testing.B) {
 	a := assert.New(b, false)
 	s := newTestServer(a, false)
 
-	b.Run("none", func(b *testing.B) {
+	b.Run("json;identity", func(b *testing.B) {
 		b.ReportAllocs()
-		for b.Loop() {
-			r := rest.Get(a, "/path").Header(header.AcceptEncoding, header.Identity).Header(header.Accept, header.JSON).Request()
-			w := httptest.NewRecorder()
-
-			ctx := s.NewContext(w, r, types.NewRoute())
-			ctx.apply(Response(http.StatusCreated, objectInst))
-			ctx.freeContext()
-
-			a.Equal(w.Body.Bytes(), objectJSONString)
-		}
-	})
-
-	b.Run("utf8", func(b *testing.B) {
-		b.ReportAllocs()
+		var body *bytes.Buffer
 		for b.Loop() {
 			r := rest.Get(a, "/path").
-				Header(header.Accept, header.JSON).
-				Header(header.AcceptCharset, header.UTF8).
 				Header(header.AcceptEncoding, header.Identity).
-				Request()
-			w := httptest.NewRecorder()
-			ctx := s.NewContext(w, r, types.NewRoute())
-			ctx.apply(Response(http.StatusCreated, objectInst))
-			ctx.freeContext()
-
-			a.Equal(w.Body.Bytes(), objectJSONString)
-		}
-	})
-
-	b.Run("gbk", func(b *testing.B) {
-		b.ReportAllocs()
-		for b.Loop() {
-			r := rest.Get(a, "/path").
 				Header(header.Accept, header.JSON).
-				Header(header.AcceptCharset, "gbk").
-				Header(header.AcceptEncoding, header.Identity).
 				Request()
 			w := httptest.NewRecorder()
 
@@ -117,16 +86,17 @@ func BenchmarkContext_Render(b *testing.B) {
 			ctx.apply(Response(http.StatusCreated, objectInst))
 			ctx.freeContext()
 
-			a.Equal(w.Body.Bytes(), objectGBKBytes)
+			body = w.Body
 		}
+		a.Equal(body.Bytes(), objectJSONString)
 	})
 
-	b.Run("charset; encoding", func(b *testing.B) {
+	b.Run("json,deflate", func(b *testing.B) {
 		b.ReportAllocs()
+		var body *bytes.Buffer
 		for b.Loop() {
 			r := rest.Get(a, "/path").
 				Header(header.Accept, header.JSON).
-				Header(header.AcceptCharset, "gbk").
 				Header(header.AcceptEncoding, "deflate").
 				Request()
 			w := httptest.NewRecorder()
@@ -135,9 +105,10 @@ func BenchmarkContext_Render(b *testing.B) {
 			ctx.apply(Response(http.StatusCreated, objectInst))
 			ctx.freeContext()
 
-			data, err := io.ReadAll(flate.NewReader(w.Body))
-			a.NotError(err).NotNil(data).Equal(data, objectGBKBytes)
+			body = w.Body
 		}
+		data, err := io.ReadAll(flate.NewReader(body))
+		a.NotError(err).NotNil(data).Equal(data, objectJSONString)
 	})
 }
 

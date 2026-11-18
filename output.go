@@ -12,7 +12,6 @@ import (
 	"slices"
 
 	"github.com/issue9/mux/v10/header"
-	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/qheader"
 	"github.com/issue9/web/problems"
@@ -125,12 +124,6 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 			closes = append(closes, w)
 		}
 
-		if !qheader.CharsetIsNop(ctx.outputCharset) {
-			w := transform.NewWriter(ctx.writer, ctx.outputCharset.NewEncoder())
-			ctx.writer = w
-			closes = append(closes, w)
-		}
-
 		if l := len(closes); l > 0 {
 			ctx.OnExit(func(*Context, int) {
 				for _, c := range slices.Backward(closes) {
@@ -172,7 +165,7 @@ func (ctx *Context) writeHeaders(problem bool) {
 		return
 	}
 
-	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.MediaType(problem), ctx.Charset()))
+	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.MediaType(problem), header.UTF8))
 
 	if id := ctx.LanguageTag().String(); id != "" {
 		ctx.Header().Set(header.ContentLanguage, id)

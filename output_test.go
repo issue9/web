@@ -65,25 +65,11 @@ func TestContext_Render(t *testing.T) {
 		Equal(w.Header().Get(header.ContentLanguage), ""). // 指定了输出语言，也返回空。
 		Equal(w.Header().Get(header.ContentType), "")
 
-	// accept,accept-language,accept-charset
-	w = httptest.NewRecorder()
-	r = rest.Get(a, "/p1").
-		Header(header.Accept, header.JSON).
-		Header(header.AcceptLanguage, "zh-hans").
-		Header(header.AcceptCharset, "gbk").
-		Header(header.AcceptEncoding, header.Identity).
-		Request()
-	ctx = srv.NewContext(w, r, types.NewRoute())
-	a.NotNil(ctx)
-	ctx.Render(http.StatusCreated, objectInst)
-	a.Equal(w.Body.Bytes(), objectGBKBytes)
-
 	// 同时指定了 accept,accept-language,accept-charset 和 accept-encoding
 	w = httptest.NewRecorder()
 	r = rest.Get(a, "/p1").
 		Header(header.Accept, header.JSON).
 		Header(header.AcceptLanguage, "zh-hans").
-		Header(header.AcceptCharset, "gbk").
 		Header(header.AcceptEncoding, "deflate").
 		Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
@@ -93,7 +79,10 @@ func TestContext_Render(t *testing.T) {
 	a.Equal(w.Result().StatusCode, http.StatusCreated).
 		Equal(w.Header().Get(header.ContentEncoding), "deflate")
 	data, err := io.ReadAll(flate.NewReader(w.Body))
-	a.NotError(err).Equal(data, objectGBKBytes)
+	a.NotError(err).Equal(data, objectJSONString).
+		Equal(w.Header().Get(header.ContentType), header.JSON+"; charset=utf-8").
+		Equal(w.Header().Get(header.ContentLanguage), language.MustParse("zh-hans").String()).
+		Equal(w.Header().Get(header.ContentEncoding), "deflate")
 
 	// 同时通过 ctx.Write 和 ctx.Marshal 输出内容
 	w = httptest.NewRecorder()
@@ -124,8 +113,7 @@ func TestContext_Render(t *testing.T) {
 	r = rest.Get(a, "/p1").Header(header.Accept, "application/test").Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx, srv.logBuf.String()).
-		Equal(ctx.MediaType(false), "application/test").
-		Equal(ctx.Charset(), header.UTF8)
+		Equal(ctx.MediaType(false), "application/test")
 	ctx.Render(http.StatusCreated, "任意值")
 	ctx.freeContext()
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)
@@ -135,8 +123,7 @@ func TestContext_Render(t *testing.T) {
 	r = rest.Get(a, "/p1").Header(header.Accept, "application/test").Request()
 	ctx = srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx).
-		Equal(ctx.MediaType(false), "application/test").
-		Equal(ctx.Charset(), header.UTF8)
+		Equal(ctx.MediaType(false), "application/test")
 	ctx.Render(http.StatusCreated, errors.New("error"))
 	ctx.freeContext()
 	a.Equal(w.Result().StatusCode, http.StatusInternalServerError)

@@ -509,5 +509,4 @@ func (nego *Negotiation) setVary(h http.Header) {
 	h.Add(header.Vary, header.Accept)
 	h.Add(header.Vary, header.AcceptLanguage)
 	h.Add(header.Vary, header.AcceptEncoding)
-	h.Add(header.Vary, header.AcceptCharset)
 }

@@ -336,7 +336,6 @@ func TestHTTPServer_NewContext(t *testing.T) {
 	router.Get("/path", func(ctx *Context) Responser {
 		a.NotNil(ctx).NotEmpty(ctx.ID())
 		a.Equal(ctx.MediaType(false), header.JSON).
-			Equal(ctx.Charset(), header.UTF8).
 			Equal(ctx.LanguageTag(), language.SimplifiedChinese).
 			NotNil(ctx.LocalePrinter())
 		return nil

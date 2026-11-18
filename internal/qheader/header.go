@@ -11,7 +11,6 @@ import (
 
 	"github.com/issue9/mux/v10/header"
 	"golang.org/x/text/encoding"
-	"golang.org/x/text/encoding/htmlindex"
 	xunicode "golang.org/x/text/encoding/unicode"
 )
 
@@ -42,35 +41,6 @@ func ParseWithParam(header, param string) (mt, paramValue string) {
 	}
 
 	return t, ""
-}
-
-// ParseAcceptCharset 根据 Accept-Charset 报头的内容获取其最值的字符集信息
-//
-// 传递 * 获取返回默认的字符集相关信息，即 utf-8
-// 其它值则按值查找，或是在找不到时返回空值。
-//
-// 返回的 name 值可能会与 header 中指定的不一样，比如 gb_2312 会被转换成 gbk
-func ParseAcceptCharset(h string) (name string, enc encoding.Encoding, errs []string) {
-	if h == "" || h == "*" {
-		return header.UTF8, nil, nil
-	}
-
-	items, _, errs := ParseQHeader(h, "*")
-
-	for _, item := range items {
-		var err error
-		if enc, err = htmlindex.Get(item.Value); err != nil { // err != nil 表示未找到，继续查找
-			continue
-		}
-
-		// 转换成官方的名称
-		if name, err = htmlindex.Name(enc); err != nil { // 不存在，直接使用用户上传的名称
-			name = item.Value
-		}
-		return name, enc, errs
-	}
-
-	return "", nil, errs
 }
 
 // CharsetIsNop 指定的编码是否不需要任何额外操作

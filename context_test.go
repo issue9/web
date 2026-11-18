@@ -82,14 +82,6 @@ func TestNewContext(t *testing.T) {
 		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 	})
 
-	t.Run("accept-charset", func(*testing.T) {
-		w := httptest.NewRecorder()
-		r := rest.Get(a, "/path").Header(header.AcceptCharset, "111").Request()
-
-		s.NewContext(w, r, types.NewRoute())
-		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
-	})
-
 	t.Run("accept-encoding", func(*testing.T) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Header(header.AcceptEncoding, "*;q=0").Request()
@@ -127,28 +119,6 @@ func TestContext_SetMediaType(t *testing.T) {
 	ctx.Render(200, 200) // 输出内容
 	a.PanicString(func() {
 		ctx.SetMediaType(header.JSON)
-	}, "已有内容输出，不可再更改！")
-}
-
-func TestContext_SetCharset(t *testing.T) {
-	a := assert.New(t, false)
-	srv := newTestServer(a, false)
-
-	w := httptest.NewRecorder()
-	r := rest.Post(a, "/path", []byte("123")).Header(header.Accept, header.JSON).Request()
-	ctx := srv.NewContext(w, r, types.NewRoute())
-	a.NotNil(ctx)
-
-	a.PanicString(func() {
-		ctx.SetCharset("not-exists")
-	}, "指定的字符集 not-exists 不存在")
-
-	ctx.SetCharset("gb2312")
-	a.Equal(ctx.Charset(), "gbk")
-
-	ctx.Render(200, 200) // 输出内容
-	a.PanicString(func() {
-		ctx.SetCharset("gb18030")
 	}, "已有内容输出，不可再更改！")
 }
 
