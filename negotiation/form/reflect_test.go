@@ -130,7 +130,7 @@ func TestMarshalWithFormTag(t *testing.T) {
 		Ignore:   "i",
 		unexport: true,
 	}
-	a.NotError(umarshalForm(strings.NewReader(tagObjectString), obj)).Equal(obj, tagObjectData)
+	a.NotError(unmarshalForm(strings.NewReader(tagObjectString), obj)).Equal(obj, tagObjectData)
 
 	// anonymous marshal
 	data, err = marshalForm(nil, anonymousData)
@@ -138,7 +138,7 @@ func TestMarshalWithFormTag(t *testing.T) {
 
 	// anonymous unmarshal
 	anoobj := &anonymousObject{}
-	a.NotError(umarshalForm(strings.NewReader(anonymousString), anoobj)).Equal(anoobj, anonymousData)
+	a.NotError(unmarshalForm(strings.NewReader(anonymousString), anoobj)).Equal(anoobj, anonymousData)
 
 	// nest marshal
 	data, err = marshalForm(nil, nestData)
@@ -146,5 +146,5 @@ func TestMarshalWithFormTag(t *testing.T) {
 
 	// nest unmarshal
 	nestObj := &nestObject{}
-	a.NotError(umarshalForm(strings.NewReader(nestString), nestObj)).Equal(nestObj, nestData)
+	a.NotError(unmarshalForm(strings.NewReader(nestString), nestObj)).Equal(nestObj, nestData)
 }

@@ -67,7 +67,7 @@ type Unmarshaler interface {
 
 // New 提供对 www-form-urlencoded 编码的支持
 func New() negotiation.MediaType {
-	return negotiation.NewMediaType(header.FormData, "", marshalForm, umarshalForm)
+	return negotiation.NewMediaType(header.FormData, "", marshalForm, unmarshalForm)
 }
 
 // marshalForm 针对 www-form-urlencoded 内容的解码实现
@@ -94,13 +94,13 @@ func marshalForm(_ *web.Context, v any) ([]byte, error) {
 	return []byte(vals.Encode()), nil
 }
 
-// umarshalForm 针对 www-form-urlencoded 内容的编码实现
+// unmarshalForm 针对 www-form-urlencoded 内容的编码实现
 //
 // 按以下顺序解析内容：
 //   - 如果实现 [Unmarshaler] 接口，则调用该接口；
 //   - 如果是 [url.Values] 对象，则依次赋值每个对象；
 //   - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
-func umarshalForm(r io.Reader, v any) error {
+func unmarshalForm(r io.Reader, v any) error {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return err

@@ -83,16 +83,16 @@ func TestUnmarshal(t *testing.T) {
 	a := assert.New(t, false)
 
 	v := url.Values{}
-	a.NotError(umarshalForm(strings.NewReader(""), v))
+	a.NotError(unmarshalForm(strings.NewReader(""), v))
 	a.Equal(len(v), 0)
 
 	v = url.Values{}
-	a.Error(umarshalForm(strings.NewReader("%"), v))
+	a.Error(unmarshalForm(strings.NewReader("%"), v))
 
-	a.NotError(umarshalForm(strings.NewReader(formString), &struct{}{}))
+	a.NotError(unmarshalForm(strings.NewReader(formString), &struct{}{}))
 
 	v = url.Values{}
-	a.NotError(umarshalForm(strings.NewReader(formString), v)).
+	a.NotError(unmarshalForm(strings.NewReader(formString), v)).
 		Equal(len(v), 2).
 		Equal(v.Get("name"), "Ava").
 		Equal(v.Get("friend"), "Jess").
@@ -100,5 +100,5 @@ func TestUnmarshal(t *testing.T) {
 
 	// Unmarshaler 类型
 	obj := &object{}
-	a.NotError(umarshalForm(strings.NewReader(formString), obj)).Equal(obj, objectData)
+	a.NotError(unmarshalForm(strings.NewReader(formString), obj)).Equal(obj, objectData)
 }
