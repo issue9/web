@@ -97,10 +97,10 @@ func WithMediaType(t ...string) Option {
 		for _, tt := range t {
 			found := false
 
-			for k, v := range d.s.Negotiation().MediaTypes() {
-				if k == tt {
+			for mt := range d.s.Negotiation().MediaTypes() {
+				if mt.Name() == tt {
 					found = true
-					d.mediaTypes[tt] = v
+					d.mediaTypes[tt] = mt.ProblemName()
 				}
 			}
 

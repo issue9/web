@@ -149,7 +149,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 		inputReader = transform.NewReader(inputReader, inputCharset.NewDecoder())
 	}
 
-	tag := clientAcceptLanguage(s, r.Header.Get(header.AcceptLanguage))
+	tag := s.Negotiation().acceptLanguage(r.Header.Get(header.AcceptLanguage))
 
 	// 以上是获取构建 Context 的必要参数，并未真正构建 Context，
 	// 保证 ID 不为空无任何意义，因为没有后续的执行链可追踪的。
@@ -336,14 +336,6 @@ func (ctx *Context) freeContext() {
 //
 // 此方法添加的函数会先于 [Server.OnExitContext] 添加的函数执行。
 func (ctx *Context) OnExit(f OnExitContextFunc) { ctx.exits = append(ctx.exits, f) }
-
-func clientAcceptLanguage(s *Server, h string) language.Tag {
-	if h == "" {
-		return s.Negotiation().Language()
-	}
-	tag, _ := language.MatchStrings(s.Negotiation().Catalog().Matcher(), h)
-	return tag
-}
 
 // ClientIP 返回客户端的 IP 地址及端口
 //

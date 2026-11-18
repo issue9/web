@@ -387,6 +387,35 @@ func TestNegotiation_Sprintf(t *testing.T) {
 
 func TestNegotiation_acceptLanguage(t *testing.T) {
 	a := assert.New(t, false)
+	nego := newNegotiation(a, nil)
+
+	b := nego.Catalog()
+	a.NotError(b.SetString(language.Und, "lang", "und"))
+	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
+	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
+	a.NotError(b.SetString(language.AmericanEnglish, "lang", "en_US"))
+
+	tag := nego.acceptLanguage("")
+	a.Equal(tag, nego.Language(), "v1:%s, v2:%s", tag.String(), language.Und.String())
+
+	tag = nego.acceptLanguage("zh") // 匹配 zh-hans
+	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
+
+	tag = nego.acceptLanguage("zh-Hant")
+	a.Equal(tag, language.TraditionalChinese, "v1:%s, v2:%s", tag.String(), language.TraditionalChinese.String())
+
+	tag = nego.acceptLanguage("zh-Hans")
+	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
+
+	tag = nego.acceptLanguage("english") // english 非正确的 tag，但是常用。
+	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
+
+	tag = nego.acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
+	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
+}
+
+func TestNegotiation_acceptLanguageHeader(t *testing.T) {
+	a := assert.New(t, false)
 	s := make(config.Serializer, 2)
 	s.Add(xml.Marshal, xml.Unmarshal, ".xml")
 	s.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")

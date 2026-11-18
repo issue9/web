@@ -87,11 +87,11 @@ const maxPrinterIdle = 10 * time.Minute // 缓存项的空闲时长
 
 // NewNegotiation 声明 [Negotiation] 对象
 //
-// conf 为加载配置文件的对象，[Negotiation.LoadMessags] 使用该值加载本地化的语言文件。
+// conf 为加载配置文件的对象，[Negotiation.LoadMessages] 使用该值加载本地化的语言文件。
 func NewNegotiation(lang language.Tag, conf *config.Config) *Negotiation {
 	b := catalog.NewBuilder(catalog.Fallback(lang))
 
-	// 保证 b 中包含一条 id 语言的翻译项，这样可以始终让 Locale.Printer 的对象始终是有值的。
+	// 保证 b 中包含一条 id 语言的翻译项，这样可以始终让 Negotiation.LocalePrinter 的对象始终是有值的。
 	if err := b.SetString(lang, "_____", "_____"); err != nil {
 		panic(err)
 	}
@@ -136,7 +136,7 @@ func (nego *Negotiation) Catalog() *catalog.Builder { return nego.builder }
 //
 // 根据 [Server.Config] 处理文件格式，如果文件格式不被 [Server.Config] 支持，将无法加载。
 func (nego *Negotiation) LoadMessages(glob string, fsys ...fs.FS) error {
-	if err := locale.Load(nego.config.Serializer(), nego.builder, glob, fsys...); err != nil {
+	if err := locale.Load(nego.config.Serializer(), nego.Catalog(), glob, fsys...); err != nil {
 		return err
 	}
 
@@ -156,8 +156,7 @@ func (nego *Negotiation) Sprintf(key string, v ...any) string {
 
 // NewLocalePrinter 声明最符合 tag 的 [message.Printer] 对象
 //
-// NOTE: 每当给 [Locale.SetString]、[Locale.SetMacro] 和 [Locale.Set] 传递新的 [language.Tag]
-// 值时，可能造成 NewLocalePrinter 相同的入参而返回不同的返回对象的情况。
+// NOTE: 每当更新 [Negotiation.Catalog] 时，可能造成 NewLocalePrinter 相同的入参而返回不同的返回对象的情况。
 func (nego *Negotiation) NewLocalePrinter(id language.Tag) *message.Printer {
 	if id == nego.Language() {
 		return nego.LocalePrinter()
@@ -265,27 +264,19 @@ func (nego *Negotiation) AddMediaType(mt MediaType, requestAccept, responseAccep
 	return nego
 }
 
-// 根据客户端的 Content-Encoding 报头对 r 进行包装
-//
-// name 编码名称，即 Content-Encoding 报头内容；
-// r 为未解码的内容；
-func (nego *Negotiation) contentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
-	if name == "" {
-		return io.NopCloser(r), nil
-	}
-
-	if c, f := sliceutil.At(nego.compressions, func(item *compression, _ int) bool { return item.compressor.Name() == name }); f {
-		return c.compressor.NewDecoder(r)
-	}
-	return nil, NewError("not found compress for %s", name)
-}
-
 func unableParse(v string) error { return localeutil.Error("unable parse %s", v) }
+
+// 根据客户端的 Accept-Language 报头获取最适合的语言
+func (nego *Negotiation) acceptLanguage(h string) language.Tag {
+	if h == "" {
+		return nego.Language()
+	}
+	tag, _ := language.MatchStrings(nego.Catalog().Matcher(), h)
+	return tag
+}
 
 // 根据客户端的 Accept-Encoding 报头选择是适合的压缩方法
 //
-// 如果返回的 c 为空值表示不需要压缩。
-// 当有多个符合时，按添加顺序拿第一个符合条件数据。
 // 如果 h 为空，那么将被设置为默认值 ＊；
 func (nego *Negotiation) acceptEncoding(contentType, h string) (c Compressor, err error) {
 	// 规则如下：
@@ -344,7 +335,7 @@ func (nego *Negotiation) acceptEncoding(contentType, h string) (c Compressor, er
 	if hasAny {
 		for _, idx := range indexes {
 			c := nego.compressions[idx]
-			if !denied(c.compressor.Name(), deny) {
+			if !mediaTypeIsDenied(c.compressor.Name(), deny) {
 				return c.compressor, nil
 			}
 		}
@@ -354,56 +345,6 @@ func (nego *Negotiation) acceptEncoding(contentType, h string) (c Compressor, er
 		return nil, localeutil.Error("client disabled identity")
 	}
 	return nil, nil
-}
-
-func (nego *Negotiation) getMatchCompresses(contentType string) []int {
-	indexes := make([]int, 0, len(nego.compressions))
-
-LOOP:
-	for index, c := range nego.compressions {
-		if c.wildcard {
-			indexes = append(indexes, index)
-			continue
-		}
-
-		for _, s := range c.types {
-			if s == contentType {
-				indexes = append(indexes, index)
-				continue LOOP
-			}
-		}
-
-		for _, p := range c.wildcardSuffix {
-			if strings.HasPrefix(contentType, p) {
-				indexes = append(indexes, index)
-				continue LOOP
-			}
-		}
-	}
-
-	return indexes
-}
-
-// 从请求端提交的 Content-Type 报头中获取解码和字符集函数
-//
-// h 表示 Content-Type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
-func (nego *Negotiation) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
-	mt, charset := qheader.ParseWithParam(h, "charset")
-
-	item := nego.searchFunc(func(s string) bool { return s == mt })
-	if item == nil {
-		return nil, nil, NewError("not found serialization function for %s", mt)
-	}
-
-	if charset == "" || charset == header.UTF8 {
-		return item.Unmarshal, nil, nil
-	}
-	c, err := htmlindex.Get(charset)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return item.Unmarshal, c, nil
 }
 
 // 从请求端提交的 Accept 报头解析出所需要的解码函数
@@ -439,7 +380,8 @@ func (nego *Negotiation) accept(h string) (MediaType, error) {
 		}
 
 		for _, mt := range nego.mediaTypes {
-			if match(item.Value, mt) {
+			name, mn := item.Value, mt.Name()
+			if name == mn || matchPrefix(mn, name) {
 				return mt, nil
 			}
 		}
@@ -448,7 +390,7 @@ func (nego *Negotiation) accept(h string) (MediaType, error) {
 	// 在 accept 中未找到符合的，且指定 */*，挑一个服务器支持且不在 deny 中的
 	if hasAny {
 		for _, mt := range nego.mediaTypes {
-			if !denied(mt.Name(), deny) {
+			if !mediaTypeIsDenied(mt.Name(), deny) {
 				return mt, nil
 			}
 		}
@@ -457,29 +399,86 @@ func (nego *Negotiation) accept(h string) (MediaType, error) {
 	return nil, nil
 }
 
-func match(name string, mt MediaType) bool {
-	return name == mt.Name() ||
-		(strings.HasSuffix(name, "/*") && strings.HasPrefix(mt.Name(), name[:len(name)-1]))
-}
-
 // name 是否在 deny 中
-func denied(name string, deny []string) bool {
+func mediaTypeIsDenied(name string, deny []string) bool {
 	for _, d := range deny {
-		if d == "*/*" || d == name {
-			return true
-		}
-		if strings.HasSuffix(d, "/*") && strings.HasPrefix(name, d[:len(d)-1]) {
+		if d == "*/*" || d == name || matchPrefix(name, d) {
 			return true
 		}
 	}
 	return false
 }
 
-func (nego *Negotiation) searchFunc(match func(string) bool) MediaType {
-	item, _ := sliceutil.At(nego.mediaTypes, func(i MediaType, _ int) bool {
-		return match(i.Name()) || match(i.ProblemName())
+// match 为 XX/* 且 v 符合 match 的规则
+func matchPrefix(v, match string) bool {
+	return strings.HasSuffix(match, "/*") && strings.HasPrefix(v, match[:len(match)-1])
+}
+
+func (nego *Negotiation) getMatchCompresses(contentType string) []int {
+	indexes := make([]int, 0, len(nego.compressions))
+
+LOOP:
+	for index, c := range nego.compressions {
+		if c.wildcard {
+			indexes = append(indexes, index)
+			continue
+		}
+
+		for _, s := range c.types {
+			if s == contentType {
+				indexes = append(indexes, index)
+				continue LOOP
+			}
+		}
+
+		for _, p := range c.wildcardSuffix {
+			if strings.HasPrefix(contentType, p) {
+				indexes = append(indexes, index)
+				continue LOOP
+			}
+		}
+	}
+
+	return indexes
+}
+
+// 根据客户端的 Content-Encoding 报头对 r 进行包装
+//
+// name 编码名称，即 Content-Encoding 报头内容；
+// r 为未解码的内容；
+func (nego *Negotiation) contentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
+	if name == "" {
+		return io.NopCloser(r), nil
+	}
+
+	if c, f := sliceutil.At(nego.compressions, func(item *compression, _ int) bool { return item.compressor.Name() == name }); f {
+		return c.compressor.NewDecoder(r)
+	}
+	return nil, NewError("not found compress for %s", name)
+}
+
+// 从请求端提交的 Content-Type 报头中获取解码和字符集函数
+//
+// h 表示 Content-Type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
+func (nego *Negotiation) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
+	mt, charset := qheader.ParseWithParam(h, "charset")
+
+	item, found := sliceutil.At(nego.mediaTypes, func(i MediaType, _ int) bool {
+		return i.Name() == mt || i.ProblemName() == mt
 	})
-	return item
+	if !found {
+		return nil, nil, NewError("not found serialization function for %s", mt)
+	}
+
+	if charset == "" || charset == header.UTF8 {
+		return item.Unmarshal, nil, nil
+	}
+	c, err := htmlindex.Get(charset)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return item.Unmarshal, c, nil
 }
 
 // CanCompress 当前是否拥有压缩功能
@@ -488,17 +487,15 @@ func (nego *Negotiation) CanCompress() bool { return !nego.disableCompress }
 // SetCompress 设置压缩功能
 //
 // 在服务器性能吃紧的情况下可以采用此方法禁用压缩。
-//
-// NOTE: 仅对输出内容启作用，读取内容始终是按照提交的 Content-Encoding 指定算法进行解析。
 func (nego *Negotiation) SetCompress(enable bool) { nego.disableCompress = !enable }
 
 // MediaTypes 返回支持的所有媒体类型
 //
 // 键名和键值分别为正常和 problem 下的名称。
-func (nego *Negotiation) MediaTypes() iter.Seq2[string, string] {
-	return func(yield func(string, string) bool) {
+func (nego *Negotiation) MediaTypes() iter.Seq[MediaType] {
+	return func(yield func(MediaType) bool) {
 		for _, v := range nego.mediaTypes {
-			if !yield(v.Name(), v.ProblemName()) {
+			if !yield(v) {
 				break
 			}
 		}

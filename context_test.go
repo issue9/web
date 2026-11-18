@@ -244,35 +244,6 @@ func TestContext_IsIdempotent(t *testing.T) {
 	a.False(ctx.IsIdempotent())
 }
 
-func TestClientAcceptLanguage(t *testing.T) {
-	a := assert.New(t, false)
-
-	srv := newTestServer(a, false)
-	b := srv.Negotiation().Catalog()
-	a.NotError(b.SetString(language.Und, "lang", "und"))
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
-	a.NotError(b.SetString(language.AmericanEnglish, "lang", "en_US"))
-
-	tag := clientAcceptLanguage(srv.Server, "")
-	a.Equal(tag, srv.Negotiation().Language(), "v1:%s, v2:%s", tag.String(), language.Und.String())
-
-	tag = clientAcceptLanguage(srv.Server, "zh") // 匹配 zh-hans
-	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
-
-	tag = clientAcceptLanguage(srv.Server, "zh-Hant")
-	a.Equal(tag, language.TraditionalChinese, "v1:%s, v2:%s", tag.String(), language.TraditionalChinese.String())
-
-	tag = clientAcceptLanguage(srv.Server, "zh-Hans")
-	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
-
-	tag = clientAcceptLanguage(srv.Server, "english") // english 非正确的 tag，但是常用。
-	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
-
-	tag = clientAcceptLanguage(srv.Server, "zh-Hans;q=0.1,zh-Hant;q=0.3,en")
-	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
-}
-
 func TestContext_ClientIP(t *testing.T) {
 	a := assert.New(t, false)
 	r := rest.Post(a, "/path", []byte("123")).Request()
