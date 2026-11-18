@@ -134,7 +134,7 @@ func (nego *Negotiation) Catalog() *catalog.Builder { return nego.builder }
 
 // LoadMessages 从 fsys 中加载符合 glob 的本地化文件
 //
-// 根据 [Server.Config] 处理文件格式，如果文件格式不被 [Server.Config] 支持，将无法加载。
+// 根据 [Server.Config] 处理文件格式，如果文件格式不被支持，将无法加载。
 func (nego *Negotiation) LoadMessages(glob string, fsys ...fs.FS) error {
 	if err := locale.Load(nego.config.Serializer(), nego.Catalog(), glob, fsys...); err != nil {
 		return err
@@ -180,10 +180,9 @@ func (nego *Negotiation) NewLocalePrinter(id language.Tag) *message.Printer {
 // AddCompressor 添加新的压缩算法
 //
 // t 表示适用的 content-type 类型，可以包含通配符，比如：
-//
-//	application/json
-//	text/*
-//	*
+//   - application/json
+//   - text/*
+//   - *
 //
 // 如果为空，则和 * 是相同的，表示匹配所有。
 func (nego *Negotiation) AddCompressor(c Compressor, t ...string) *Negotiation {
@@ -233,9 +232,9 @@ func buildCompression(c Compressor, types []string) *compression {
 
 // AddMediaType 添加媒体类型
 //
-// requestAccept 是否出现在客户端请求的 accept 报头中；
-// responseAccept 是否出现在服务端返回的 accept 报头中；
-func (nego *Negotiation) AddMediaType(mt MediaType, requestAccept, responseAccept bool) *Negotiation {
+// clientAccept 作为客户端请求时，出现在提交的 accept 报头中；
+// serverAccept 作为服务端请求时，出现在反馈给客户端的 accept 报头中；
+func (nego *Negotiation) AddMediaType(mt MediaType, clientAccept, serverAccept bool) *Negotiation {
 	if mt == nil {
 		panic("参数 mt 不能为空")
 	}
@@ -247,14 +246,14 @@ func (nego *Negotiation) AddMediaType(mt MediaType, requestAccept, responseAccep
 
 	nego.mediaTypes = append(nego.mediaTypes, mt)
 
-	if requestAccept {
+	if clientAccept {
 		if nego.clientAcceptHeader != "" {
 			nego.clientAcceptHeader += ", "
 		}
 		nego.clientAcceptHeader += mt.Name()
 	}
 
-	if responseAccept {
+	if serverAccept {
 		if nego.serverAcceptHeader != "" {
 			nego.serverAcceptHeader += ", "
 		}
@@ -291,7 +290,7 @@ func (nego *Negotiation) acceptEncoding(contentType, h string) (c Compressor, er
 	//
 	// 则因为 * 的 q 值比较高，而返回 * 匹配的内容
 	//
-	// */*;q=0 表示匹配所有未列出的编码
+	// *;q=0 表示匹配所有未列出的编码
 
 	if len(nego.compressions) == 0 {
 		return
@@ -349,7 +348,7 @@ func (nego *Negotiation) acceptEncoding(contentType, h string) (c Compressor, er
 
 // 从请求端提交的 Accept 报头解析出所需要的解码函数
 //
-// 如果 h 为空，那么将被设置为默认值 ＊；
+// 如果 h 为空，那么将被设置为默认值 ＊/*；
 func (nego *Negotiation) accept(h string) (MediaType, error) {
 	// 规则如下：
 	//  - 按 q 从大到小进行排序；
@@ -490,8 +489,6 @@ func (nego *Negotiation) CanCompress() bool { return !nego.disableCompress }
 func (nego *Negotiation) SetCompress(enable bool) { nego.disableCompress = !enable }
 
 // MediaTypes 返回支持的所有媒体类型
-//
-// 键名和键值分别为正常和 problem 下的名称。
 func (nego *Negotiation) MediaTypes() iter.Seq[MediaType] {
 	return func(yield func(MediaType) bool) {
 		for _, v := range nego.mediaTypes {

@@ -27,9 +27,9 @@ func TestClient_NewRequest(t *testing.T) {
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("https://example.com"))
-	c := NewClient(nil, nego, sel, header.JSON, func(v any) ([]byte, error) { return json.Marshal(v) }, header.XRequestID, func() string { return "123" })
+	c := NewClient(nil, nego, sel, header.JSON, header.XRequestID, func() string { return "123" })
 	a.NotNil(c).
-		NotNil(c.marshal).
+		NotNil(c.mediaType).
 		NotNil(c.Client())
 
 	req, err := c.NewRequest(http.MethodPost, "/post", &object{Age: 11})
@@ -40,17 +40,15 @@ func TestClient_NewRequest(t *testing.T) {
 		Equal(req.Header.Get(header.ContentType), qheader.BuildContentType(header.JSON, header.UTF8))
 }
 
-func jsonM(v any) ([]byte, error) { return json.Marshal(v) }
-
 func TestClient_ParseResponse(t *testing.T) {
 	a := assert.New(t, false)
 	nego := newNegotiation(a, nil)
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("https://example.com"))
-	c := NewClient(nil, nego, sel, header.JSON, jsonM, "", nil)
+	c := NewClient(nil, nego, sel, header.JSON, "", nil)
 	a.NotNil(c).
-		NotNil(c.marshal)
+		NotNil(c.mediaType)
 
 	t.Run("empty", func(*testing.T) {
 		resp, problem, err := c.ParseResponse[struct{}, any](&http.Response{})
@@ -113,7 +111,7 @@ func TestServer_NewClient(t *testing.T) {
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer(s.st.URL))
-	c := s.NewClient(s.st.Client, sel, header.JSON, func(a any) ([]byte, error) { return json.Marshal(a) })
+	c := s.NewClient(s.st.Client, sel, header.JSON)
 	a.NotNil(c)
 
 	resp, p, err := c.Get[object, any]("/get")

@@ -11,6 +11,7 @@ import (
 	"net/http"
 
 	"github.com/issue9/mux/v10/header"
+	"github.com/issue9/sliceutil"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
 
@@ -27,8 +28,7 @@ type Client struct {
 	nego     *Negotiation
 	selector selector.Selector
 
-	marshal     func(any) ([]byte, error)
-	marshalName string
+	mediaType MediaType
 
 	requestIDKey string
 	requestIDGen func() string
@@ -37,24 +37,23 @@ type Client struct {
 // NewClient 创建 [Client] 实例
 //
 // client 如果为空，表示采用 &http.Client{} 作为默认值；
-// marshalName 和 marshal 表示编码的名称和方法；
-// requestIDKey 表示 x-request-id 的报头名称，如果为空则表示不需要；
-// requestIDGen 表示生成 x-request-id 值的方法；
+// marshal 指定提交数据的媒体类型，如果对应的 [MediaType.Marshal] 需要 ctx 参数，可能 panic；
+// reqIDKey 表示 x-request-id 的报头名称，如果为空则表示不需要；
+// reqIDGen 表示生成 x-request-id 值的方法；
 func NewClient(
-	client *http.Client,
-	nego *Negotiation,
-	s selector.Selector,
-	marshalName string,
-	marshal func(any) ([]byte, error),
-	requestIDKey string,
-	requestIDGen func() string,
+	client *http.Client, nego *Negotiation, s selector.Selector, marshal string, reqIDKey string, reqIDGen func() string,
 ) *Client {
 	if client == nil {
 		client = &http.Client{}
 	}
 
-	if requestIDKey != "" && requestIDGen == nil {
+	if reqIDKey != "" && reqIDGen == nil {
 		panic("当前 requestIDKey 不为空时 requestIDGen 也不能为空")
+	}
+
+	mt, found := sliceutil.At(nego.mediaTypes, func(mt MediaType, _ int) bool { return mt.Name() == marshal })
+	if !found {
+		panic("参数 marshal 未找到")
 	}
 
 	return &Client{
@@ -62,11 +61,10 @@ func NewClient(
 		nego:     nego,
 		selector: s,
 
-		marshalName: marshalName,
-		marshal:     marshal,
+		mediaType: mt,
 
-		requestIDKey: requestIDKey,
-		requestIDGen: requestIDGen,
+		requestIDKey: reqIDKey,
+		requestIDGen: reqIDGen,
 	}
 }
 
@@ -174,8 +172,7 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, err error) {
 	var data []byte
 	if body != nil {
-		data, err = c.marshal(body)
-		if err != nil {
+		if data, err = c.mediaType.Marshal(nil, body); err != nil {
 			return nil, err
 		}
 	}
@@ -197,11 +194,14 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 	}
 
 	if !bodyIsEmpty {
-		r.Header.Set(header.ContentType, qheader.BuildContentType(c.marshalName, header.UTF8))
+		r.Header.Set(header.ContentType, qheader.BuildContentType(c.mediaType.Name(), header.UTF8))
+		r.Header.Set(header.ContentLanguage, c.nego.Language().String())
+		// 提交的内容始终不压缩，所以就不提交 content-encoding 报头了。
 	}
 
 	r.Header.Set(header.Accept, c.nego.clientAcceptHeader)
 	r.Header.Set(header.AcceptEncoding, c.nego.acceptEncodingHeader)
+	r.Header.Set(header.AcceptLanguage, c.nego.acceptLanguageHeader)
 	if c.requestIDKey != "" {
 		r.Header.Set(c.requestIDKey, c.requestIDGen())
 	}
@@ -223,6 +223,6 @@ func (c *Client) Client() *http.Client { return c.client }
 // NewClient 基于当前对象的相关字段创建 [Client] 对象
 //
 // 功能与 [NewClient] 相同，缺少的参数直接采用 [Server] 关联的字段。
-func (s *Server) NewClient(c *http.Client, sel selector.Selector, m string, marshal func(any) ([]byte, error)) *Client {
-	return NewClient(c, s.Negotiation(), sel, m, marshal, s.requestIDKey, s.UniqueID)
+func (s *Server) NewClient(c *http.Client, sel selector.Selector, m string) *Client {
+	return NewClient(c, s.Negotiation(), sel, m, s.requestIDKey, s.UniqueID)
 }
