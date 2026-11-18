@@ -159,10 +159,7 @@ func (ctx *Context) WriteHeader(status int) {
 
 	// 内容协商的报头名称，无论是否有输出都应该无条件添加。
 	if status >= http.StatusOK && ctx.status < http.StatusOK {
-		ctx.Header().Add(header.Vary, header.Accept)
-		ctx.Header().Add(header.Vary, header.AcceptLanguage)
-		ctx.Header().Add(header.Vary, header.AcceptEncoding)
-		ctx.Header().Add(header.Vary, header.AcceptCharset)
+		ctx.Server().Negotiation().setVary(ctx.Header())
 	}
 
 	ctx.Header().Del(header.ContentLength) // https://github.com/golang/go/issues/14975

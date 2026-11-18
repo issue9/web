@@ -23,8 +23,8 @@ func newServer(a *assert.Assertion) *web.Server {
 	a.NotError(err).NotNil(s)
 
 	s.Negotiation().LoadMessages("*.yaml", locales.Locales...)
-	a.NotError(s.Negotiation().SetString(language.SimplifiedChinese, "lang", "简体"))
-	a.NotError(s.Negotiation().SetString(language.TraditionalChinese, "lang", "繁体"))
+	a.NotError(s.Negotiation().Catalog().SetString(language.SimplifiedChinese, "lang", "简体"))
+	a.NotError(s.Negotiation().Catalog().SetString(language.TraditionalChinese, "lang", "繁体"))
 
 	return s
 }

@@ -85,10 +85,12 @@ func newTestServer(a *assert.Assertion, sec bool) *testServer {
 	srv.Server = NewServer("test", "1.0.0", startup, time.Local, log, u.String, cc, newNegotiation(a, conf), header.XRequestID)
 	srv.Services().Add(Phrase("unique"), u.Serve)
 
-	a.NotError(srv.Negotiation().SetString(language.SimplifiedChinese, "lang", "cn")).
-		NotError(srv.Negotiation().SetString(language.TraditionalChinese, "lang", "tw"))
+	a.NotError(srv.Negotiation().Catalog().SetString(language.SimplifiedChinese, "lang", "cn")).
+		NotError(srv.Negotiation().Catalog().SetString(language.TraditionalChinese, "lang", "tw"))
 
-	srv.Problems().Add("", &problems.Item{Status: 411, ID: unique.Make("41110"), Type: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail")})
+	srv.Problems().Add("", &problems.Item{
+		Status: 411, ID: unique.Make("41110"), Type: "41110", Title: Phrase("41110 title"), Detail: Phrase("41110 detail"),
+	})
 
 	return srv
 }

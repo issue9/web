@@ -354,7 +354,7 @@ func BenchmarkNegotiation_getMatchCompresses(b *testing.B) {
 	}
 }
 
-func BenchmarkLocale_NewPrinter(b *testing.B) {
+func BenchmarkLocale_NewLocalePrinter(b *testing.B) {
 	l := NewNegotiation(language.SimplifiedChinese, nil)
 
 	b.Run("equal Locale.id", func(b *testing.B) {

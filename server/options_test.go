@@ -24,7 +24,6 @@ func TestSanitizeOptions(t *testing.T) {
 		NotNil(o.IDGenerator).
 		Equal(o.RequestIDKey, header.XRequestID).
 		NotNil(o.Negotiation).
-		NotNil(o.Negotiation.Config()).
 		NotZero(len(o.Plugins))
 
 	o, err = sanitizeOptions(&Options{

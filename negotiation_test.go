@@ -369,20 +369,20 @@ func TestNegotiation_accept(t *testing.T) {
 func TestNegotiation_Sprintf(t *testing.T) {
 	a := assert.New(t, false)
 
-	l := NewNegotiation(language.SimplifiedChinese, nil)
-	a.NotError(l.SetString(language.SimplifiedChinese, "lang", "hans")).
-		NotNil(l).Equal(l.Sprintf("lang"), "hans").
-		NotError(l.SetString(language.SimplifiedChinese, "lang", "hans-2")).
-		Equal(l.Sprintf("lang"), "hans-2")
+	nego := NewNegotiation(language.SimplifiedChinese, nil)
+	a.NotError(nego.Catalog().SetString(language.SimplifiedChinese, "lang", "hans")).
+		NotNil(nego).Equal(nego.Sprintf("lang"), "hans").
+		NotError(nego.Catalog().SetString(language.SimplifiedChinese, "lang", "hans-2")).
+		Equal(nego.Sprintf("lang"), "hans-2")
 
 	// ID 不存在于 catalog
 
-	l = NewNegotiation(language.Afrikaans, nil)
-	a.NotNil(l).
-		NotError(l.SetString(language.SimplifiedChinese, "lang", "hans")).
-		Equal(l.Sprintf("lang"), "lang"). // 找不到对应的翻译项，返回原值
-		NotError(l.SetString(language.Afrikaans, "lang", "afrik")).
-		Equal(l.Sprintf("lang"), "afrik")
+	nego = NewNegotiation(language.Afrikaans, nil)
+	a.NotNil(nego).
+		NotError(nego.Catalog().SetString(language.SimplifiedChinese, "lang", "hans")).
+		Equal(nego.Sprintf("lang"), "lang"). // 找不到对应的翻译项，返回原值
+		NotError(nego.Catalog().SetString(language.Afrikaans, "lang", "afrik")).
+		Equal(nego.Sprintf("lang"), "afrik")
 }
 
 func TestNegotiation_acceptLanguage(t *testing.T) {
@@ -392,13 +392,13 @@ func TestNegotiation_acceptLanguage(t *testing.T) {
 	s.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
 
 	l := NewNegotiation(language.SimplifiedChinese, config.Dir(s, "./"))
-	a.Equal(l.acceptLanguage, "zh-Hans")
+	a.StrictEqual(l.acceptLanguageHeader, "zh-Hans")
 
 	a.NotError(l.LoadMessages("*.yaml", os.DirFS("./internal/locale/testdata"))).
-		Equal(l.acceptLanguage, "zh-Hans, cmn-Hans")
+		StrictEqual(l.acceptLanguageHeader, "zh-Hans, cmn-Hans")
 
 	a.NotError(l.LoadMessages("*.xml", os.DirFS("./internal/locale/testdata"))).
-		Equal(l.acceptLanguage, "zh-Hans, cmn-Hans, zh-Hant")
+		StrictEqual(l.acceptLanguageHeader, "zh-Hans, cmn-Hans, zh-Hant")
 }
 
 func TestNegotiation_NewPrinter(t *testing.T) {
@@ -413,7 +413,7 @@ func TestNegotiation_NewPrinter(t *testing.T) {
 	// language.MustParse("cmn-Hans") 是默认的 ID，初始化 l 时即已存在。
 
 	p1 := l.NewLocalePrinter(language.MustParse("cmn-Hans"))
-	a.NotError(l.SetString(language.MustParse("cmn-Hans"), "lang", "hans"))
+	a.NotError(l.Catalog().SetString(language.MustParse("cmn-Hans"), "lang", "hans"))
 
 	a.NotError(l.LoadMessages("*.yaml", os.DirFS("./internal/locale/testdata")))
 	p2 := l.NewLocalePrinter(language.MustParse("cmn-Hans"))
@@ -432,7 +432,7 @@ func TestNegotiation_NewPrinter(t *testing.T) {
 	// 所以 p1 会匹配成其它相似的值，p2 则会准确匹配到 TraditionalChinese。
 
 	p1 = l.NewLocalePrinter(language.TraditionalChinese)
-	a.NotError(l.SetString(language.TraditionalChinese, "lang", "hant"))
+	a.NotError(l.Catalog().SetString(language.TraditionalChinese, "lang", "hant"))
 
 	a.NotError(l.LoadMessages("*.xml", os.DirFS("./internal/locale/testdata")))
 	p2 = l.NewLocalePrinter(language.TraditionalChinese)

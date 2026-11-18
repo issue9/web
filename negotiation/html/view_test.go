@@ -30,7 +30,7 @@ func newServer(a *assert.Assertion, lang string, mt negotiation.MediaType) (*web
 	a.NotError(err).NotNil(s)
 
 	// locale
-	b := s.Negotiation()
+	b := s.Negotiation().Catalog()
 	a.NotError(b.SetString(language.Und, "lang", "und"))
 	a.NotError(b.SetString(language.MustParse("cmn-hans"), "lang", "hans"))
 	a.NotError(b.SetString(language.MustParse("cmn-hant"), "lang", "hant"))

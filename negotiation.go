@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/fs"
 	"iter"
+	"net/http"
 	"slices"
 	"strings"
 	"time"
@@ -65,13 +66,12 @@ type Negotiation struct {
 	clientAcceptHeader string // 生成客户端的 Accept 报头内容
 	serverAcceptHeader string // 生成服务端的 Accept 报头内容
 
-	*catalog.Builder
-	id       language.Tag
-	printer  *message.Printer
-	printers *ttlcache.Cache[language.Tag, *message.Printer]
-	config   *config.Config
-
-	acceptLanguage string // 根据内容生成 Accept-Language 报头
+	builder              *catalog.Builder
+	lang                 language.Tag
+	printer              *message.Printer
+	printers             *ttlcache.Cache[language.Tag, *message.Printer]
+	config               *config.Config
+	acceptLanguageHeader string // 根据 builder 加载的语言文件，生成服务端的 Accept-Language 报头
 }
 
 type compression struct {
@@ -86,30 +86,31 @@ const maxPrinters = 64 // 缓存的 [message.Printer] 数量上限
 const maxPrinterIdle = 10 * time.Minute // 缓存项的空闲时长
 
 // NewNegotiation 声明 [Negotiation] 对象
-func NewNegotiation(id language.Tag, c *config.Config) *Negotiation {
-	b := catalog.NewBuilder(catalog.Fallback(id))
+//
+// conf 为加载配置文件的对象，[Negotiation.LoadMessags] 使用该值加载本地化的语言文件。
+func NewNegotiation(lang language.Tag, conf *config.Config) *Negotiation {
+	b := catalog.NewBuilder(catalog.Fallback(lang))
 
-	// 保证 b 中包含一条 id 语言的翻译项，
-	// 这样可以始终让 Locale.Printer 的对象始终是有值的。
-	if err := b.SetString(id, "_____", "_____"); err != nil {
+	// 保证 b 中包含一条 id 语言的翻译项，这样可以始终让 Locale.Printer 的对象始终是有值的。
+	if err := b.SetString(lang, "_____", "_____"); err != nil {
 		panic(err)
 	}
 
-	id, _, _ = b.Matcher().Match(id) // 从 b 中查找最合适的 tag
+	lang, _, _ = b.Matcher().Match(lang) // 从 b 中查找最合适的 tag
 
 	return &Negotiation{
 		compressions: make([]*compression, 0, 10),
 		mediaTypes:   make([]MediaType, 0, 10),
 
-		Builder: b,
-		id:      id,
-		config:  c,
-		printer: message.NewPrinter(id, message.Catalog(b)),
+		builder: b,
+		lang:    lang,
+		config:  conf,
+		printer: message.NewPrinter(lang, message.Catalog(b)),
 		printers: ttlcache.New(
 			ttlcache.WithCapacity[language.Tag, *message.Printer](maxPrinters),
 			ttlcache.WithTTL[language.Tag, *message.Printer](maxPrinterIdle),
 		),
-		acceptLanguage: buildAcceptLanguage(b),
+		acceptLanguageHeader: buildAcceptLanguage(b),
 	}
 }
 
@@ -126,82 +127,55 @@ func buildAcceptLanguage(ls catalog.Catalog) string {
 	return s.String()
 }
 
-func (e *Negotiation) Config() *config.Config { return e.config }
-
 // Language 返回默认的语言标签
-func (e *Negotiation) Language() language.Tag { return e.id }
+func (nego *Negotiation) Language() language.Tag { return nego.lang }
+
+func (nego *Negotiation) Catalog() *catalog.Builder { return nego.builder }
 
 // LoadMessages 从 fsys 中加载符合 glob 的本地化文件
 //
 // 根据 [Server.Config] 处理文件格式，如果文件格式不被 [Server.Config] 支持，将无法加载。
-func (e *Negotiation) LoadMessages(glob string, fsys ...fs.FS) error {
-	if err := locale.Load(e.config.Serializer(), e.Builder, glob, fsys...); err != nil {
+func (nego *Negotiation) LoadMessages(glob string, fsys ...fs.FS) error {
+	if err := locale.Load(nego.config.Serializer(), nego.builder, glob, fsys...); err != nil {
 		return err
 	}
 
-	e.acceptLanguage = buildAcceptLanguage(e.Builder)
-	e.printers.DeleteAll()
+	nego.acceptLanguageHeader = buildAcceptLanguage(nego.Catalog())
+	nego.printers.DeleteAll()
 
 	return nil
 }
 
 // LocalePrinter 最符合 [Locale.Language] 的 [message.LocalePrinter] 对象
-func (e *Negotiation) LocalePrinter() *message.Printer { return e.printer }
+func (nego *Negotiation) LocalePrinter() *message.Printer { return nego.printer }
 
 // Sprintf 等同于 [Locale.Printer.Sprintf]
-func (e *Negotiation) Sprintf(key string, v ...any) string {
-	return e.LocalePrinter().Sprintf(key, v...)
+func (nego *Negotiation) Sprintf(key string, v ...any) string {
+	return nego.LocalePrinter().Sprintf(key, v...)
 }
 
 // NewLocalePrinter 声明最符合 tag 的 [message.Printer] 对象
 //
 // NOTE: 每当给 [Locale.SetString]、[Locale.SetMacro] 和 [Locale.Set] 传递新的 [language.Tag]
 // 值时，可能造成 NewLocalePrinter 相同的入参而返回不同的返回对象的情况。
-func (e *Negotiation) NewLocalePrinter(id language.Tag) *message.Printer {
-	if id == e.Language() {
-		return e.LocalePrinter()
+func (nego *Negotiation) NewLocalePrinter(id language.Tag) *message.Printer {
+	if id == nego.Language() {
+		return nego.LocalePrinter()
 	}
 
-	if item := e.printers.Get(id); item != nil {
+	if item := nego.printers.Get(id); item != nil {
 		return item.Value()
 	}
 
 	// 从 l 中查找最合适的 tag
-	id, _, _ = e.Matcher().Match(id)
-	if item := e.printers.Get(id); item != nil {
+	id, _, _ = nego.Catalog().Matcher().Match(id)
+	if item := nego.printers.Get(id); item != nil {
 		return item.Value()
 	}
 
-	p := message.NewPrinter(id, message.Catalog(e))
-	e.printers.Set(id, p, maxPrinterIdle)
+	p := message.NewPrinter(id, message.Catalog(nego.Catalog()))
+	nego.printers.Set(id, p, maxPrinterIdle)
 	return p
-}
-
-// SetString 添加新的翻译项
-func (e *Negotiation) SetString(tag language.Tag, key, msg string) error {
-	if err := e.Builder.SetString(tag, key, msg); err != nil {
-		return err
-	}
-	e.printers.DeleteAll()
-	return nil
-}
-
-// SetMacro 添加新的翻译项
-func (e *Negotiation) SetMacro(tag language.Tag, name string, msg ...catalog.Message) error {
-	if err := e.Builder.SetMacro(tag, name, msg...); err != nil {
-		return err
-	}
-	e.printers.DeleteAll()
-	return nil
-}
-
-// Set 添加新的翻译项
-func (e *Negotiation) Set(tag language.Tag, key string, msg ...catalog.Message) error {
-	if err := e.Builder.Set(tag, key, msg...); err != nil {
-		return err
-	}
-	e.printers.DeleteAll()
-	return nil
 }
 
 // AddCompressor 添加新的压缩算法
@@ -213,17 +187,17 @@ func (e *Negotiation) Set(tag language.Tag, key string, msg ...catalog.Message) 
 //	*
 //
 // 如果为空，则和 * 是相同的，表示匹配所有。
-func (e *Negotiation) AddCompressor(c Compressor, t ...string) *Negotiation {
-	e.compressions = append(e.compressions, buildCompression(c, t))
+func (nego *Negotiation) AddCompressor(c Compressor, t ...string) *Negotiation {
+	nego.compressions = append(nego.compressions, buildCompression(c, t))
 
-	names := make([]string, 0, len(e.compressions))
-	for _, item := range e.compressions {
+	names := make([]string, 0, len(nego.compressions))
+	for _, item := range nego.compressions {
 		names = append(names, item.compressor.Name())
 	}
 	names = sliceutil.Unique(names, func(i, j string) bool { return i == j })
-	e.acceptEncodingHeader = strings.Join(names, ",")
+	nego.acceptEncodingHeader = strings.Join(names, ",")
 
-	return e
+	return nego
 }
 
 func buildCompression(c Compressor, types []string) *compression {
@@ -262,45 +236,45 @@ func buildCompression(c Compressor, types []string) *compression {
 //
 // requestAccept 是否出现在客户端请求的 accept 报头中；
 // responseAccept 是否出现在服务端返回的 accept 报头中；
-func (e *Negotiation) AddMediaType(mt MediaType, requestAccept, responseAccept bool) *Negotiation {
+func (nego *Negotiation) AddMediaType(mt MediaType, requestAccept, responseAccept bool) *Negotiation {
 	if mt == nil {
 		panic("参数 mt 不能为空")
 	}
 
 	// 检测复复值
-	if slices.ContainsFunc(e.mediaTypes, func(v MediaType) bool { return v.Name() == mt.Name() }) {
+	if slices.ContainsFunc(nego.mediaTypes, func(v MediaType) bool { return v.Name() == mt.Name() }) {
 		panic(fmt.Sprintf("存在重复的项 %s", mt.Name()))
 	}
 
-	e.mediaTypes = append(e.mediaTypes, mt)
+	nego.mediaTypes = append(nego.mediaTypes, mt)
 
 	if requestAccept {
-		if e.clientAcceptHeader != "" {
-			e.clientAcceptHeader += ", "
+		if nego.clientAcceptHeader != "" {
+			nego.clientAcceptHeader += ", "
 		}
-		e.clientAcceptHeader += mt.Name()
+		nego.clientAcceptHeader += mt.Name()
 	}
 
 	if responseAccept {
-		if e.serverAcceptHeader != "" {
-			e.serverAcceptHeader += ", "
+		if nego.serverAcceptHeader != "" {
+			nego.serverAcceptHeader += ", "
 		}
-		e.serverAcceptHeader += mt.Name()
+		nego.serverAcceptHeader += mt.Name()
 	}
 
-	return e
+	return nego
 }
 
 // 根据客户端的 Content-Encoding 报头对 r 进行包装
 //
 // name 编码名称，即 Content-Encoding 报头内容；
 // r 为未解码的内容；
-func (e *Negotiation) contentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
+func (nego *Negotiation) contentEncoding(name string, r io.Reader) (io.ReadCloser, error) {
 	if name == "" {
 		return io.NopCloser(r), nil
 	}
 
-	if c, f := sliceutil.At(e.compressions, func(item *compression, _ int) bool { return item.compressor.Name() == name }); f {
+	if c, f := sliceutil.At(nego.compressions, func(item *compression, _ int) bool { return item.compressor.Name() == name }); f {
 		return c.compressor.NewDecoder(r)
 	}
 	return nil, NewError("not found compress for %s", name)
@@ -313,7 +287,7 @@ func unableParse(v string) error { return localeutil.Error("unable parse %s", v)
 // 如果返回的 c 为空值表示不需要压缩。
 // 当有多个符合时，按添加顺序拿第一个符合条件数据。
 // 如果 h 为空，那么将被设置为默认值 ＊；
-func (e *Negotiation) acceptEncoding(contentType, h string) (c Compressor, err error) {
+func (nego *Negotiation) acceptEncoding(contentType, h string) (c Compressor, err error) {
 	// 规则如下：
 	//  - 按 q 从大到小进行排序；
 	//  - 忽略无法解析 q 的项；
@@ -328,7 +302,7 @@ func (e *Negotiation) acceptEncoding(contentType, h string) (c Compressor, err e
 	//
 	// */*;q=0 表示匹配所有未列出的编码
 
-	if len(e.compressions) == 0 {
+	if len(nego.compressions) == 0 {
 		return
 	}
 
@@ -339,7 +313,7 @@ func (e *Negotiation) acceptEncoding(contentType, h string) (c Compressor, err e
 		return nil, unableParse(h)
 	}
 
-	indexes := e.getMatchCompresses(contentType)
+	indexes := nego.getMatchCompresses(contentType)
 	if len(indexes) == 0 { // 服务端未添加任何压缩算法
 		if slices.Contains(deny, header.Identity) { // 且客户端要求必须要压缩
 			return nil, localeutil.Error("client disabled identity")
@@ -359,7 +333,7 @@ func (e *Negotiation) acceptEncoding(contentType, h string) (c Compressor, err e
 		}
 
 		for _, idx := range indexes {
-			c := e.compressions[idx]
+			c := nego.compressions[idx]
 			if item.Value == c.compressor.Name() {
 				return c.compressor, nil
 			}
@@ -369,7 +343,7 @@ func (e *Negotiation) acceptEncoding(contentType, h string) (c Compressor, err e
 	// 在 accept 中未找到符合的，且指定 *，挑一个服务器支持且不在 deny 中的
 	if hasAny {
 		for _, idx := range indexes {
-			c := e.compressions[idx]
+			c := nego.compressions[idx]
 			if !denied(c.compressor.Name(), deny) {
 				return c.compressor, nil
 			}
@@ -382,11 +356,11 @@ func (e *Negotiation) acceptEncoding(contentType, h string) (c Compressor, err e
 	return nil, nil
 }
 
-func (e *Negotiation) getMatchCompresses(contentType string) []int {
-	indexes := make([]int, 0, len(e.compressions))
+func (nego *Negotiation) getMatchCompresses(contentType string) []int {
+	indexes := make([]int, 0, len(nego.compressions))
 
 LOOP:
-	for index, c := range e.compressions {
+	for index, c := range nego.compressions {
 		if c.wildcard {
 			indexes = append(indexes, index)
 			continue
@@ -413,10 +387,10 @@ LOOP:
 // 从请求端提交的 Content-Type 报头中获取解码和字符集函数
 //
 // h 表示 Content-Type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
-func (e *Negotiation) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
+func (nego *Negotiation) contentType(h string) (UnmarshalFunc, encoding.Encoding, error) {
 	mt, charset := qheader.ParseWithParam(h, "charset")
 
-	item := e.searchFunc(func(s string) bool { return s == mt })
+	item := nego.searchFunc(func(s string) bool { return s == mt })
 	if item == nil {
 		return nil, nil, NewError("not found serialization function for %s", mt)
 	}
@@ -435,7 +409,7 @@ func (e *Negotiation) contentType(h string) (UnmarshalFunc, encoding.Encoding, e
 // 从请求端提交的 Accept 报头解析出所需要的解码函数
 //
 // 如果 h 为空，那么将被设置为默认值 ＊；
-func (e *Negotiation) accept(h string) (MediaType, error) {
+func (nego *Negotiation) accept(h string) (MediaType, error) {
 	// 规则如下：
 	//  - 按 q 从大到小进行排序；
 	//  - 忽略无法解析 q 的项；
@@ -464,7 +438,7 @@ func (e *Negotiation) accept(h string) (MediaType, error) {
 			break
 		}
 
-		for _, mt := range e.mediaTypes {
+		for _, mt := range nego.mediaTypes {
 			if match(item.Value, mt) {
 				return mt, nil
 			}
@@ -473,7 +447,7 @@ func (e *Negotiation) accept(h string) (MediaType, error) {
 
 	// 在 accept 中未找到符合的，且指定 */*，挑一个服务器支持且不在 deny 中的
 	if hasAny {
-		for _, mt := range e.mediaTypes {
+		for _, mt := range nego.mediaTypes {
 			if !denied(mt.Name(), deny) {
 				return mt, nil
 			}
@@ -501,32 +475,39 @@ func denied(name string, deny []string) bool {
 	return false
 }
 
-func (e *Negotiation) searchFunc(match func(string) bool) MediaType {
-	item, _ := sliceutil.At(e.mediaTypes, func(i MediaType, _ int) bool {
+func (nego *Negotiation) searchFunc(match func(string) bool) MediaType {
+	item, _ := sliceutil.At(nego.mediaTypes, func(i MediaType, _ int) bool {
 		return match(i.Name()) || match(i.ProblemName())
 	})
 	return item
 }
 
 // CanCompress 当前是否拥有压缩功能
-func (e *Negotiation) CanCompress() bool { return !e.disableCompress }
+func (nego *Negotiation) CanCompress() bool { return !nego.disableCompress }
 
 // SetCompress 设置压缩功能
 //
 // 在服务器性能吃紧的情况下可以采用此方法禁用压缩。
 //
 // NOTE: 仅对输出内容启作用，读取内容始终是按照提交的 Content-Encoding 指定算法进行解析。
-func (e *Negotiation) SetCompress(enable bool) { e.disableCompress = !enable }
+func (nego *Negotiation) SetCompress(enable bool) { nego.disableCompress = !enable }
 
 // MediaTypes 返回支持的所有媒体类型
 //
 // 键名和键值分别为正常和 problem 下的名称。
-func (e *Negotiation) MediaTypes() iter.Seq2[string, string] {
+func (nego *Negotiation) MediaTypes() iter.Seq2[string, string] {
 	return func(yield func(string, string) bool) {
-		for _, v := range e.mediaTypes {
+		for _, v := range nego.mediaTypes {
 			if !yield(v.Name(), v.ProblemName()) {
 				break
 			}
 		}
 	}
+}
+
+func (nego *Negotiation) setVary(h http.Header) {
+	h.Add(header.Vary, header.Accept)
+	h.Add(header.Vary, header.AcceptLanguage)
+	h.Add(header.Vary, header.AcceptEncoding)
+	h.Add(header.Vary, header.AcceptCharset)
 }
