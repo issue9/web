@@ -46,7 +46,7 @@ func TestConfigOf_sanitizeMediaTypes(t *testing.T) {
 	conf := &configOf[empty]{
 		MediaTypes: []*mediaTypeConfig{
 			{Target: "json"},
-			{Target: "xml", Accept: "request,response"},
+			{Target: "xml"},
 		},
 	}
 	e, f := buildFilter()
@@ -63,38 +63,6 @@ func TestConfigOf_sanitizeMediaTypes(t *testing.T) {
 	conf.buildNegotiation(f)
 	a.True(f.HasError()).
 		Equal(e, filter.Map{"mediaTypes[1].target": []web.LocaleStringer{locales.NotFound}})
-
-	// Accept
-
-	conf = &configOf[empty]{
-		MediaTypes: []*mediaTypeConfig{
-			{Target: "json", Accept: "req"},
-		},
-	}
-	e, f = buildFilter()
-	conf.buildNegotiation(f)
-	a.True(f.HasError()).
-		Equal(e, filter.Map{"mediaTypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
-
-	conf = &configOf[empty]{
-		MediaTypes: []*mediaTypeConfig{
-			{Target: "json", Accept: "request,resp"},
-		},
-	}
-	e, f = buildFilter()
-	conf.buildNegotiation(f)
-	a.True(f.HasError()).
-		Equal(e, filter.Map{"mediaTypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
-
-	conf = &configOf[empty]{
-		MediaTypes: []*mediaTypeConfig{
-			{Target: "json", Accept: "request,response,request"},
-		},
-	}
-	e, f = buildFilter()
-	conf.buildNegotiation(f)
-	a.True(f.HasError()).
-		Equal(e, filter.Map{"mediaTypes[0].accept": []web.LocaleStringer{locales.InvalidValue}})
 }
 
 func TestRegisterMediaType(t *testing.T) {

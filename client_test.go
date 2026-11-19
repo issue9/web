@@ -34,7 +34,7 @@ func TestClient_NewRequest(t *testing.T) {
 
 	req, err := c.NewRequest(http.MethodPost, "/post", &object{Age: 11})
 	a.NotError(err).NotNil(req).
-		Equal(req.Header.Get(header.Accept), nego.clientAcceptHeader).
+		Equal(req.Header.Get(header.Accept), nego.acceptHeader).
 		Equal(req.Header.Get(header.XRequestID), "123").
 		Equal(req.Header.Get(header.AcceptEncoding), nego.acceptEncodingHeader).
 		Equal(req.Header.Get(header.ContentType), qheader.BuildContentType(header.JSON, header.UTF8))

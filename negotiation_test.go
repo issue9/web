@@ -128,9 +128,9 @@ func newNegotiation(a *assert.Assertion, conf *config.Config) *Negotiation {
 	c.AddCompressor(newGzip()).
 		AddCompressor(newDeflate()).
 		//AddCompressor(nil).
-		AddMediaType(newMediaType(header.JSON, "application/problem+json", marshalJSON, unmarshalJSON), true, true).
-		AddMediaType(newMediaType(header.XML, "application/problem+xml", marshalXML, unmarshalXML), true, true).
-		AddMediaType(newMediaType("application/test", "application/problem+test", marshalTest, unmarshalTest), true, true)
+		AddMediaType(newMediaType(header.JSON, "application/problem+json", marshalJSON, unmarshalJSON)).
+		AddMediaType(newMediaType(header.XML, "application/problem+xml", marshalXML, unmarshalXML)).
+		AddMediaType(newMediaType("application/test", "application/problem+test", marshalTest, unmarshalTest))
 
 	return c
 }
@@ -140,21 +140,21 @@ func TestNegotiation_AddMediaType(t *testing.T) {
 	c := NewNegotiation(language.SimplifiedChinese, nil)
 
 	a.NotPanic(func() {
-		c.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON), true, true)
+		c.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON))
 	})
 
 	a.PanicString(func() {
-		c.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON), true, true)
+		c.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON))
 	}, "存在重复的项 "+header.JSON)
 
 	a.PanicString(func() {
-		c.AddMediaType(nil, true, true)
+		c.AddMediaType(nil)
 	}, "参数 mt 不能为空")
 
 	mt := newMediaType(header.Plain, "", marshalJSON, unmarshalJSON)
 	a.Equal(mt.ProblemName(), header.Plain)
-	e := NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt, false, true)
-	a.Equal(e.clientAcceptHeader, "").Equal(e.serverAcceptHeader, header.Plain)
+	e := NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt)
+	a.Equal(e.acceptHeader, header.Plain)
 }
 
 func TestBuildCompression(t *testing.T) {
@@ -265,7 +265,7 @@ func TestNegotiation_contentType(t *testing.T) {
 
 	mt := NewNegotiation(language.SimplifiedChinese, nil)
 	a.NotNil(mt)
-	mt.AddMediaType(newMediaType(header.OctetStream, "", marshalJSON, unmarshalJSON), true, true)
+	mt.AddMediaType(newMediaType(header.OctetStream, "", marshalJSON, unmarshalJSON))
 
 	f, e, err := mt.contentType(";;;")
 	a.Error(err).Nil(f).Nil(e)
@@ -320,8 +320,8 @@ func TestNegotiation_accept(t *testing.T) {
 
 	mt = NewNegotiation(language.SimplifiedChinese, nil)
 	a.NotNil(mt)
-	mt.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON), true, true).
-		AddMediaType(newMediaType(header.Plain, "text/plain+problem", marshalXML, unmarshalXML), true, true)
+	mt.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON)).
+		AddMediaType(newMediaType(header.Plain, "text/plain+problem", marshalXML, unmarshalXML))
 
 	item, err = mt.accept(header.JSON)
 	a.NotError(err).NotNil(item).

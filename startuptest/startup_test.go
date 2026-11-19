@@ -32,7 +32,7 @@ func newServer(a *assert.Assertion, ts Startup) *web.Server {
 	u := unique.NewNumber(100)
 
 	negoInst := web.NewNegotiation(language.SimplifiedChinese, conf)
-	negoInst.AddMediaType(negotiation.NewJSON(), true, true)
+	negoInst.AddMediaType(negotiation.NewJSON())
 
 	s := web.NewServer("id", "1.0.0", ts, time.Local, logs.New(logs.NewNopHandler()), u.String, cc, negoInst, header.XRequestID)
 	a.NotNil(s)

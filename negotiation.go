@@ -30,6 +30,8 @@ import (
 )
 
 // Compressor 压缩算法的接口
+//
+// 实现者应该是一个无状态的对象。
 type Compressor interface {
 	// Name 算法的名称
 	Name() string
@@ -42,6 +44,8 @@ type Compressor interface {
 }
 
 // MediaType 媒体类型需要提供的接口
+//
+// 实现者应该是一个无状态的对象。
 type MediaType interface {
 	// Name 获取媒体类型的名称
 	Name() string
@@ -62,9 +66,8 @@ type Negotiation struct {
 	compressions         []*compression
 	acceptEncodingHeader string // 生成 AcceptEncoding 报头内容
 
-	mediaTypes         []MediaType
-	clientAcceptHeader string // 生成客户端的 Accept 报头内容
-	serverAcceptHeader string // 生成服务端的 Accept 报头内容
+	mediaTypes   []MediaType
+	acceptHeader string // 生成的 Accept 报头内容
 
 	builder              *catalog.Builder
 	lang                 language.Tag
@@ -231,10 +234,7 @@ func buildCompression(c Compressor, types []string) *compression {
 }
 
 // AddMediaType 添加媒体类型
-//
-// clientAccept 作为客户端请求时，出现在提交的 accept 报头中；
-// serverAccept 作为服务端请求时，出现在反馈给客户端的 accept 报头中；
-func (nego *Negotiation) AddMediaType(mt MediaType, clientAccept, serverAccept bool) *Negotiation {
+func (nego *Negotiation) AddMediaType(mt MediaType) *Negotiation {
 	if mt == nil {
 		panic("参数 mt 不能为空")
 	}
@@ -246,19 +246,10 @@ func (nego *Negotiation) AddMediaType(mt MediaType, clientAccept, serverAccept b
 
 	nego.mediaTypes = append(nego.mediaTypes, mt)
 
-	if clientAccept {
-		if nego.clientAcceptHeader != "" {
-			nego.clientAcceptHeader += ", "
-		}
-		nego.clientAcceptHeader += mt.Name()
+	if nego.acceptHeader != "" {
+		nego.acceptHeader += ", "
 	}
-
-	if serverAccept {
-		if nego.serverAcceptHeader != "" {
-			nego.serverAcceptHeader += ", "
-		}
-		nego.serverAcceptHeader += mt.Name()
-	}
+	nego.acceptHeader += mt.Name()
 
 	return nego
 }

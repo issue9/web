@@ -59,7 +59,7 @@ func TestOnMessage(t *testing.T) {
 	ts := startuptest.NewHTTPServerStartup(a, false)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Startup:     ts,
-		Negotiation: web.NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(negotiation.NewNOP(Mimetype, Mimetype), true, true),
+		Negotiation: web.NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(negotiation.NewNOP(Mimetype, Mimetype)),
 		Logs:        logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout)),
 	})
 	a.NotError(err).NotNil(s)

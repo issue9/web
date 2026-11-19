@@ -199,7 +199,7 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 		// 提交的内容始终不压缩，所以就不提交 content-encoding 报头了。
 	}
 
-	r.Header.Set(header.Accept, c.nego.clientAcceptHeader)
+	r.Header.Set(header.Accept, c.nego.acceptHeader)
 	r.Header.Set(header.AcceptEncoding, c.nego.acceptEncodingHeader)
 	r.Header.Set(header.AcceptLanguage, c.nego.acceptLanguageHeader)
 	if c.requestIDKey != "" {

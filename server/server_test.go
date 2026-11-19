@@ -62,8 +62,8 @@ func newOptions(a *assert.Assertion, o *Options) *Options {
 	}
 	if o.Negotiation == nil {
 		o.Negotiation = web.NewNegotiation(language.English, nil).
-			AddMediaType(negotiation.NewJSON(), true, true).
-			AddMediaType(negotiation.NewXML(), true, true)
+			AddMediaType(negotiation.NewJSON()).
+			AddMediaType(negotiation.NewXML())
 	}
 
 	return o
