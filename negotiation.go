@@ -232,7 +232,7 @@ func (nego *Negotiation) addMediaType(mt MediaType) {
 
 func unableParse(v string) error { return localeutil.Error("unable parse %s", v) }
 
-// 根据客户端的 Accept-Language 报头获取最适合的语言
+// 根据 Accept-Language 报头获取最适合的语言
 func (nego *Negotiation) acceptLanguage(h string) language.Tag {
 	if h == "" {
 		return nego.Language()
@@ -241,7 +241,7 @@ func (nego *Negotiation) acceptLanguage(h string) language.Tag {
 	return tag
 }
 
-// 根据客户端的 Accept-Encoding 报头选择是适合的压缩方法
+// 根据 Accept-Encoding 报头选择是适合的压缩方法
 //
 // 如果 h 为空，那么将被设置为默认值 ＊；
 func (nego *Negotiation) acceptEncoding(contentType, h string) (c Compressor, err error) {
@@ -313,7 +313,7 @@ func (nego *Negotiation) acceptEncoding(contentType, h string) (c Compressor, er
 	return nil, nil
 }
 
-// 从请求端提交的 Accept 报头解析出所需要的解码函数
+// 从 Accept 报头解析出所需要的解码函数
 //
 // 如果 h 为空，那么将被设置为默认值 ＊/*；
 func (nego *Negotiation) accept(h string) (MediaType, error) {
@@ -408,7 +408,7 @@ LOOP:
 	return indexes
 }
 
-// 根据客户端的 Content-Encoding 报头对 r 进行包装
+// 根据 Content-Encoding 报头对 r 进行包装
 //
 // name 编码名称，即 Content-Encoding 报头内容；
 // r 为未解码的内容；
@@ -423,10 +423,11 @@ func (nego *Negotiation) contentEncoding(name string, r io.Reader) (io.ReadClose
 	return nil, NewError("not found compress for %s", name)
 }
 
-// 从请求端提交的 Content-Type 报头中获取解码和字符集函数
+// 从 Content-Type 报头中获取解码和字符集函数
 //
 // h 表示 Content-Type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
-// method 如果不为空，表示该请求的内容只与该请求方法绑定；
+// method 如果为空表示只从 [MediaType.Method] 为空的类型中查找，
+// 如果不为空，除了前者还会从 [MediaType.Method] 与 method 相同的类型中查找；
 func (nego *Negotiation) contentType(h, method string) (MediaType, encoding.Encoding, error) {
 	mt, charset := qheader.ParseWithParam(h, "charset")
 

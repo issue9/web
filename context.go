@@ -103,7 +103,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 
 	h := r.Header.Get(header.Accept)
-	mt, err := s.nego.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
+	mt, err := s.nego.accept(h) // h 空值相当于 */*，如果正确设置，肯定不会返回 nil。
 	if err != nil {
 		warn().LocaleString(parseHeaderErr(header.Accept, err))
 		s.errorPage(w, problems.NotAcceptable)

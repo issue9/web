@@ -12,6 +12,7 @@ import (
 	"encoding/json/v2"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"slices"
@@ -410,47 +411,73 @@ func TestNegotiation_accept(t *testing.T) {
 	mt = NewNegotiation(language.SimplifiedChinese, nil)
 	a.NotNil(mt)
 	mt.AddMediaType(newMediaType(header.JSON, "", "", marshalJSON, unmarshalJSON)).
-		AddMediaType(newMediaType(header.Plain, "text/plain+problem", "", marshalXML, unmarshalXML))
+		AddMediaType(newMediaType(header.Plain, "text/plain+problem", "", marshalXML, unmarshalXML)).
+		AddMediaType(newMediaType(header.XML, "", http.MethodPatch, marshalXML, unmarshalXML))
 
-	item, err = mt.accept(header.JSON)
-	a.NotError(err).NotNil(item).
-		NotNil(item.Marshal).
-		Equal(item.Name(), header.JSON).
-		Equal(item.ProblemName(), header.JSON)
+	t.Run("JSON", func(t *testing.T) {
+		a := a.New(t)
+		item, err = mt.accept(header.JSON)
+		a.NotError(err).NotNil(item).
+			NotNil(item.Marshal).
+			StrictEqual(item.Name(), header.JSON).
+			StrictEqual(item.ProblemName(), header.JSON)
+	})
 
-	// */*
-	item, err = mt.accept("*/*")
-	a.NotError(err).NotNil(item).
-		NotNil(item.Marshal).
-		Equal(item.Name(), header.JSON)
+	for m := range mt.MediaTypes() {
+		fmt.Println(m.Name())
+	}
+	t.Run("*/*", func(t *testing.T) {
+		a := a.New(t)
+		item, err = mt.accept("*/*")
+		a.NotError(err).NotNil(item).
+			NotNil(item.Marshal).
+			StrictEqual(item.Name(), header.JSON)
+	})
 
-	// 空参数，结果同 */*
-	item, err = mt.accept("")
-	a.NotError(err).NotNil(item).
-		NotNil(item.Marshal).
-		Equal(item.Name(), header.JSON)
+	t.Run("空参数，结果同 */*", func(t *testing.T) {
+		a := a.New(t)
+		item, err = mt.accept("")
+		a.NotError(err).NotNil(item).
+			NotNil(item.Marshal).
+			StrictEqual(item.Name(), header.JSON)
+	})
 
-	item, err = mt.accept("*/*,text/plain")
-	a.NotError(err).NotNil(item).
-		NotNil(item.Marshal).
-		Equal(item.Name(), header.Plain).
-		Equal(item.ProblemName(), "text/plain+problem")
+	t.Run("*/*,text/plain", func(t *testing.T) {
+		a := a.New(t)
+		item, err = mt.accept("*/*,text/plain")
+		a.NotError(err).NotNil(item).
+			NotNil(item.Marshal).
+			StrictEqual(item.Name(), header.Plain).
+			StrictEqual(item.ProblemName(), "text/plain+problem")
+	})
 
-	// json 被禁，但是匹配 */* 匹配了 text/plain
-	item, err = mt.accept(header.JSON + ";q=0,*/*;q=1")
-	a.NotError(err).Equal(item.Name(), header.Plain)
+	t.Run("json 被禁，但是 */* 匹配了 text/plain", func(t *testing.T) {
+		a := a.New(t)
+		item, err = mt.accept(header.JSON + ";q=0,*/*;q=1")
+		a.NotError(err).StrictEqual(item.Name(), header.Plain)
+	})
 
-	// json 被禁
-	item, err = mt.accept(header.JSON + ";q=0")
-	a.NotError(err).Nil(item)
+	t.Run("json 被禁", func(t *testing.T) {
+		a := a.New(t)
+		item, err = mt.accept(header.JSON + ";q=0")
+		a.NotError(err).Nil(item)
+	})
 
-	// json 和 text/* 被禁，找不到匹配项
-	item, err = mt.accept("text/*;q=0,application/json;q=0,*/*;q=1")
-	a.NotError(err).Nil(item)
+	t.Run("json 和 text/* 被禁，XML 可用", func(t *testing.T) {
+		a := a.New(t)
+		item, err = mt.accept("text/*;q=0,application/json;q=0,*/*;q=1")
+		a.NotError(err).NotNil(item).StrictEqual(item.Name(), header.XML)
+	})
 
-	item, err = mt.accept("font/wottf;q=x.9")
-	a.Error(err).Nil(item)
+	t.Run("font/wottf;q=x.9", func(t *testing.T) {
+		a := a.New(t)
+		item, err = mt.accept("font/wottf;q=x.9")
+		a.Error(err).Nil(item)
+	})
 
-	item, err = mt.accept("font/wottf")
-	a.NotError(err).Nil(item)
+	t.Run("font/wottf", func(t *testing.T) {
+		a := a.New(t)
+		item, err = mt.accept("font/wottf")
+		a.NotError(err).Nil(item)
+	})
 }
