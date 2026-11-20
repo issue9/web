@@ -36,7 +36,7 @@ func WithOptionsMethod(enable bool) Option {
 //
 // 这将开启 [Document.Handler] 对 [header.HTML] 类型的支持。
 // 此选项仅是定义了 [Document.Handler] 输出的一些内容，
-// 还需要向 [github.com/issue9/web/codec/html] 添加模板。
+// 还需要向 [github.com/issue9/web/negotiation/html] 添加模板。
 //
 // tpl 表示 HTML 模板名称，该模板由 [html.Install] 注册；
 // assets 资源基地址，apidoc 的浏览工具一般都是在一个 html 文件中引入一些依赖文件，
@@ -97,10 +97,10 @@ func WithMediaType(t ...string) Option {
 		for _, tt := range t {
 			found := false
 
-			for k, v := range d.s.Codec().MediaTypes() {
-				if k == tt {
+			for mt := range d.s.Negotiation().MediaTypes() {
+				if mt.Name() == tt {
 					found = true
-					d.mediaTypes[tt] = v
+					d.mediaTypes[tt] = mt.ProblemName()
 				}
 			}
 

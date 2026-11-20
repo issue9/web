@@ -106,7 +106,7 @@ type configOf[T comparable] struct {
 	// 如果为空，那么将不支持任何格式的内容输出。
 	MediaTypes []*mediaTypeConfig `yaml:"mediaTypes,omitempty" json:"mediaTypes,omitempty" xml:"mediaTypes>mediaType,omitempty" toml:"mediaTypes,omitempty"`
 
-	codec *web.Codec
+	negotiation *web.Negotiation
 
 	// 唯一 ID 生成器
 	//
@@ -181,7 +181,12 @@ type configOf[T comparable] struct {
 func Load[T comparable](configDir, filename string) (*server.Options, T, error) {
 	var zero T
 	if filename == "" {
-		return &server.Options{Config: config.Dir(nil, configDir)}, zero, nil
+		tag, err := localeutil.DetectUserLanguageTag()
+		if err != nil {
+			return nil, zero, nil
+		}
+
+		return &server.Options{Negotiation: web.NewNegotiation(tag, config.Dir(nil, configDir))}, zero, nil
 	}
 
 	conf, err := loadConfigOf[T](configDir, filename)
@@ -190,16 +195,14 @@ func Load[T comparable](configDir, filename string) (*server.Options, T, error) 
 	}
 
 	o := &server.Options{
-		Config:         conf.config,
 		Location:       conf.location,
 		Cache:          conf.cache,
 		Startup:        web.NewHTTPServerStartup(conf.HTTP.httpServer),
 		Logs:           conf.Logs.logs,
-		Language:       conf.languageTag,
 		RoutersOptions: make([]web.RouterOption, 0, 5),
 		IDGenerator:    conf.idGenerator,
 		RequestIDKey:   conf.HTTP.RequestID,
-		Codec:          conf.codec,
+		Negotiation:    conf.negotiation,
 		Plugins:        make([]web.Plugin, 0, 5),
 	}
 
@@ -234,7 +237,7 @@ func (conf *configOf[T]) filter() filter.Map {
 		ApplyFilter("", conf.buildLogs).
 		ApplyFilter("", conf.buildTimezone).
 		ApplyFilter("", conf.buildHTTP).
-		ApplyFilter("", conf.buildCodec).
+		ApplyFilter("", conf.buildNegotiation).
 		ApplyFilter("", conf.buildConfig).
 		ApplyFilter("", conf.buildMicro)
 	conf.buildIDGen()

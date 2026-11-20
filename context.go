@@ -51,17 +51,15 @@ type Context struct {
 	begin   time.Time
 	queries *Queries
 
-	originResponse    http.ResponseWriter // 原始的 http.ResponseWriter
-	writer            io.Writer
-	outputCompressor  Compressor
-	outputCharset     encoding.Encoding
-	outputCharsetName string
-	outputMediaType   MediaType
-	status            int // WriteHeader 保存的副本，非零表示已经输出。
-	wrote             bool
+	originResponse   http.ResponseWriter // 原始的 http.ResponseWriter
+	writer           io.Writer
+	outputCompressor Compressor
+	outputMediaType  MediaType
+	status           int // WriteHeader 保存的副本，非零表示已经输出。
+	wrote            bool
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
-	inputUnmarshal UnmarshalFunc
+	inputMediaType MediaType
 	requestBody    io.Reader
 
 	// 区域和本地相关信息
@@ -83,7 +81,7 @@ func parseHeaderErr(header string, err error) LocaleStringer {
 // 在 Context 未初始化成功时，可以使用此方法
 func (s *Server) errorPage(w http.ResponseWriter, id problems.ID) {
 	item := s.Problems().Get(id)
-	txt := item.Title.LocaleString(s.Locale().Printer())
+	txt := item.Title.LocaleString(s.Negotiation().LocalePrinter())
 	http.Error(w, txt, item.Status)
 }
 
@@ -105,7 +103,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 
 	h := r.Header.Get(header.Accept)
-	mt, err := s.codec.accept(h) // 空值相当于 */*，如果正确设置，肯定不会返回 nil。
+	mt, err := s.nego.accept(h) // h 空值相当于 */*，如果正确设置，肯定不会返回 nil。
 	if err != nil {
 		warn().LocaleString(parseHeaderErr(header.Accept, err))
 		s.errorPage(w, problems.NotAcceptable)
@@ -117,22 +115,9 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 		return nil
 	}
 
-	h = r.Header.Get(header.AcceptCharset)
-	outputCharsetName, outputCharset, errs := qheader.ParseAcceptCharset(h)
-	if len(errs) > 0 {
-		warn().LocaleString(parseHeaderErr(header.AcceptCharset, unableParse(strings.Join(errs, ","))))
-		s.errorPage(w, problems.NotAcceptable)
-		return nil
-	}
-	if outputCharsetName == "" {
-		warn().LocaleString(Phrase("not found charset for %s", h))
-		s.errorPage(w, problems.NotAcceptable)
-		return nil
-	}
-
 	var outputCompressor Compressor
-	if s.codec.CanCompress() {
-		if outputCompressor, err = s.codec.acceptEncoding(mt.Name(), r.Header.Get(header.AcceptEncoding)); err != nil {
+	if s.nego.CanCompress() {
+		if outputCompressor, err = s.nego.acceptEncoding(mt.Name(), r.Header.Get(header.AcceptEncoding)); err != nil {
 			warn().LocaleString(parseHeaderErr(header.AcceptEncoding, err))
 			s.errorPage(w, problems.NotAcceptable)
 			return nil
@@ -140,10 +125,10 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 
 	var inputReader io.Reader = r.Body // 作为服务端不需要关闭 Request.Body，所以直接使用 io.Reader
-	var unmarshal UnmarshalFunc
+	var inputMedia MediaType
 	var inputCharset encoding.Encoding
 	if h = r.Header.Get(header.ContentType); h != "" {
-		if unmarshal, inputCharset, err = s.codec.contentType(h); err != nil {
+		if inputMedia, inputCharset, err = s.nego.contentType(h, r.Method); err != nil {
 			warn().LocaleString(parseHeaderErr(header.ContentType, err))
 			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
@@ -152,7 +137,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 
 	var inputEncoding io.ReadCloser
 	if h = r.Header.Get(header.ContentEncoding); h != "" {
-		if inputEncoding, err = s.codec.contentEncoding(h, inputReader); err != nil {
+		if inputEncoding, err = s.nego.contentEncoding(h, inputReader); err != nil {
 			warn().LocaleString(parseHeaderErr(header.ContentEncoding, err))
 			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
@@ -164,7 +149,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 		inputReader = transform.NewReader(inputReader, inputCharset.NewDecoder())
 	}
 
-	tag := acceptLanguage(s, r.Header.Get(header.AcceptLanguage))
+	tag := s.Negotiation().acceptLanguage(r.Header.Get(header.AcceptLanguage))
 
 	// 以上是获取构建 Context 的必要参数，并未真正构建 Context，
 	// 保证 ID 不为空无任何意义，因为没有后续的执行链可追踪的。
@@ -201,16 +186,14 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	ctx.originResponse = w
 	ctx.writer = w
 	ctx.outputCompressor = outputCompressor
-	ctx.outputCharset = outputCharset
-	ctx.outputCharsetName = outputCharsetName
 	ctx.outputMediaType = mt
 	ctx.status = 0
 	ctx.wrote = false
 
-	ctx.inputUnmarshal = unmarshal
+	ctx.inputMediaType = inputMedia
 	ctx.requestBody = inputReader
 	ctx.languageTag = tag
-	ctx.localePrinter = s.Locale().NewPrinter(tag)
+	ctx.localePrinter = s.Negotiation().NewLocalePrinter(tag)
 	clear(ctx.vars)
 	ctx.logs = s.Logs().New(map[string]any{s.requestIDKey: id})
 
@@ -257,32 +240,6 @@ func (ctx *Context) ParseTime(layout, value string) (time.Time, error) {
 // 一般源自客户端的 X-Request-ID 报头，如果不存在，则由 [Server.UniqueID] 生成。
 func (ctx *Context) ID() string { return ctx.id }
 
-// SetCharset 设置输出的字符集
-//
-// 不会修改 [Context.Request] 中的 Accept-Charset 报头，如果需要同时修改此报头
-// 可以通过 [Server.NewContext] 构建一个新 [Context] 对象。
-func (ctx *Context) SetCharset(charset string) {
-	if ctx.Wrote() {
-		panic("已有内容输出，不可再更改！")
-	}
-	if ctx.Charset() == charset {
-		return
-	}
-
-	outputCharsetName, outputCharset, errs := qheader.ParseAcceptCharset(charset)
-	if len(errs) > 0 {
-		panic(fmt.Sprintf("无法解析以下内容：%s", strings.Join(errs, ",")))
-	}
-	if outputCharsetName == "" {
-		panic(fmt.Sprintf("指定的字符集 %s 不存在", charset))
-	}
-	ctx.outputCharset = outputCharset
-	ctx.outputCharsetName = outputCharsetName
-}
-
-// Charset 输出的字符集
-func (ctx *Context) Charset() string { return ctx.outputCharsetName }
-
 // SetMediaType 设置输出的格式
 //
 // 不会修改 [Context.Request] 中的 Accept 报头，如果需要同时修改此报头
@@ -295,7 +252,7 @@ func (ctx *Context) SetMediaType(mediaType string) {
 		return
 	}
 
-	item, err := ctx.s.codec.accept(mediaType)
+	item, err := ctx.s.nego.accept(mediaType)
 	if err != nil {
 		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
 	}
@@ -327,7 +284,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	c, err := ctx.s.codec.acceptEncoding(ctx.MediaType(false), enc)
+	c, err := ctx.s.nego.acceptEncoding(ctx.MediaType(false), enc)
 	if err != nil {
 		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
 	}
@@ -350,7 +307,7 @@ func (ctx *Context) SetLanguage(tag language.Tag) {
 	// 不判断是否有内容已经输出，允许中途改变语言。
 	if ctx.languageTag != tag {
 		ctx.languageTag = tag
-		ctx.localePrinter = ctx.Server().Locale().NewPrinter(tag)
+		ctx.localePrinter = ctx.Server().Negotiation().NewLocalePrinter(tag)
 	}
 }
 
@@ -379,14 +336,6 @@ func (ctx *Context) freeContext() {
 //
 // 此方法添加的函数会先于 [Server.OnExitContext] 添加的函数执行。
 func (ctx *Context) OnExit(f OnExitContextFunc) { ctx.exits = append(ctx.exits, f) }
-
-func acceptLanguage(s *Server, h string) language.Tag {
-	if h == "" {
-		return s.Locale().ID()
-	}
-	tag, _ := language.MatchStrings(s.Locale().Matcher(), h)
-	return tag
-}
 
 // ClientIP 返回客户端的 IP 地址及端口
 //

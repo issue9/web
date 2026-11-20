@@ -82,14 +82,6 @@ func TestNewContext(t *testing.T) {
 		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
 	})
 
-	t.Run("accept-charset", func(*testing.T) {
-		w := httptest.NewRecorder()
-		r := rest.Get(a, "/path").Header(header.AcceptCharset, "111").Request()
-
-		s.NewContext(w, r, types.NewRoute())
-		a.Equal(w.Result().StatusCode, http.StatusNotAcceptable)
-	})
-
 	t.Run("accept-encoding", func(*testing.T) {
 		w := httptest.NewRecorder()
 		r := rest.Get(a, "/path").Header(header.AcceptEncoding, "*;q=0").Request()
@@ -127,28 +119,6 @@ func TestContext_SetMediaType(t *testing.T) {
 	ctx.Render(200, 200) // 输出内容
 	a.PanicString(func() {
 		ctx.SetMediaType(header.JSON)
-	}, "已有内容输出，不可再更改！")
-}
-
-func TestContext_SetCharset(t *testing.T) {
-	a := assert.New(t, false)
-	srv := newTestServer(a, false)
-
-	w := httptest.NewRecorder()
-	r := rest.Post(a, "/path", []byte("123")).Header(header.Accept, header.JSON).Request()
-	ctx := srv.NewContext(w, r, types.NewRoute())
-	a.NotNil(ctx)
-
-	a.PanicString(func() {
-		ctx.SetCharset("not-exists")
-	}, "指定的字符集 not-exists 不存在")
-
-	ctx.SetCharset("gb2312")
-	a.Equal(ctx.Charset(), "gbk")
-
-	ctx.Render(200, 200) // 输出内容
-	a.PanicString(func() {
-		ctx.SetCharset("gb18030")
 	}, "已有内容输出，不可再更改！")
 }
 
@@ -236,7 +206,7 @@ func TestContext_SetLanguage(t *testing.T) {
 	ctx := srv.NewContext(w, r, types.NewRoute())
 	a.NotNil(ctx)
 
-	a.Equal(ctx.LanguageTag(), ctx.Server().Locale().ID())
+	a.Equal(ctx.LanguageTag(), ctx.Server().Negotiation().Language())
 
 	cmnHant := language.MustParse("cmn-hant")
 	ctx.SetLanguage(cmnHant)
@@ -272,35 +242,6 @@ func TestContext_IsIdempotent(t *testing.T) {
 	r = rest.Patch(a, "/p", nil).Request()
 	ctx = s.NewContext(w, r, types.NewRoute())
 	a.False(ctx.IsIdempotent())
-}
-
-func TestServer_acceptLanguage(t *testing.T) {
-	a := assert.New(t, false)
-
-	srv := newTestServer(a, false)
-	b := srv.Locale()
-	a.NotError(b.SetString(language.Und, "lang", "und"))
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
-	a.NotError(b.SetString(language.AmericanEnglish, "lang", "en_US"))
-
-	tag := acceptLanguage(srv.Server, "")
-	a.Equal(tag, srv.Locale().ID(), "v1:%s, v2:%s", tag.String(), language.Und.String())
-
-	tag = acceptLanguage(srv.Server, "zh") // 匹配 zh-hans
-	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
-
-	tag = acceptLanguage(srv.Server, "zh-Hant")
-	a.Equal(tag, language.TraditionalChinese, "v1:%s, v2:%s", tag.String(), language.TraditionalChinese.String())
-
-	tag = acceptLanguage(srv.Server, "zh-Hans")
-	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
-
-	tag = acceptLanguage(srv.Server, "english") // english 非正确的 tag，但是常用。
-	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
-
-	tag = acceptLanguage(srv.Server, "zh-Hans;q=0.1,zh-Hant;q=0.3,en")
-	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
 }
 
 func TestContext_ClientIP(t *testing.T) {

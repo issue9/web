@@ -11,7 +11,6 @@ import (
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/assert/v6/rest"
 	"github.com/issue9/mux/v10/header"
-	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
 func TestParseWithParam(t *testing.T) {
@@ -53,44 +52,6 @@ func TestParseWithParam(t *testing.T) {
 	// 参数格式不正确
 	v, p = ParseWithParam("application/xml; invalid-params", "charset")
 	a.Equal(v, "application/xml").Equal(p, "")
-}
-
-func TestAcceptCharset(t *testing.T) {
-	a := assert.New(t, false)
-
-	name, enc, err := ParseAcceptCharset(header.UTF8)
-	a.Nil(err).Equal(name, header.UTF8).
-		True(CharsetIsNop(enc))
-
-	name, enc, err = ParseAcceptCharset("")
-	a.Nil(err).Equal(name, header.UTF8).
-		True(CharsetIsNop(enc))
-
-	// * 表示采用默认的编码
-	name, enc, err = ParseAcceptCharset("*")
-	a.Nil(err).Equal(name, header.UTF8).
-		True(CharsetIsNop(enc))
-
-	name, enc, err = ParseAcceptCharset("gbk")
-	a.Nil(err).Equal(name, "gbk").
-		Equal(enc, simplifiedchinese.GBK)
-
-	// 传递一个非正规名称
-	name, enc, err = ParseAcceptCharset("chinese")
-	a.Nil(err).Equal(name, "gbk").
-		Equal(enc, simplifiedchinese.GBK)
-
-	// q 错解析错误
-	name, enc, err = ParseAcceptCharset("utf-8;q=x.9,gbk;q=0.8")
-	a.Equal(err, []string{"utf-8;q=x.9"}).
-		Equal(name, "gbk").
-		Equal(enc, simplifiedchinese.GBK)
-
-	// 不支持的编码
-	name, enc, err = ParseAcceptCharset("not-supported")
-	a.Empty(err).
-		Empty(name).
-		Nil(enc)
 }
 
 func TestBuildContentType(t *testing.T) {

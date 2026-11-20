@@ -18,8 +18,8 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server/registry"
 	"github.com/issue9/web/startuptest"
@@ -48,22 +48,22 @@ func TestNewHTTP(t *testing.T) {
 	d, ok := srv.Cache().(cache.Driver)
 	a.True(ok).
 		NotNil(d).
-		True(srv.Codec().CanCompress())
-	srv.Codec().SetCompress(false)
-	a.False(srv.Codec().CanCompress())
+		True(srv.Negotiation().CanCompress())
+	srv.Negotiation().SetCompress(false)
+	a.False(srv.Negotiation().CanCompress())
 }
 
 func newOptions(a *assert.Assertion, o *Options) *Options {
 	if o == nil {
-		o = &Options{Startup: startuptest.NewHTTPServerStartup(a, false), Language: language.English} // 指定不存在的语言
+		o = &Options{Startup: startuptest.NewHTTPServerStartup(a, false), Negotiation: web.NewNegotiation(language.English, nil)} // 指定不存在的语言
 	}
 	if o.Logs == nil { // 默认重定向到 os.Stderr
 		o.Logs = logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithLocation(true), logs.WithCreated(logs.NanoLayout), logs.WithLevels(logs.AllLevels()...))
 	}
-	if o.Codec == nil {
-		o.Codec = web.NewCodec().
-			AddMediaType(codec.NewJSON(), true, true).
-			AddMediaType(codec.NewXML(), true, true)
+	if o.Negotiation == nil {
+		o.Negotiation = web.NewNegotiation(language.English, nil).
+			AddMediaType(negotiation.NewJSON()).
+			AddMediaType(negotiation.NewXML())
 	}
 
 	return o

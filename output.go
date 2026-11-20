@@ -12,7 +12,6 @@ import (
 	"slices"
 
 	"github.com/issue9/mux/v10/header"
-	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/qheader"
 	"github.com/issue9/web/problems"
@@ -125,12 +124,6 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 			closes = append(closes, w)
 		}
 
-		if !qheader.CharsetIsNop(ctx.outputCharset) {
-			w := transform.NewWriter(ctx.writer, ctx.outputCharset.NewEncoder())
-			ctx.writer = w
-			closes = append(closes, w)
-		}
-
 		if l := len(closes); l > 0 {
 			ctx.OnExit(func(*Context, int) {
 				for _, c := range slices.Backward(closes) {
@@ -159,10 +152,7 @@ func (ctx *Context) WriteHeader(status int) {
 
 	// 内容协商的报头名称，无论是否有输出都应该无条件添加。
 	if status >= http.StatusOK && ctx.status < http.StatusOK {
-		ctx.Header().Add(header.Vary, header.Accept)
-		ctx.Header().Add(header.Vary, header.AcceptLanguage)
-		ctx.Header().Add(header.Vary, header.AcceptEncoding)
-		ctx.Header().Add(header.Vary, header.AcceptCharset)
+		ctx.Server().Negotiation().setVary(ctx.Header())
 	}
 
 	ctx.Header().Del(header.ContentLength) // https://github.com/golang/go/issues/14975
@@ -175,7 +165,7 @@ func (ctx *Context) writeHeaders(problem bool) {
 		return
 	}
 
-	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.MediaType(problem), ctx.Charset()))
+	ctx.Header().Set(header.ContentType, qheader.BuildContentType(ctx.MediaType(problem), header.UTF8))
 
 	if id := ctx.LanguageTag().String(); id != "" {
 		ctx.Header().Set(header.ContentLanguage, id)

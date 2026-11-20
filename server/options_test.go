@@ -10,6 +10,7 @@ import (
 
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/mux/v10/header"
+	"github.com/issue9/web"
 	"golang.org/x/text/language"
 )
 
@@ -21,13 +22,12 @@ func TestSanitizeOptions(t *testing.T) {
 		Equal(o.Location, time.Local).
 		NotNil(o.Logs).
 		NotNil(o.IDGenerator).
-		NotNil(o.Config).
 		Equal(o.RequestIDKey, header.XRequestID).
-		NotNil(o.Codec).
+		NotNil(o.Negotiation).
 		NotZero(len(o.Plugins))
 
 	o, err = sanitizeOptions(&Options{
-		Language: language.MustParse("zh-Hant"),
+		Negotiation: web.NewNegotiation(language.MustParse("zh-Hant"), nil),
 	}, typeHTTP)
-	a.NotError(err).NotNil(o).Equal(o.Language, language.MustParse("zh-Hant"))
+	a.NotError(err).NotNil(o).Equal(o.Negotiation.Language(), language.MustParse("zh-Hant"))
 }

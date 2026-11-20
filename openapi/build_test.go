@@ -16,7 +16,7 @@ import (
 func TestDocument_build(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a)
-	p := s.Locale().NewPrinter(language.SimplifiedChinese)
+	p := s.Negotiation().NewLocalePrinter(language.SimplifiedChinese)
 
 	d := New(s, web.Phrase("lang"))
 	r := d.build(p, language.SimplifiedChinese, nil)
@@ -59,7 +59,7 @@ func TestDocument_build(t *testing.T) {
 func TestComponents_build(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a)
-	p := s.Locale().NewPrinter(language.SimplifiedChinese)
+	p := s.Negotiation().NewLocalePrinter(language.SimplifiedChinese)
 	d := New(s, web.Phrase("lang"))
 	c := d.components
 
@@ -77,7 +77,7 @@ func TestComponents_build(t *testing.T) {
 func TestServer_build(t *testing.T) {
 	a := assert.New(t, false)
 	ss := newServer(a)
-	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
+	p := ss.Negotiation().NewLocalePrinter(language.SimplifiedChinese)
 
 	s := &Server{
 		URL:         "https://example.com",
@@ -106,7 +106,7 @@ func TestServer_build(t *testing.T) {
 func TestRef_build(t *testing.T) {
 	a := assert.New(t, false)
 	ss := newServer(a)
-	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
+	p := ss.Negotiation().NewLocalePrinter(language.SimplifiedChinese)
 
 	ref := &Ref{}
 	a.PanicString(func() {
@@ -124,7 +124,7 @@ func TestRef_build(t *testing.T) {
 func TestSchema_build(t *testing.T) {
 	a := assert.New(t, false)
 	ss := newServer(a)
-	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
+	p := ss.Negotiation().NewLocalePrinter(language.SimplifiedChinese)
 
 	var s *Schema
 	a.Nil(s.build(p))
@@ -143,7 +143,7 @@ func TestSchema_build(t *testing.T) {
 func TestSecurityScheme_build(t *testing.T) {
 	a := assert.New(t, false)
 	ss := newServer(a)
-	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
+	p := ss.Negotiation().NewLocalePrinter(language.SimplifiedChinese)
 
 	s := &SecurityScheme{
 		Description: web.Phrase("lang"),

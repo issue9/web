@@ -17,19 +17,13 @@ import (
 
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/filter/validators"
-	"github.com/issue9/web/internal/qheader"
 	"github.com/issue9/web/locales"
 )
 
-var (
-	objectInst = &object{
-		Name: "中文",
-		Age:  456,
-	}
-
-	// {"name":"中文","Age":456}
-	objectGBKBytes = []byte{'{', '"', 'n', 'a', 'm', 'e', '"', ':', '"', 214, 208, 206, 196, '"', ',', '"', 'A', 'g', 'e', '"', ':', '4', '5', '6', '}'}
-)
+var objectInst = &object{
+	Name: "中文",
+	Age:  456,
+}
 
 const objectJSONString = `{"name":"中文","Age":456}`
 
@@ -297,14 +291,6 @@ func TestContext_Unmarshal(t *testing.T) {
 	obj = &object{}
 	a.NotError(ctx.Unmarshal(obj))
 	a.Equal(obj.Name, "").Equal(obj.Age, 0)
-
-	// gbk
-	r = httptest.NewRequest(http.MethodPost, "/path", bytes.NewBuffer(objectGBKBytes))
-	r.Header.Set(header.ContentType, qheader.BuildContentType(header.JSON, "gb18030"))
-	w = httptest.NewRecorder()
-	ctx = srv.NewContext(w, r, types.NewRoute())
-	obj = &object{}
-	a.NotError(ctx.Unmarshal(obj)).Equal(obj, objectInst)
 }
 
 func TestContext_Read(t *testing.T) {

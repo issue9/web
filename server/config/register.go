@@ -27,8 +27,8 @@ import (
 	"github.com/issue9/unique/v2"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/codec"
-	"github.com/issue9/web/codec/form"
+	"github.com/issue9/web/negotiation"
+	"github.com/issue9/web/negotiation/form"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/server/registry"
 )
@@ -158,22 +158,22 @@ func init() {
 
 	// RegisterCompression
 
-	RegisterCompressor("deflate-default", codec.NewDeflate(flate.DefaultCompression, nil))
-	RegisterCompressor("deflate-best-compression", codec.NewDeflate(flate.BestCompression, nil))
-	RegisterCompressor("deflate-best-speed", codec.NewDeflate(flate.BestSpeed, nil))
+	RegisterCompressor("deflate-default", negotiation.NewDeflate(flate.DefaultCompression, nil))
+	RegisterCompressor("deflate-best-compression", negotiation.NewDeflate(flate.BestCompression, nil))
+	RegisterCompressor("deflate-best-speed", negotiation.NewDeflate(flate.BestSpeed, nil))
 
-	RegisterCompressor("gzip-default", codec.NewGzip(gzip.DefaultCompression))
-	RegisterCompressor("gzip-best-compression", codec.NewGzip(gzip.BestCompression))
-	RegisterCompressor("gzip-best-speed", codec.NewGzip(gzip.BestSpeed))
+	RegisterCompressor("gzip-default", negotiation.NewGzip(gzip.DefaultCompression))
+	RegisterCompressor("gzip-best-compression", negotiation.NewGzip(gzip.BestCompression))
+	RegisterCompressor("gzip-best-speed", negotiation.NewGzip(gzip.BestSpeed))
 
-	RegisterCompressor("compress-lsb-8", codec.NewLZW(lzw.LSB, 8))
-	RegisterCompressor("compress-msb-8", codec.NewLZW(lzw.MSB, 8))
+	RegisterCompressor("compress-lsb-8", negotiation.NewLZW(lzw.LSB, 8))
+	RegisterCompressor("compress-msb-8", negotiation.NewLZW(lzw.MSB, 8))
 
-	RegisterCompressor("br-default", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
-	RegisterCompressor("br-best-compression", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
-	RegisterCompressor("br-best-speed", codec.NewBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
+	RegisterCompressor("br-default", negotiation.NewBrotli(brotli.WriterOptions{Quality: brotli.DefaultCompression}))
+	RegisterCompressor("br-best-compression", negotiation.NewBrotli(brotli.WriterOptions{Quality: brotli.BestCompression}))
+	RegisterCompressor("br-best-speed", negotiation.NewBrotli(brotli.WriterOptions{Quality: brotli.BestSpeed}))
 
-	RegisterCompressor("zstd-default", codec.NewZstd())
+	RegisterCompressor("zstd-default", negotiation.NewZstd())
 
 	// RegisterIDGenerator
 
@@ -192,13 +192,13 @@ func init() {
 
 	// RegisterMeidaType
 
-	RegisterMediaType(codec.NewJSON(), "json")
-	RegisterMediaType(codec.NewYAML(), "yaml")
-	RegisterMediaType(codec.NewCBOR(), "cbor")
-	RegisterMediaType(codec.NewXML(), "xml")
+	RegisterMediaType(negotiation.NewJSON(), "json")
+	RegisterMediaType(negotiation.NewYAML(), "yaml")
+	RegisterMediaType(negotiation.NewCBOR(), "cbor")
+	RegisterMediaType(negotiation.NewXML(), "xml")
 	RegisterMediaType(form.New(), "form")
-	RegisterMediaType(codec.NewGOB(), "gob")
-	RegisterMediaType(codec.NewNOP("nop", "nop"), "nop")
+	RegisterMediaType(negotiation.NewGOB(), "gob")
+	RegisterMediaType(negotiation.NewNOP("nop", "nop"), "nop")
 
 	// RegisterFileSerializer
 

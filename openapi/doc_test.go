@@ -20,7 +20,7 @@ import (
 func TestParameterizedDoc(t *testing.T) {
 	a := assert.New(t, false)
 	s := newServer(a)
-	p := s.Locale().NewPrinter(language.SimplifiedChinese)
+	p := s.Negotiation().NewLocalePrinter(language.SimplifiedChinese)
 	d := New(s, web.Phrase("title"))
 
 	a.PanicString(func() {
@@ -100,7 +100,7 @@ func TestMarkdownGoObject(t *testing.T) {
 func TestMarkdownProblems(t *testing.T) {
 	a := assert.New(t, false)
 	ss := newServer(a)
-	p := ss.Locale().NewPrinter(language.SimplifiedChinese)
+	p := ss.Negotiation().NewLocalePrinter(language.SimplifiedChinese)
 
 	txt := MarkdownProblems(ss, 2)
 	lines := strings.Split(txt.LocaleString(p), "\n\n")

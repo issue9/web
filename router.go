@@ -58,9 +58,18 @@ func buildNodeHandle(status int) types.BuildNodeHandler[HandlerFunc] {
 
 			if ctx.Request().Method == http.MethodOptions { // OPTIONS 200
 				return ResponserFunc(func(ctx *Context) {
-					ctx.Header().Set(header.AcceptEncoding, ctx.s.codec.acceptEncodingHeader)
-					ctx.Header().Set(header.Accept, ctx.s.codec.serverAcceptHeader)
-					ctx.Header().Set(header.AcceptLanguage, ctx.s.locale.acceptLanguage)
+					nego := ctx.Server().Negotiation()
+
+					ctx.Header().Set(header.AcceptEncoding, nego.acceptEncodingHeader)
+					ctx.Header().Set(header.Accept, nego.acceptHeader)
+					ctx.Header().Set(header.AcceptLanguage, nego.acceptLanguageHeader())
+					if nego.acceptPatchHeader != "" {
+						ctx.Header().Set(header.AcceptPatch, nego.acceptPatchHeader)
+					}
+					if nego.acceptQueryHeader != "" {
+						ctx.Header().Set("Accept-Query", nego.acceptQueryHeader)
+					}
+
 					ctx.WriteHeader(http.StatusOK)
 				})
 			}
