@@ -150,7 +150,7 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 
 	if problems.IsProblem(rsp.StatusCode) {
 		var e E
-		p = &Problem{} // TODO
+		p = &Problem{} // 也可以通过 problems.Free 回收
 		p.Extensions = e
 		if err = c.mediaType.Unmarshal(reader, p); err != nil {
 			return

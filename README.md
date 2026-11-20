@@ -59,7 +59,7 @@ func getGroups(ctx *web.Context) web.Responser {
 
 编码相关的功能由 `Negotiation` 结构体管理，总体上分为以下几个类型：
 
-### 字符集和文档类型
+### 文档类型
 
 并没有像其它框架一样为不同的媒体类型输出提供各自不同的方法，而返回统一的对象，
 再由客户端的 Accept 等报头协商返回给客户端需要的类型。比如要向用户返回一个 400 的错误，
@@ -78,8 +78,6 @@ func handler(ctx *web.Context) web.Responser {
 如果 Accept 为 `application/json;q=0.5,application/xml;q=1` 那么会返回 XML 格式。
 服务端只需要在初始化服务时配置对应的 `web.Negotiation` 对象就可以了。
 
-字符集也是如此，甚至不需要服务端做配置，本身就支持在 <https://www.iana.org/assignments/character-sets/character-sets.xhtml> 中列出的所有字符集。
-
 ```go
 import (
 	"github.com/issue9/web"
@@ -89,20 +87,28 @@ import (
 
 func newServer() (*web.Server, error) {
 	nego := web.NewNegotiation().
-		AddMediaType(negotiation.NewJSON(), true, true).
-		AddMediaType(negotiation.NewXML(), true, true)
+		AddMediaType(negotiation.NewJSON()).
+		AddMediaType(negotiation.NewXML())
 
 	return server.NewHTTP("app", "1.0.0", &server.Options{Negotiation: nego})
 }
 ```
 
-客户端只要在请求时设置 Accept 报头就可返回相应类型的数据，而 Accept-Charset 报头可设置接收的字符集。
-Content-Type 则可以有向服务器指定提交内容的文档类型和字符集。
+客户端只要在请求时设置 Accept 报头就可返回相应类型的数据。Content-Type 则可以有向服务器指定提交内容的文档类型和字符集。
+
+**我们通过 `MediaType` 接口，将不同的文档类型都尽量统一成相同的输入输出接口，不用在处理函数中写 `ctx.JSON()`、`ctx.XML()`
+等方法输出不同的媒体类型，但是万事总有意外的，如果你想在你的 PATCH 请求方法中支持 patch 类型的数据，
+比如 json 的 `application/json-patch+json`，xml 的 `application/xml-patch+xml` 的数据类型，
+其格式是完全不同的，没办法抽象，所以对于这类的数据，还是需要各自判断。**
 
 ### 压缩
 
-通过 `web.Negotiation.AddCompressor` 可以添加需要支持压缩算法。`Negotiation` 提供大部分目前浏览器支持的压缩算法。
+通过 `Negotiation.AddCompressor` 可以添加需要支持压缩算法。`Negotiation` 提供大部分目前浏览器支持的压缩算法。
 使用方法也同媒体类型，通过客户端的 `Accept-Encoding` 自动匹配压缩算法。
+
+### 本地化
+
+通过 `Negotiation.LoadMessages` 可以动态加载本地化文件，在之后就能使用 `Negotiation.Sprintf` 对内容进行翻译输出。
 
 ## 错误处理
 

@@ -96,7 +96,6 @@ type compression struct {
 //
 // conf 为加载配置文件的对象，[Negotiation.LoadMessages] 使用该值加载本地化的语言文件。
 func NewNegotiation(lang language.Tag, conf *config.Config) *Negotiation {
-
 	return &Negotiation{
 		compressions: make([]*compression, 0, 10),
 		mediaTypes:   make([]MediaType, 0, 10),
