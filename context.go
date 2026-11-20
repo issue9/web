@@ -59,7 +59,7 @@ type Context struct {
 	wrote            bool
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
-	inputUnmarshal UnmarshalFunc
+	inputMediaType MediaType
 	requestBody    io.Reader
 
 	// 区域和本地相关信息
@@ -125,10 +125,10 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 
 	var inputReader io.Reader = r.Body // 作为服务端不需要关闭 Request.Body，所以直接使用 io.Reader
-	var unmarshal UnmarshalFunc
+	var inputMedia MediaType
 	var inputCharset encoding.Encoding
 	if h = r.Header.Get(header.ContentType); h != "" {
-		if unmarshal, inputCharset, err = s.nego.contentType(h); err != nil {
+		if inputMedia, inputCharset, err = s.nego.contentType(h, r.Method); err != nil {
 			warn().LocaleString(parseHeaderErr(header.ContentType, err))
 			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
@@ -190,7 +190,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	ctx.status = 0
 	ctx.wrote = false
 
-	ctx.inputUnmarshal = unmarshal
+	ctx.inputMediaType = inputMedia
 	ctx.requestBody = inputReader
 	ctx.languageTag = tag
 	ctx.localePrinter = s.Negotiation().NewLocalePrinter(tag)

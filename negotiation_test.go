@@ -13,11 +13,11 @@ import (
 	"encoding/xml"
 	"errors"
 	"io"
-	"os"
+	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/andybalholm/brotli"
-	"github.com/goccy/go-yaml"
 	"github.com/issue9/assert/v6"
 	"github.com/issue9/config"
 	"github.com/issue9/localeutil"
@@ -38,6 +38,7 @@ type (
 	mediaTypeImpl struct {
 		normalName  string
 		problemName string
+		method      string
 		marshal     MarshalFunc
 		unmarshal   UnmarshalFunc
 	}
@@ -84,7 +85,7 @@ func (deflateImpl) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 	return flate.NewWriter(w, flate.DefaultCompression)
 }
 
-func newMediaType(name, problem string, m MarshalFunc, u UnmarshalFunc) MediaType {
+func newMediaType(name, problem, method string, m MarshalFunc, u UnmarshalFunc) MediaType {
 	if problem == "" {
 		problem = name
 	}
@@ -92,6 +93,7 @@ func newMediaType(name, problem string, m MarshalFunc, u UnmarshalFunc) MediaTyp
 	return &mediaTypeImpl{
 		normalName:  name,
 		problemName: problem,
+		method:      method,
 		marshal:     m,
 		unmarshal:   u,
 	}
@@ -99,6 +101,7 @@ func newMediaType(name, problem string, m MarshalFunc, u UnmarshalFunc) MediaTyp
 
 func (m *mediaTypeImpl) Name() string                                { return m.normalName }
 func (m *mediaTypeImpl) ProblemName() string                         { return m.problemName }
+func (m *mediaTypeImpl) Method() string                              { return m.method }
 func (m *mediaTypeImpl) Marshal(ctx *Context, v any) ([]byte, error) { return m.marshal(ctx, v) }
 func (m *mediaTypeImpl) Unmarshal(r io.Reader, v any) error          { return m.unmarshal(r, v) }
 
@@ -128,9 +131,13 @@ func newNegotiation(a *assert.Assertion, conf *config.Config) *Negotiation {
 	c.AddCompressor(newGzip()).
 		AddCompressor(newDeflate()).
 		//AddCompressor(nil).
-		AddMediaType(newMediaType(header.JSON, "application/problem+json", marshalJSON, unmarshalJSON)).
-		AddMediaType(newMediaType(header.XML, "application/problem+xml", marshalXML, unmarshalXML)).
-		AddMediaType(newMediaType("application/test", "application/problem+test", marshalTest, unmarshalTest))
+		AddMediaType(newMediaType(header.JSON, "application/problem+json", "", marshalJSON, unmarshalJSON)).
+		AddMediaType(newMediaType(header.XML, "application/problem+xml", "", marshalXML, unmarshalXML)).
+		AddMediaType(newMediaType("application/test", "application/problem+test", "", marshalTest, unmarshalTest))
+
+	a.Length(slices.Collect(c.MediaTypes()), 3).
+		StrictEqual(conf, c.config()).
+		StrictEqual(c.Language(), language.SimplifiedChinese)
 
 	return c
 }
@@ -140,21 +147,56 @@ func TestNegotiation_AddMediaType(t *testing.T) {
 	c := NewNegotiation(language.SimplifiedChinese, nil)
 
 	a.NotPanic(func() {
-		c.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON))
+		c.AddMediaType(newMediaType(header.JSON, "", "", marshalJSON, unmarshalJSON))
 	})
 
 	a.PanicString(func() {
-		c.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON))
+		c.AddMediaType(newMediaType(header.JSON, "", "", marshalJSON, unmarshalJSON))
 	}, "存在重复的项 "+header.JSON)
 
 	a.PanicString(func() {
-		c.AddMediaType(nil)
+		c.AddMediaType()
 	}, "参数 mt 不能为空")
 
-	mt := newMediaType(header.Plain, "", marshalJSON, unmarshalJSON)
-	a.Equal(mt.ProblemName(), header.Plain)
-	e := NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt)
-	a.Equal(e.acceptHeader, header.Plain)
+	a.PanicString(func() {
+		c.AddMediaType(nil)
+	}, "参数 mt 不能为 nil")
+
+	t.Run("acceptHeader", func(t *testing.T) {
+		mt := newMediaType(header.Plain, "", "", marshalJSON, unmarshalJSON)
+		e := NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt)
+		a.Equal(e.acceptHeader, header.Plain).
+			Empty(e.acceptPatchHeader).
+			Empty(e.acceptQueryHeader)
+	})
+
+	t.Run("acceptPatchHeader", func(t *testing.T) {
+		mt := newMediaType(header.Plain, "", http.MethodPatch, marshalJSON, unmarshalJSON)
+		e := NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt)
+		a.Equal(e.acceptPatchHeader, header.Plain).
+			Empty(e.acceptHeader).
+			Empty(e.acceptQueryHeader)
+	})
+
+	t.Run("acceptQueryHeader", func(t *testing.T) {
+		mt := newMediaType(header.Plain, "", "QUERY", marshalJSON, unmarshalJSON)
+		e := NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt)
+		a.Equal(e.acceptQueryHeader, header.Plain).
+			Empty(e.acceptHeader).
+			Empty(e.acceptPatchHeader)
+	})
+
+	t.Run("accept", func(t *testing.T) {
+		mt1 := newMediaType("application/sql", "", "QUERY", marshalJSON, unmarshalJSON)
+		mt2 := newMediaType("text/plain", "", "", marshalJSON, unmarshalJSON)
+		mt3 := newMediaType("application/json-patch+json", "", http.MethodPatch, marshalJSON, unmarshalJSON)
+		mt4 := newMediaType("application/json-merge+json", "", http.MethodPatch, marshalJSON, unmarshalJSON)
+		mt5 := newMediaType("application/cbor", "", "", marshalJSON, unmarshalJSON)
+		e := NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt1, mt2, mt3, mt4, mt5)
+		a.Equal(e.acceptQueryHeader, "application/sql").
+			Equal(e.acceptHeader, "text/plain, application/cbor").
+			Equal(e.acceptPatchHeader, "application/json-patch+json, application/json-merge+json")
+	})
 }
 
 func TestBuildCompression(t *testing.T) {
@@ -265,46 +307,93 @@ func TestNegotiation_contentType(t *testing.T) {
 
 	mt := NewNegotiation(language.SimplifiedChinese, nil)
 	a.NotNil(mt)
-	mt.AddMediaType(newMediaType(header.OctetStream, "", marshalJSON, unmarshalJSON))
+	mt.AddMediaType(
+		newMediaType(header.XML, "", "", marshalJSON, unmarshalJSON),
+		newMediaType(header.JSON, "", http.MethodPatch, marshalJSON, unmarshalJSON),
+		newMediaType(header.CBOR, "", "QUERY", marshalJSON, unmarshalJSON),
+	)
 
-	f, e, err := mt.contentType(";;;")
-	a.Error(err).Nil(f).Nil(e)
+	t.Run(";;;", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType(";;;", "")
+		a.Error(err).Nil(f).Nil(e)
+	})
 
-	// 不存在的 mimetype
-	f, e, err = mt.contentType("not-exists; charset=utf-8")
-	a.Equal(err, NewError("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
+	t.Run("不存在的 mediaType", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType("not-exists; charset=utf-8", "")
+		a.Equal(err, NewError("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
+	})
 
-	// charset=utf-8
-	f, e, err = mt.contentType(qheader.BuildContentType(header.OctetStream, header.UTF8))
-	a.NotError(err).NotNil(f).Nil(e)
+	t.Run("xml;charset=utf-8", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType(qheader.BuildContentType(header.XML, header.UTF8), "")
+		a.NotError(err).NotNil(f).Nil(e)
+	})
 
-	// charset=gb2312
-	f, e, err = mt.contentType(qheader.BuildContentType(header.OctetStream, "gb2312"))
-	a.NotError(err).NotNil(f).NotNil(e)
+	t.Run("xml;charset=gb2312", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType(qheader.BuildContentType(header.XML, "gb2312"), "")
+		a.NotError(err).NotNil(f).NotNil(e)
+	})
 
-	// charset=not-exists
-	f, e, err = mt.contentType(qheader.BuildContentType(header.OctetStream, "not-exists"))
-	a.Error(err).Nil(f).Nil(e)
+	t.Run("xml;charset=not-exists", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType(qheader.BuildContentType(header.XML, "not-exists"), "")
+		a.Error(err).Nil(f).Nil(e)
+	})
 
-	// charset=UTF-8
-	f, e, err = mt.contentType("application/octet-stream; charset=UTF-8;p1=k1;p2=k2")
-	a.NotError(err).NotNil(f).Nil(e)
+	t.Run("xml;charset=UTF-8;params", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType("application/xml; charset=UTF-8;p1=k1;p2=k2", "")
+		a.NotError(err).NotNil(f).Nil(e)
+	})
 
-	// charset=
-	f, e, err = mt.contentType(qheader.BuildContentType(header.OctetStream, ""))
-	a.NotError(err).NotNil(f).Nil(e)
+	t.Run("xml;charset=", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType(qheader.BuildContentType(header.XML, ""), "")
+		a.NotError(err).NotNil(f).Nil(e)
+	})
 
-	// 没有 charset
-	f, e, err = mt.contentType("application/octet-stream;")
-	a.NotError(err).NotNil(f).Nil(e)
+	t.Run("没有 charset", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType("application/xml;", "")
+		a.NotError(err).NotNil(f).Nil(e)
+	})
 
-	// 没有 ;charset
-	f, e, err = mt.contentType(header.OctetStream)
-	a.NotError(err).NotNil(f).Nil(e)
+	t.Run("无 ;charset", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType(header.XML, "")
+		a.NotError(err).NotNil(f).Nil(e)
+	})
 
-	// 未指定 charset 参数
-	f, e, err = mt.contentType("application/octet-stream; invalid-params")
-	a.NotError(err).NotNil(f).Nil(e)
+	// Patch 在没有匹配 PATCH 的请求的情况下，也会匹配普通项
+	t.Run("xml;charset=utf-8;method=PATCH", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType(qheader.BuildContentType(header.XML, header.UTF8), http.MethodPatch)
+		a.NotError(err).NotNil(f).Nil(e)
+	})
+
+	// Patch 匹配 PATCH 项
+	t.Run("json;charset=utf-8;method=PATCH", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType(qheader.BuildContentType(header.JSON, header.UTF8), http.MethodPatch)
+		a.NotError(err).NotNil(f).Nil(e)
+	})
+
+	// 普通请求无法匹配 Patch 项
+	t.Run("json;charset=utf-8;method=GET", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType(qheader.BuildContentType(header.JSON, header.UTF8), http.MethodGet)
+		a.Error(err).Nil(f).Nil(e)
+	})
+
+	// 普通请求匹配普通项
+	t.Run("xml;charset=utf-8;method=GET", func(t *testing.T) {
+		a := a.New(t)
+		f, e, err := mt.contentType(qheader.BuildContentType(header.XML, header.UTF8), http.MethodGet)
+		a.NotError(err).NotNil(f).Nil(e)
+	})
 }
 
 func TestNegotiation_accept(t *testing.T) {
@@ -320,8 +409,8 @@ func TestNegotiation_accept(t *testing.T) {
 
 	mt = NewNegotiation(language.SimplifiedChinese, nil)
 	a.NotNil(mt)
-	mt.AddMediaType(newMediaType(header.JSON, "", marshalJSON, unmarshalJSON)).
-		AddMediaType(newMediaType(header.Plain, "text/plain+problem", marshalXML, unmarshalXML))
+	mt.AddMediaType(newMediaType(header.JSON, "", "", marshalJSON, unmarshalJSON)).
+		AddMediaType(newMediaType(header.Plain, "text/plain+problem", "", marshalXML, unmarshalXML))
 
 	item, err = mt.accept(header.JSON)
 	a.NotError(err).NotNil(item).
@@ -364,116 +453,4 @@ func TestNegotiation_accept(t *testing.T) {
 
 	item, err = mt.accept("font/wottf")
 	a.NotError(err).Nil(item)
-}
-
-func TestNegotiation_Sprintf(t *testing.T) {
-	a := assert.New(t, false)
-
-	nego := NewNegotiation(language.SimplifiedChinese, nil)
-	a.NotError(nego.Catalog().SetString(language.SimplifiedChinese, "lang", "hans")).
-		NotNil(nego).Equal(nego.Sprintf("lang"), "hans").
-		NotError(nego.Catalog().SetString(language.SimplifiedChinese, "lang", "hans-2")).
-		Equal(nego.Sprintf("lang"), "hans-2")
-
-	// ID 不存在于 catalog
-
-	nego = NewNegotiation(language.Afrikaans, nil)
-	a.NotNil(nego).
-		NotError(nego.Catalog().SetString(language.SimplifiedChinese, "lang", "hans")).
-		Equal(nego.Sprintf("lang"), "lang"). // 找不到对应的翻译项，返回原值
-		NotError(nego.Catalog().SetString(language.Afrikaans, "lang", "afrik")).
-		Equal(nego.Sprintf("lang"), "afrik")
-}
-
-func TestNegotiation_acceptLanguage(t *testing.T) {
-	a := assert.New(t, false)
-	nego := newNegotiation(a, nil)
-
-	b := nego.Catalog()
-	a.NotError(b.SetString(language.Und, "lang", "und"))
-	a.NotError(b.SetString(language.SimplifiedChinese, "lang", "hans"))
-	a.NotError(b.SetString(language.TraditionalChinese, "lang", "hant"))
-	a.NotError(b.SetString(language.AmericanEnglish, "lang", "en_US"))
-
-	tag := nego.acceptLanguage("")
-	a.Equal(tag, nego.Language(), "v1:%s, v2:%s", tag.String(), language.Und.String())
-
-	tag = nego.acceptLanguage("zh") // 匹配 zh-hans
-	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
-
-	tag = nego.acceptLanguage("zh-Hant")
-	a.Equal(tag, language.TraditionalChinese, "v1:%s, v2:%s", tag.String(), language.TraditionalChinese.String())
-
-	tag = nego.acceptLanguage("zh-Hans")
-	a.Equal(tag, language.SimplifiedChinese, "v1:%s, v2:%s", tag.String(), language.SimplifiedChinese.String())
-
-	tag = nego.acceptLanguage("english") // english 非正确的 tag，但是常用。
-	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
-
-	tag = nego.acceptLanguage("zh-Hans;q=0.1,zh-Hant;q=0.3,en")
-	a.Equal(tag, language.AmericanEnglish, "v1:%s, v2:%s", tag.String(), language.AmericanEnglish.String())
-}
-
-func TestNegotiation_acceptLanguageHeader(t *testing.T) {
-	a := assert.New(t, false)
-	s := make(config.Serializer, 2)
-	s.Add(xml.Marshal, xml.Unmarshal, ".xml")
-	s.Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
-
-	l := NewNegotiation(language.SimplifiedChinese, config.Dir(s, "./"))
-	a.StrictEqual(l.acceptLanguageHeader, "zh-Hans")
-
-	a.NotError(l.LoadMessages("*.yaml", os.DirFS("./internal/locale/testdata"))).
-		StrictEqual(l.acceptLanguageHeader, "zh-Hans, cmn-Hans")
-
-	a.NotError(l.LoadMessages("*.xml", os.DirFS("./internal/locale/testdata"))).
-		StrictEqual(l.acceptLanguageHeader, "zh-Hans, cmn-Hans, zh-Hant")
-}
-
-func TestNegotiation_NewPrinter(t *testing.T) {
-	a := assert.New(t, false)
-	s := make(config.Serializer, 2)
-	s.Add(xml.Marshal, xml.Unmarshal, ".xml").
-		Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
-
-	l := NewNegotiation(language.MustParse("cmn-Hans"), config.Dir(s, "./"))
-	a.NotNil(l).Equal(l.Language(), language.MustParse("cmn-Hans"))
-
-	// language.MustParse("cmn-Hans") 是默认的 ID，初始化 l 时即已存在。
-
-	p1 := l.NewLocalePrinter(language.MustParse("cmn-Hans"))
-	a.NotError(l.Catalog().SetString(language.MustParse("cmn-Hans"), "lang", "hans"))
-
-	a.NotError(l.LoadMessages("*.yaml", os.DirFS("./internal/locale/testdata")))
-	p2 := l.NewLocalePrinter(language.MustParse("cmn-Hans"))
-	a.Equal(p1.Sprintf("lang"), p2.Sprintf("lang"))
-	a.Equal(p2.Sprintf("k1"), "zh")
-
-	a.Equal(p2.Sprintf("k2", 1), "msg-1")
-	a.Equal(p2.Sprintf("k2", 3), "msg-3")
-	a.Equal(p2.Sprintf("k2", 5), "msg-other")
-
-	a.Equal(p2.Sprintf("k3", 1, 1), "1-一")
-	a.Equal(p2.Sprintf("k3", 1, 2), "2-一")
-	a.Equal(p2.Sprintf("k3", 2, 2), "2-二")
-
-	// language.TraditionalChinese 在调用 SetString 之前不存在，
-	// 所以 p1 会匹配成其它相似的值，p2 则会准确匹配到 TraditionalChinese。
-
-	p1 = l.NewLocalePrinter(language.TraditionalChinese)
-	a.NotError(l.Catalog().SetString(language.TraditionalChinese, "lang", "hant"))
-
-	a.NotError(l.LoadMessages("*.xml", os.DirFS("./internal/locale/testdata")))
-	p2 = l.NewLocalePrinter(language.TraditionalChinese)
-	a.NotEqual(p1.Sprintf("lang"), p2.Sprintf("lang"))
-
-	a.Equal(p2.Sprintf("k1"), "zh-hant")
-
-	a.Equal(p2.Sprintf("k2", 1), "msg-1")
-	a.Equal(p2.Sprintf("k2", 3), "msg-3")
-	a.Equal(p2.Sprintf("k2", 5), "msg-other")
-
-	a.Equal(p2.Sprintf("k3", 1, 1), "1-壹")
-	a.Equal(p2.Sprintf("k3", 1, 2), "2-壹")
-	a.Equal(p2.Sprintf("k3", 2, 2), "2-贰")
 }

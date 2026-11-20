@@ -67,7 +67,7 @@ type Unmarshaler interface {
 
 // New 提供对 www-form-urlencoded 编码的支持
 func New() negotiation.MediaType {
-	return negotiation.NewMediaType(header.FormData, "", marshalForm, unmarshalForm)
+	return negotiation.NewMediaType(header.FormData, "", "", marshalForm, unmarshalForm)
 }
 
 // marshalForm 针对 www-form-urlencoded 内容的解码实现

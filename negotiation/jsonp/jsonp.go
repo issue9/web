@@ -35,6 +35,8 @@ func New(key string) negotiation.MediaType { return jsonp(key) }
 
 func (j jsonp) Name() string { return header.Javascript }
 
+func (j jsonp) Method() string { return "" }
+
 func (j jsonp) ProblemName() string { return header.Javascript }
 
 func (j jsonp) Marshal(ctx *web.Context, v any) ([]byte, error) {

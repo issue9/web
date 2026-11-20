@@ -75,7 +75,7 @@ func TestRegisterMediaType(t *testing.T) {
 		RegisterMediaType(negotiation.NewJSON(), "json2")
 	}, "存在同名的媒体类型")
 
-	RegisterMediaType(negotiation.ForkMediaType(negotiation.NewJSON(), "application/jsonv2", "application/problem+jsonv2"), "json2")
+	RegisterMediaType(negotiation.ForkMediaType(negotiation.NewJSON(), "jsonv2", "problem+jsonv2", ""), "json2")
 	v, f = mediaTypeFactory.get("json2")
 	a.True(f).NotNil(v)
 }

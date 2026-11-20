@@ -59,7 +59,6 @@ func BenchmarkNewContext(b *testing.B) {
 		Header(header.ContentType, qheader.BuildContentType(header.JSON, "gbk")).
 		Header(header.Accept, header.JSON).
 		Header(header.AcceptEncoding, header.Identity).
-		Header(header.AcceptCharset, "gbk").
 		Request()
 	for b.Loop() {
 		ctx := s.NewContext(w, r, types.NewRoute())
@@ -216,7 +215,7 @@ func BenchmarkNegotiation_contentType(b *testing.B) {
 		b.ResetTimer()
 		b.ReportAllocs()
 		for b.Loop() {
-			marshal, encoding, err := mt.contentType(qheader.BuildContentType(header.XML, header.UTF8))
+			marshal, encoding, err := mt.contentType(qheader.BuildContentType(header.XML, header.UTF8), "")
 			a.NotError(err).NotNil(marshal).Nil(encoding)
 		}
 	})
@@ -226,7 +225,7 @@ func BenchmarkNegotiation_contentType(b *testing.B) {
 		b.ResetTimer()
 		b.ReportAllocs()
 		for b.Loop() {
-			marshal, encoding, err := mt.contentType(qheader.BuildContentType(header.XML, "gbk"))
+			marshal, encoding, err := mt.contentType(qheader.BuildContentType(header.XML, "gbk"), "")
 			a.NotError(err).NotNil(marshal).NotNil(encoding)
 		}
 	})
@@ -325,39 +324,6 @@ func BenchmarkNegotiation_getMatchCompresses(b *testing.B) {
 	}
 }
 
-func BenchmarkLocale_NewLocalePrinter(b *testing.B) {
-	l := NewNegotiation(language.SimplifiedChinese, nil)
-
-	b.Run("equal Locale.id", func(b *testing.B) {
-		b.ReportAllocs()
-		for b.Loop() {
-			l.NewLocalePrinter(language.SimplifiedChinese)
-		}
-	})
-
-	b.Run("not equal Locale.id", func(b *testing.B) {
-		b.ReportAllocs()
-		for b.Loop() {
-			l.NewLocalePrinter(language.TraditionalChinese)
-		}
-	})
-
-	langs := []language.Tag{
-		language.Chinese,
-		language.SimplifiedChinese,
-		language.TraditionalChinese,
-		language.MustParse("zh-CN"),
-		language.MustParse("cmn-Hans"),
-	}
-	b.Run("rand id", func(b *testing.B) {
-		b.ReportAllocs()
-		size := len(langs)
-		for i := range b.N {
-			l.NewLocalePrinter(langs[i%size])
-		}
-	})
-}
-
 func BenchmarkServer_Serve(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a, false)
@@ -371,32 +337,12 @@ func BenchmarkServer_Serve(b *testing.B) {
 	defer srv.Run()()
 	defer srv.Close(0)
 
-	b.Run("charset", func(b *testing.B) {
+	b.Run("encoding", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {
 			r := srv.Get("/path").
 				Header(header.ContentType, qheader.BuildContentType(header.JSON, "gbk")).
 				Header(header.Accept, header.JSON).
-				Header(header.AcceptCharset, "gbk;q=1,gb18080;q=0.1").
-				Request()
-			resp, err := http.DefaultClient.Do(r)
-			if err != nil {
-				b.Log(err)
-			}
-			_, err = io.ReadAll(resp.Body)
-			if err != nil {
-				b.Log(err)
-			}
-		}
-	})
-
-	b.Run("charset encoding", func(b *testing.B) {
-		b.ReportAllocs()
-		for b.Loop() {
-			r := srv.Get("/path").
-				Header(header.ContentType, qheader.BuildContentType(header.JSON, "gbk")).
-				Header(header.Accept, header.JSON).
-				Header(header.AcceptCharset, "gbk;q=1,gb18080;q=0.1").
 				Header(header.AcceptEncoding, "gzip").
 				Request()
 			resp, err := http.DefaultClient.Do(r)

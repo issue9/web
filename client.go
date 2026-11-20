@@ -129,14 +129,14 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 		err = errors.Join(err, encodingReader.Close())
 	}()
 
-	var unmarshal UnmarshalFunc
+	var mt MediaType
 	var inputCharset encoding.Encoding
 	if h := rsp.Header.Get(header.ContentType); h != "" {
-		if unmarshal, inputCharset, err = c.nego.contentType(h); err != nil {
+		if mt, inputCharset, err = c.nego.contentType(h, ""); err != nil {
 			return
 		}
 
-		if unmarshal == nil {
+		if mt == nil {
 			err = NewError("not found unmarshaler for the server content-type %s", h)
 			return
 		}
@@ -153,14 +153,14 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 		var e E
 		p = &Problem{} // TODO
 		p.Extensions = e
-		if err = unmarshal(reader, p); err != nil {
+		if err = mt.Unmarshal(reader, p); err != nil {
 			return
 		}
 		return nil, p, nil
 	}
 
 	var resp R
-	if err = unmarshal(reader, &resp); err != nil {
+	if err = mt.Unmarshal(reader, &resp); err != nil {
 		return
 	}
 	return &resp, nil, nil
@@ -201,7 +201,7 @@ func (c *Client) NewRequest(method, path string, body any) (resp *http.Request, 
 
 	r.Header.Set(header.Accept, c.nego.acceptHeader)
 	r.Header.Set(header.AcceptEncoding, c.nego.acceptEncodingHeader)
-	r.Header.Set(header.AcceptLanguage, c.nego.acceptLanguageHeader)
+	r.Header.Set(header.AcceptLanguage, c.nego.acceptLanguageHeader())
 	if c.requestIDKey != "" {
 		r.Header.Set(c.requestIDKey, c.requestIDGen())
 	}

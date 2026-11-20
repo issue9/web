@@ -121,7 +121,7 @@ func NewServer(
 }
 
 // Config 当前项目配置文件的管理
-func (s *Server) Config() *config.Config { return s.Negotiation().config }
+func (s *Server) Config() *config.Config { return s.Negotiation().config() }
 
 // ID 应用的 ID
 func (s *Server) ID() string { return s.id }

@@ -6,6 +6,7 @@ package negotiation
 
 import (
 	"bytes"
+	"net/http"
 	"testing"
 
 	"github.com/issue9/assert/v6"
@@ -17,9 +18,10 @@ func TestForkMediaType(t *testing.T) {
 	a := assert.New(t, false)
 
 	mt1 := NewCBOR()
-	mt2 := ForkMediaType(mt1, "mt2", "")
+	mt2 := ForkMediaType(mt1, "mt2", "", http.MethodPatch)
 	a.Equal(mt2.Name(), "mt2").
 		Equal(mt2.ProblemName(), "mt2").
+		Equal(mt2.Method(), http.MethodPatch).
 		NotEqual(mt1.Name(), mt2.Name())
 }
 

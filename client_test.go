@@ -74,7 +74,6 @@ func TestClient_ParseResponse(t *testing.T) {
 		h.Set(header.ContentLength, strconv.Itoa(body.Len()))
 		h.Set(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8))
 		h.Set(header.Accept, header.JSON)
-		h.Set(header.AcceptCharset, header.UTF8)
 		h.Set(header.AcceptEncoding, "gzip")
 
 		resp := &http.Response{
