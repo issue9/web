@@ -52,11 +52,12 @@ func (obj *object) UnmarshalForm(data []byte) error {
 	return nil
 }
 
-func TestMarshal(t *testing.T) {
+func TestForm_Marshal(t *testing.T) {
 	a := assert.New(t, false)
+	f := New()
 
 	formObject := url.Values{}
-	data, err := marshalForm(nil, formObject)
+	data, err := f.Marshal(nil, formObject)
 	a.NotError(err)
 	a.NotNil(data). // 非 nil
 			Empty(data) // 但长度为 0
@@ -65,34 +66,35 @@ func TestMarshal(t *testing.T) {
 	formObject.Add("friend", "Jess")
 	formObject.Add("friend", "Sarah")
 	formObject.Add("friend", "Zoe")
-	data, err = marshalForm(nil, formObject)
+	data, err = f.Marshal(nil, formObject)
 	a.NotError(err).NotNil(data)
 	a.Equal(string(data), formString)
 
 	// 非 url.Values 类型
-	data, err = marshalForm(nil, &struct{}{})
+	data, err = f.Marshal(nil, &struct{}{})
 	a.NotError(err).Empty(data)
 
 	// Marshaler 类型
-	data, err = marshalForm(nil, objectData)
+	data, err = f.Marshal(nil, objectData)
 	a.NotError(err).
 		Equal(string(data), formString)
 }
 
-func TestUnmarshal(t *testing.T) {
+func TestForm_Unmarshal(t *testing.T) {
 	a := assert.New(t, false)
+	f := New()
 
 	v := url.Values{}
-	a.NotError(unmarshalForm(strings.NewReader(""), v))
+	a.NotError(f.Unmarshal(strings.NewReader(""), v))
 	a.Equal(len(v), 0)
 
 	v = url.Values{}
-	a.Error(unmarshalForm(strings.NewReader("%"), v))
+	a.Error(f.Unmarshal(strings.NewReader("%"), v))
 
-	a.NotError(unmarshalForm(strings.NewReader(formString), &struct{}{}))
+	a.NotError(f.Unmarshal(strings.NewReader(formString), &struct{}{}))
 
 	v = url.Values{}
-	a.NotError(unmarshalForm(strings.NewReader(formString), v)).
+	a.NotError(f.Unmarshal(strings.NewReader(formString), v)).
 		Equal(len(v), 2).
 		Equal(v.Get("name"), "Ava").
 		Equal(v.Get("friend"), "Jess").
@@ -100,5 +102,5 @@ func TestUnmarshal(t *testing.T) {
 
 	// Unmarshaler 类型
 	obj := &object{}
-	a.NotError(unmarshalForm(strings.NewReader(formString), obj)).Equal(obj, objectData)
+	a.NotError(f.Unmarshal(strings.NewReader(formString), obj)).Equal(obj, objectData)
 }

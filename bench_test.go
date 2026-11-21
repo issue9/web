@@ -199,7 +199,7 @@ func BenchmarkNegotiation_accept(b *testing.B) {
 	mt := newNegotiation(a, nil)
 	b.ReportAllocs()
 
-	var item MediaType
+	var item *MediaType
 	for b.Loop() {
 		item, _ = mt.accept("application/json;q=0.9")
 	}

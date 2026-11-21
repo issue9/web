@@ -31,7 +31,7 @@ var inst = &web.Problem{
 	Instance: "instance",
 }
 
-func Test(a *assert.Assertion, mt web.MediaType) {
+func Test(a *assert.Assertion, codec web.Codec) {
 	ts := startuptest.NewTestServerStartup(a)
 	conf := config.Dir(nil, "./")
 	log := logs.New(logs.NewNopHandler())
@@ -44,10 +44,10 @@ func Test(a *assert.Assertion, mt web.MediaType) {
 	r := httptest.NewRequest(http.MethodGet, "/path", nil)
 	ctx := s.NewContext(w, r, types.NewRoute())
 
-	data, err := mt.Marshal(ctx, inst)
+	data, err := codec.Marshal(ctx, inst)
 	a.NotError(err).NotNil(data)
 
 	inst2 := &web.Problem{}
-	a.NotError(mt.Unmarshal(bytes.NewBuffer(data), inst2))
+	a.NotError(codec.Unmarshal(bytes.NewBuffer(data), inst2))
 	a.Equal(inst, inst2)
 }

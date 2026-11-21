@@ -5,7 +5,10 @@
 package config
 
 import (
+	"net/http"
 	"strconv"
+
+	"github.com/issue9/sliceutil"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/filter"
@@ -49,7 +52,26 @@ type mediaTypeConfig struct {
 	//  - yaml
 	//  - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。
 	Target string `json:"target" yaml:"target" xml:"target,attr" toml:"target"`
+
+	// 媒体类型的名称
+	Name string `json:"name" yaml:"name" xml:"name,attr" toml:"name"`
+
+	// 出错时的媒体类型
+	Problem string `json:"problem,omitempty" yaml:"problem,omitempty" xml:"problem,attr,omitempty" toml:"problem,omitempty"`
+
+	// 绑定在特定的请求方法上
+	Method string `json:"method,omitempty" yaml:"method,omitempty" xml:"method,attr,omitempty" toml:"method,omitempty"`
+
+	// 当 Method 的值为 [http.MethodPatch] 时此值表示可解析的对象类型
+	//
+	// 可用的值为：
+	//  - 空值
+	//  - patcher
+	//  - merger
+	PatchKind string `json:"patchKind,omitempty" yaml:"patchKind,omitempty" xml:"patchKind,attr,omitempty" toml:"patchKind,omitempty"`
 }
+
+var patchKinds = []string{"patcher", "merger"}
 
 func (conf *configOf[T]) buildNegotiation(f *filter.Filter) {
 	if len(conf.Compressors) == 0 && len(conf.MediaTypes) == 0 {
@@ -70,14 +92,37 @@ func (conf *configOf[T]) buildNegotiation(f *filter.Filter) {
 }
 
 func (conf *configOf[T]) sanitizeMediaTypes(c *web.Negotiation, f *filter.Filter) {
+	indexes := sliceutil.Dup(conf.MediaTypes, func(i, j *mediaTypeConfig) bool { return i.Name == j.Name })
+	if len(indexes) > 0 {
+		f.AddReason("mediaTypes["+strconv.Itoa(indexes[0])+"].name", locales.DuplicateValue)
+		return
+	}
+
 	for index, item := range conf.MediaTypes {
-		m, found := mediaTypeFactory.get(item.Target)
+		codec, found := codecFactory.get(item.Target)
 		if !found {
 			f.AddReason("mediaTypes["+strconv.Itoa(index)+"].target", locales.NotFound)
 			return
 		}
 
-		c.AddMediaType(m)
+		kind := web.PatchKindNone
+		switch item.PatchKind {
+		case "patcher":
+			if item.Method != http.MethodPatch {
+				f.AddReason("mediaTypes["+strconv.Itoa(index)+"].pathKind", locales.InvalidValue)
+			}
+			kind = web.PatchKindPatcher
+		case "merger":
+			if item.Method != http.MethodPatch {
+				f.AddReason("mediaTypes["+strconv.Itoa(index)+"].pathKind", locales.InvalidValue)
+			}
+			kind = web.PatchKindMerger
+		case "":
+		default:
+			f.AddReason("mediaTypes["+strconv.Itoa(index)+"].pathKind", locales.InvalidValue)
+		}
+
+		c.AddMediaType(web.NewMediaType(codec, item.Name, item.Problem, item.Method, kind))
 	}
 
 	conf.negotiation = c

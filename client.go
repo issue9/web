@@ -20,7 +20,7 @@ import (
 	"github.com/issue9/web/selector"
 )
 
-func mediaTypeAccept(mt MediaType) string {
+func mediaTypeAccept(mt *MediaType) string {
 	if mt.ProblemName() != mt.Name() {
 		return mt.Name() + "," + mt.ProblemName()
 	}
@@ -41,7 +41,7 @@ type Client struct {
 	selector     selector.Selector
 	requestIDKey string
 	requestIDGen func() string
-	mediaType    MediaType
+	mediaType    *MediaType
 }
 
 // NewClient 创建 [Client] 实例
@@ -51,7 +51,7 @@ type Client struct {
 // reqIDGen 表示生成 x-request-id 值的方法；
 // mt 指定提交和解析数据的媒体类型，如果对应的 mt.Marshal 需要 ctx 参数，可能 panic。
 func NewClient(
-	client *http.Client, nego *Negotiation, s selector.Selector, mt MediaType, reqIDKey string, reqIDGen func() string,
+	client *http.Client, nego *Negotiation, s selector.Selector, mt *MediaType, reqIDKey string, reqIDGen func() string,
 ) *Client {
 	if client == nil {
 		client = &http.Client{}
@@ -150,7 +150,7 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 
 	if problems.IsProblem(rsp.StatusCode) {
 		var e E
-		p = &Problem{} // TODO
+		p = &Problem{} // 也可以通过 problems.Free 回收
 		p.Extensions = e
 		if err = c.mediaType.Unmarshal(reader, p); err != nil {
 			return
@@ -222,6 +222,6 @@ func (c *Client) Client() *http.Client { return c.client }
 // NewClient 基于当前对象的相关字段创建 [Client] 对象
 //
 // 功能与 [NewClient] 相同，缺少的参数直接采用 [Server] 关联的字段。
-func (s *Server) NewClient(c *http.Client, sel selector.Selector, mt MediaType) *Client {
+func (s *Server) NewClient(c *http.Client, sel selector.Selector, mt *MediaType) *Client {
 	return NewClient(c, s.Negotiation(), sel, mt, s.requestIDKey, s.UniqueID)
 }

@@ -12,7 +12,6 @@ import (
 	"encoding/json/v2"
 	"encoding/xml"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"slices"
@@ -36,12 +35,9 @@ type (
 	zstdImpl    struct{}
 	brotliImpl  struct{}
 
-	mediaTypeImpl struct {
-		normalName  string
-		problemName string
-		method      string
-		marshal     MarshalFunc
-		unmarshal   UnmarshalFunc
+	codecImpl struct {
+		m MarshalFunc
+		u UnmarshalFunc
 	}
 )
 
@@ -86,25 +82,9 @@ func (deflateImpl) NewEncoder(w io.Writer) (io.WriteCloser, error) {
 	return flate.NewWriter(w, flate.DefaultCompression)
 }
 
-func newMediaType(name, problem, method string, m MarshalFunc, u UnmarshalFunc) MediaType {
-	if problem == "" {
-		problem = name
-	}
-
-	return &mediaTypeImpl{
-		normalName:  name,
-		problemName: problem,
-		method:      method,
-		marshal:     m,
-		unmarshal:   u,
-	}
-}
-
-func (m *mediaTypeImpl) Name() string                                { return m.normalName }
-func (m *mediaTypeImpl) ProblemName() string                         { return m.problemName }
-func (m *mediaTypeImpl) Method() string                              { return m.method }
-func (m *mediaTypeImpl) Marshal(ctx *Context, v any) ([]byte, error) { return m.marshal(ctx, v) }
-func (m *mediaTypeImpl) Unmarshal(r io.Reader, v any) error          { return m.unmarshal(r, v) }
+func newCodec(m MarshalFunc, u UnmarshalFunc) Codec              { return &codecImpl{m: m, u: u} }
+func (m *codecImpl) Marshal(ctx *Context, v any) ([]byte, error) { return m.m(ctx, v) }
+func (m *codecImpl) Unmarshal(r io.Reader, v any) error          { return m.u(r, v) }
 
 func marshalTest(_ *Context, v any) ([]byte, error) {
 	switch vv := v.(type) {
@@ -115,15 +95,11 @@ func marshalTest(_ *Context, v any) ([]byte, error) {
 	}
 }
 
-func unmarshalTest(io.Reader, any) error { return errors.ErrUnsupported }
-
+func unmarshalTest(io.Reader, any) error            { return errors.ErrUnsupported }
 func marshalJSON(_ *Context, v any) ([]byte, error) { return json.Marshal(v) }
-
-func unmarshalJSON(r io.Reader, v any) error { return json.UnmarshalRead(r, v) }
-
-func marshalXML(_ *Context, v any) ([]byte, error) { return xml.Marshal(v) }
-
-func unmarshalXML(r io.Reader, v any) error { return xml.NewDecoder(r).Decode(v) }
+func unmarshalJSON(r io.Reader, v any) error        { return json.UnmarshalRead(r, v) }
+func marshalXML(_ *Context, v any) ([]byte, error)  { return xml.Marshal(v) }
+func unmarshalXML(r io.Reader, v any) error         { return xml.NewDecoder(r).Decode(v) }
 
 func newNegotiation(a *assert.Assertion, conf *config.Config) *Negotiation {
 	c := NewNegotiation(language.SimplifiedChinese, conf)
@@ -132,9 +108,9 @@ func newNegotiation(a *assert.Assertion, conf *config.Config) *Negotiation {
 	c.AddCompressor(newGzip()).
 		AddCompressor(newDeflate()).
 		//AddCompressor(nil).
-		AddMediaType(newMediaType(header.JSON, "application/problem+json", "", marshalJSON, unmarshalJSON)).
-		AddMediaType(newMediaType(header.XML, "application/problem+xml", "", marshalXML, unmarshalXML)).
-		AddMediaType(newMediaType("application/test", "application/problem+test", "", marshalTest, unmarshalTest))
+		AddCodec(newCodec(marshalJSON, unmarshalJSON), header.JSON, "application/problem+json", "", PatchKindNone).
+		AddCodec(newCodec(marshalXML, unmarshalXML), header.XML, "application/problem+xml", "", PatchKindNone).
+		AddCodec(newCodec(marshalTest, unmarshalTest), "application/test", "application/problem+test", "", PatchKindNone)
 
 	a.Length(slices.Collect(c.MediaTypes()), 3).
 		StrictEqual(conf, c.config()).
@@ -143,56 +119,65 @@ func newNegotiation(a *assert.Assertion, conf *config.Config) *Negotiation {
 	return c
 }
 
-func TestNegotiation_AddMediaType(t *testing.T) {
+func TestNewMediaType(t *testing.T) {
 	a := assert.New(t, false)
-	c := NewNegotiation(language.SimplifiedChinese, nil)
 
-	a.NotPanic(func() {
-		c.AddMediaType(newMediaType(header.JSON, "", "", marshalJSON, unmarshalJSON))
-	})
+	a.PanicString(func() { NewMediaType(nil, "", "", "", PatchKindNone) }, "参数 codec 不能为 nil")
 
 	a.PanicString(func() {
-		c.AddMediaType(newMediaType(header.JSON, "", "", marshalJSON, unmarshalJSON))
+		NewMediaType(newCodec(marshalJSON, unmarshalJSON), "", "", "", PatchKindNone)
+	}, "参数 name 不能为空")
+
+	codec := newCodec(marshalJSON, unmarshalJSON)
+	mt := NewPatcherMediaType(codec, "name", "problem")
+	a.Equal(mt.Codec, codec).
+		StrictEqual(mt.Method(), http.MethodPatch).
+		StrictEqual(mt.Name(), "name").
+		StrictEqual(mt.ProblemName(), "problem").
+		StrictEqual(mt.Method(), http.MethodPatch).
+		StrictEqual(mt.PatchKind(), PatchKindPatcher)
+}
+
+func TestNegotiation_AddCodec(t *testing.T) {
+	a := assert.New(t, false)
+	nego := NewNegotiation(language.SimplifiedChinese, nil)
+
+	a.NotPanic(func() { nego.AddCodec(newCodec(marshalJSON, unmarshalJSON), header.JSON, "", "", PatchKindNone) })
+
+	a.PanicString(func() {
+		nego.AddCodec(newCodec(marshalJSON, unmarshalJSON), header.JSON, "", "", PatchKindNone)
 	}, "存在重复的项 "+header.JSON)
 
-	a.PanicString(func() {
-		c.AddMediaType()
-	}, "参数 mt 不能为空")
-
-	a.PanicString(func() {
-		c.AddMediaType(nil)
-	}, "参数 mt 不能为 nil")
-
 	t.Run("acceptHeader", func(t *testing.T) {
-		mt := newMediaType(header.Plain, "", "", marshalJSON, unmarshalJSON)
-		e := NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt)
+		codec := newCodec(marshalJSON, unmarshalJSON)
+		e := NewNegotiation(language.SimplifiedChinese, nil).AddCodec(codec, header.Plain, "", "", PatchKindNone)
 		a.Equal(e.acceptHeader, header.Plain).
 			Empty(e.acceptPatchHeader).
 			Empty(e.acceptQueryHeader)
 	})
 
 	t.Run("acceptPatchHeader", func(t *testing.T) {
-		mt := newMediaType(header.Plain, "", http.MethodPatch, marshalJSON, unmarshalJSON)
-		e := NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt)
+		codec := newCodec(marshalJSON, unmarshalJSON)
+		e := NewNegotiation(language.SimplifiedChinese, nil).AddCodec(codec, header.Plain, "", http.MethodPatch, PatchKindNone)
 		a.Equal(e.acceptPatchHeader, header.Plain).
 			Empty(e.acceptHeader).
 			Empty(e.acceptQueryHeader)
 	})
 
 	t.Run("acceptQueryHeader", func(t *testing.T) {
-		mt := newMediaType(header.Plain, "", "QUERY", marshalJSON, unmarshalJSON)
-		e := NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt)
+		codec := newCodec(marshalJSON, unmarshalJSON)
+		e := NewNegotiation(language.SimplifiedChinese, nil).AddCodec(codec, header.Plain, "", "QUERY", PatchKindNone)
 		a.Equal(e.acceptQueryHeader, header.Plain).
 			Empty(e.acceptHeader).
 			Empty(e.acceptPatchHeader)
 	})
 
 	t.Run("accept", func(t *testing.T) {
-		mt1 := newMediaType("application/sql", "", "QUERY", marshalJSON, unmarshalJSON)
-		mt2 := newMediaType("text/plain", "", "", marshalJSON, unmarshalJSON)
-		mt3 := newMediaType("application/json-patch+json", "", http.MethodPatch, marshalJSON, unmarshalJSON)
-		mt4 := newMediaType("application/json-merge+json", "", http.MethodPatch, marshalJSON, unmarshalJSON)
-		mt5 := newMediaType("application/cbor", "", "", marshalJSON, unmarshalJSON)
+		mt1 := NewMediaType(newCodec(marshalJSON, unmarshalJSON), "application/sql", "", "QUERY", PatchKindNone)
+		mt2 := NewMediaType(newCodec(marshalJSON, unmarshalJSON), "text/plain", "", "", PatchKindNone)
+		mt3 := NewMediaType(newCodec(marshalJSON, unmarshalJSON), "application/json-patch+json", "", http.MethodPatch, PatchKindNone)
+		mt4 := NewMediaType(newCodec(marshalJSON, unmarshalJSON), "application/json-merge+json", "", http.MethodPatch, PatchKindNone)
+		mt5 := NewMediaType(newCodec(marshalJSON, unmarshalJSON), "application/cbor", "", "", PatchKindNone)
 		e := NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt1, mt2, mt3, mt4, mt5)
 		a.Equal(e.acceptQueryHeader, "application/sql").
 			Equal(e.acceptHeader, "text/plain, application/cbor").
@@ -220,19 +205,19 @@ func TestBuildCompression(t *testing.T) {
 func TestNegotiation_contentEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
-	e := NewNegotiation(language.SimplifiedChinese, nil)
-	a.NotNil(e)
-	e.AddCompressor(newLZW(), header.Plain, "application/*").
+	nego := NewNegotiation(language.SimplifiedChinese, nil)
+	a.NotNil(nego)
+	nego.AddCompressor(newLZW(), header.Plain, "application/*").
 		AddCompressor(newGzip(), header.Plain).
 		AddCompressor(newZstd(), "application/*").
 		AddCompressor(newBrotli(), "text/*")
 
 	r := &bytes.Buffer{}
-	rc, err := e.contentEncoding("zstd", r)
+	rc, err := nego.contentEncoding("zstd", r)
 	a.NotError(err).NotNil(rc)
 
 	r = bytes.NewBufferString("123")
-	rc, err = e.contentEncoding("", r)
+	rc, err = nego.contentEncoding("", r)
 	a.NotError(err).NotNil(rc)
 	data, err := io.ReadAll(rc)
 	a.NotError(err).Equal(string(data), "123")
@@ -241,64 +226,64 @@ func TestNegotiation_contentEncoding(t *testing.T) {
 func TestNegotiation_acceptEncoding(t *testing.T) {
 	a := assert.New(t, false)
 
-	e := NewNegotiation(language.SimplifiedChinese, nil)
-	a.NotNil(e)
-	e.AddCompressor(newLZW(), header.Plain, "application/*").
+	nego := NewNegotiation(language.SimplifiedChinese, nil)
+	a.NotNil(nego)
+	nego.AddCompressor(newLZW(), header.Plain, "application/*").
 		AddCompressor(newGzip(), header.Plain).
 		AddCompressor(newGzip(), "application/*")
 
-	a.Equal(e.acceptEncodingHeader, "compress,gzip")
+	a.Equal(nego.acceptEncodingHeader, "compress,gzip")
 
 	t.Run("一般", func(t *testing.T) {
 		a := a.New(t)
 
-		b, err := e.acceptEncoding(header.JSON, "gzip;q=0.9,br")
+		b, err := nego.acceptEncoding(header.JSON, "gzip;q=0.9,br")
 		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
 		// gzip 无法解析，br 能解析但是未添加到 Negotiation
-		b, err = e.acceptEncoding(header.JSON, "gzip;q=x.9,br")
+		b, err = nego.acceptEncoding(header.JSON, "gzip;q=x.9,br")
 		a.NotError(err).Nil(b)
 
-		b, err = e.acceptEncoding(header.JSON, "br,gzip")
+		b, err = nego.acceptEncoding(header.JSON, "br,gzip")
 		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, err = e.acceptEncoding(header.Plain, "gzip,br")
+		b, err = nego.acceptEncoding(header.Plain, "gzip,br")
 		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, err = e.acceptEncoding(header.Plain, "br")
+		b, err = nego.acceptEncoding(header.Plain, "br")
 		a.NotError(err).Nil(b)
 
-		b, err = e.acceptEncoding(header.Plain, "")
+		b, err = nego.acceptEncoding(header.Plain, "")
 		a.NotError(err).Equal(b.Name(), "compress")
 	})
 
 	t.Run("header=*", func(t *testing.T) {
 		a := a.New(t)
 
-		b, err := e.acceptEncoding(header.XML, "*;q=0")
+		b, err := nego.acceptEncoding(header.XML, "*;q=0")
 		a.NotError(err).Nil(b)
 
-		b, err = e.acceptEncoding(header.XML, "*,br")
+		b, err = nego.acceptEncoding(header.XML, "*,br")
 		a.NotError(err).NotNil(b).Equal(b.Name(), "compress")
 
-		b, err = e.acceptEncoding(header.XML, "*,gzip")
+		b, err = nego.acceptEncoding(header.XML, "*,gzip")
 		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
-		b, err = e.acceptEncoding(header.XML, "*,gzip,compress")
+		b, err = nego.acceptEncoding(header.XML, "*,gzip,compress")
 		a.NotError(err).Equal(b.Name(), "gzip")
 	})
 
 	t.Run("header=identity", func(t *testing.T) {
 		a := assert.New(t, false)
-		b, err := e.acceptEncoding(header.XML, "identity,gzip,br")
+		b, err := nego.acceptEncoding(header.XML, "identity,gzip,br")
 		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
 		// 正常匹配
-		b, err = e.acceptEncoding(header.XML, "identity;q=0,gzip,br")
+		b, err = nego.acceptEncoding(header.XML, "identity;q=0,gzip,br")
 		a.NotError(err).NotNil(b).Equal(b.Name(), "gzip")
 
 		// identity=0
-		b, err = e.acceptEncoding(header.XML, "identity;q=0,abc,def")
+		b, err = nego.acceptEncoding(header.XML, "identity;q=0,abc,def")
 		a.Equal(err, localeutil.Error("client disabled identity")).Nil(b)
 	})
 }
@@ -306,129 +291,126 @@ func TestNegotiation_acceptEncoding(t *testing.T) {
 func TestNegotiation_contentType(t *testing.T) {
 	a := assert.New(t, false)
 
-	mt := NewNegotiation(language.SimplifiedChinese, nil)
-	a.NotNil(mt)
-	mt.AddMediaType(
-		newMediaType(header.XML, "", "", marshalJSON, unmarshalJSON),
-		newMediaType(header.JSON, "", http.MethodPatch, marshalJSON, unmarshalJSON),
-		newMediaType(header.CBOR, "", "QUERY", marshalJSON, unmarshalJSON),
+	nego := NewNegotiation(language.SimplifiedChinese, nil)
+	a.NotNil(nego)
+	nego.AddMediaType(
+		NewMediaType(newCodec(marshalJSON, unmarshalJSON), header.XML, "", "", PatchKindNone),
+		NewMediaType(newCodec(marshalJSON, unmarshalJSON), header.JSON, "", http.MethodPatch, PatchKindNone),
+		NewMediaType(newCodec(marshalJSON, unmarshalJSON), header.CBOR, "", "QUERY", PatchKindNone),
 	)
 
 	t.Run(";;;", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType(";;;", "")
+		f, e, err := nego.contentType(";;;", "")
 		a.Error(err).Nil(f).Nil(e)
 	})
 
 	t.Run("不存在的 mediaType", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType("not-exists; charset=utf-8", "")
+		f, e, err := nego.contentType("not-exists; charset=utf-8", "")
 		a.Equal(err, NewError("not found serialization function for %s", "not-exists")).Nil(f).Nil(e)
 	})
 
 	t.Run("xml;charset=utf-8", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType(qheader.BuildContentType(header.XML, header.UTF8), "")
+		f, e, err := nego.contentType(qheader.BuildContentType(header.XML, header.UTF8), "")
 		a.NotError(err).NotNil(f).Nil(e)
 	})
 
 	t.Run("xml;charset=gb2312", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType(qheader.BuildContentType(header.XML, "gb2312"), "")
+		f, e, err := nego.contentType(qheader.BuildContentType(header.XML, "gb2312"), "")
 		a.NotError(err).NotNil(f).NotNil(e)
 	})
 
 	t.Run("xml;charset=not-exists", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType(qheader.BuildContentType(header.XML, "not-exists"), "")
+		f, e, err := nego.contentType(qheader.BuildContentType(header.XML, "not-exists"), "")
 		a.Error(err).Nil(f).Nil(e)
 	})
 
 	t.Run("xml;charset=UTF-8;params", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType("application/xml; charset=UTF-8;p1=k1;p2=k2", "")
+		f, e, err := nego.contentType("application/xml; charset=UTF-8;p1=k1;p2=k2", "")
 		a.NotError(err).NotNil(f).Nil(e)
 	})
 
 	t.Run("xml;charset=", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType(qheader.BuildContentType(header.XML, ""), "")
+		f, e, err := nego.contentType(qheader.BuildContentType(header.XML, ""), "")
 		a.NotError(err).NotNil(f).Nil(e)
 	})
 
 	t.Run("没有 charset", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType("application/xml;", "")
+		f, e, err := nego.contentType("application/xml;", "")
 		a.NotError(err).NotNil(f).Nil(e)
 	})
 
 	t.Run("无 ;charset", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType(header.XML, "")
+		f, e, err := nego.contentType(header.XML, "")
 		a.NotError(err).NotNil(f).Nil(e)
 	})
 
 	// Patch 在没有匹配 PATCH 的请求的情况下，也会匹配普通项
 	t.Run("xml;charset=utf-8;method=PATCH", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType(qheader.BuildContentType(header.XML, header.UTF8), http.MethodPatch)
+		f, e, err := nego.contentType(qheader.BuildContentType(header.XML, header.UTF8), http.MethodPatch)
 		a.NotError(err).NotNil(f).Nil(e)
 	})
 
 	// Patch 匹配 PATCH 项
 	t.Run("json;charset=utf-8;method=PATCH", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType(qheader.BuildContentType(header.JSON, header.UTF8), http.MethodPatch)
+		f, e, err := nego.contentType(qheader.BuildContentType(header.JSON, header.UTF8), http.MethodPatch)
 		a.NotError(err).NotNil(f).Nil(e)
 	})
 
 	// 普通请求无法匹配 Patch 项
 	t.Run("json;charset=utf-8;method=GET", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType(qheader.BuildContentType(header.JSON, header.UTF8), http.MethodGet)
+		f, e, err := nego.contentType(qheader.BuildContentType(header.JSON, header.UTF8), http.MethodGet)
 		a.Error(err).Nil(f).Nil(e)
 	})
 
 	// 普通请求匹配普通项
 	t.Run("xml;charset=utf-8;method=GET", func(t *testing.T) {
 		a := a.New(t)
-		f, e, err := mt.contentType(qheader.BuildContentType(header.XML, header.UTF8), http.MethodGet)
+		f, e, err := nego.contentType(qheader.BuildContentType(header.XML, header.UTF8), http.MethodGet)
 		a.NotError(err).NotNil(f).Nil(e)
 	})
 }
 
 func TestNegotiation_accept(t *testing.T) {
 	a := assert.New(t, false)
-	mt := NewNegotiation(language.SimplifiedChinese, nil)
-	a.NotNil(mt)
+	nego := NewNegotiation(language.SimplifiedChinese, nil)
+	a.NotNil(nego)
 
-	item, err := mt.accept(header.JSON)
+	item, err := nego.accept(header.JSON)
 	a.NotError(err).Nil(item)
 
-	item, err = mt.accept("")
+	item, err = nego.accept("")
 	a.NotError(err).Nil(item)
 
-	mt = NewNegotiation(language.SimplifiedChinese, nil)
-	a.NotNil(mt)
-	mt.AddMediaType(newMediaType(header.JSON, "", "", marshalJSON, unmarshalJSON)).
-		AddMediaType(newMediaType(header.Plain, "text/plain+problem", "", marshalXML, unmarshalXML)).
-		AddMediaType(newMediaType(header.XML, "", http.MethodPatch, marshalXML, unmarshalXML))
+	nego = NewNegotiation(language.SimplifiedChinese, nil)
+	a.NotNil(nego)
+	nego.AddCodec(newCodec(marshalJSON, unmarshalJSON), header.JSON, "", "", PatchKindNone).
+		AddCodec(newCodec(marshalXML, unmarshalXML), header.Plain, "text/plain+problem", "", PatchKindNone).
+		AddCodec(newCodec(marshalXML, unmarshalXML), header.XML, "", http.MethodPatch, PatchKindNone)
 
 	t.Run("JSON", func(t *testing.T) {
 		a := a.New(t)
-		item, err = mt.accept(header.JSON)
+		item, err = nego.accept(header.JSON)
 		a.NotError(err).NotNil(item).
 			NotNil(item.Marshal).
 			StrictEqual(item.Name(), header.JSON).
 			StrictEqual(item.ProblemName(), header.JSON)
 	})
 
-	for m := range mt.MediaTypes() {
-		fmt.Println(m.Name())
-	}
 	t.Run("*/*", func(t *testing.T) {
 		a := a.New(t)
-		item, err = mt.accept("*/*")
+		item, err = nego.accept("*/*")
 		a.NotError(err).NotNil(item).
 			NotNil(item.Marshal).
 			StrictEqual(item.Name(), header.JSON)
@@ -436,7 +418,7 @@ func TestNegotiation_accept(t *testing.T) {
 
 	t.Run("空参数，结果同 */*", func(t *testing.T) {
 		a := a.New(t)
-		item, err = mt.accept("")
+		item, err = nego.accept("")
 		a.NotError(err).NotNil(item).
 			NotNil(item.Marshal).
 			StrictEqual(item.Name(), header.JSON)
@@ -444,7 +426,7 @@ func TestNegotiation_accept(t *testing.T) {
 
 	t.Run("*/*,text/plain", func(t *testing.T) {
 		a := a.New(t)
-		item, err = mt.accept("*/*,text/plain")
+		item, err = nego.accept("*/*,text/plain")
 		a.NotError(err).NotNil(item).
 			NotNil(item.Marshal).
 			StrictEqual(item.Name(), header.Plain).
@@ -453,31 +435,31 @@ func TestNegotiation_accept(t *testing.T) {
 
 	t.Run("json 被禁，但是 */* 匹配了 text/plain", func(t *testing.T) {
 		a := a.New(t)
-		item, err = mt.accept(header.JSON + ";q=0,*/*;q=1")
+		item, err = nego.accept(header.JSON + ";q=0,*/*;q=1")
 		a.NotError(err).StrictEqual(item.Name(), header.Plain)
 	})
 
 	t.Run("json 被禁", func(t *testing.T) {
 		a := a.New(t)
-		item, err = mt.accept(header.JSON + ";q=0")
+		item, err = nego.accept(header.JSON + ";q=0")
 		a.NotError(err).Nil(item)
 	})
 
 	t.Run("json 和 text/* 被禁，XML 可用", func(t *testing.T) {
 		a := a.New(t)
-		item, err = mt.accept("text/*;q=0,application/json;q=0,*/*;q=1")
+		item, err = nego.accept("text/*;q=0,application/json;q=0,*/*;q=1")
 		a.NotError(err).NotNil(item).StrictEqual(item.Name(), header.XML)
 	})
 
 	t.Run("font/wottf;q=x.9", func(t *testing.T) {
 		a := a.New(t)
-		item, err = mt.accept("font/wottf;q=x.9")
+		item, err = nego.accept("font/wottf;q=x.9")
 		a.Error(err).Nil(item)
 	})
 
 	t.Run("font/wottf", func(t *testing.T) {
 		a := a.New(t)
-		item, err = mt.accept("font/wottf")
+		item, err = nego.accept("font/wottf")
 		a.NotError(err).Nil(item)
 	})
 }

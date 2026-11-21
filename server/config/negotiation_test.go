@@ -68,14 +68,14 @@ func TestConfigOf_sanitizeMediaTypes(t *testing.T) {
 func TestRegisterMediaType(t *testing.T) {
 	a := assert.New(t, false)
 
-	v, f := mediaTypeFactory.get("json")
+	v, f := codecFactory.get("json")
 	a.True(f).NotNil(v)
 
 	a.PanicString(func() {
-		RegisterMediaType(negotiation.NewJSON(), "json2")
+		RegisterCodec(negotiation.NewJSON(), "json2")
 	}, "存在同名的媒体类型")
 
-	RegisterMediaType(negotiation.ForkMediaType(negotiation.NewJSON(), "jsonv2", "problem+jsonv2", ""), "json2")
-	v, f = mediaTypeFactory.get("json2")
+	RegisterCodec(negotiation.NewJSON(), "json2")
+	v, f = codecFactory.get("json2")
 	a.True(f).NotNil(v)
 }

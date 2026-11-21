@@ -120,9 +120,10 @@ func (s *Sex) UnmarshalText(v []byte) error {
 
 func TestMarshalWithFormTag(t *testing.T) {
 	a := assert.New(t, false)
+	f := New()
 
 	// Marshal
-	data, err := marshalForm(nil, tagObjectData)
+	data, err := f.Marshal(nil, tagObjectData)
 	a.NotError(err).Equal(string(data), tagObjectString)
 
 	// Unmarshal
@@ -130,21 +131,21 @@ func TestMarshalWithFormTag(t *testing.T) {
 		Ignore:   "i",
 		unexport: true,
 	}
-	a.NotError(unmarshalForm(strings.NewReader(tagObjectString), obj)).Equal(obj, tagObjectData)
+	a.NotError(f.Unmarshal(strings.NewReader(tagObjectString), obj)).Equal(obj, tagObjectData)
 
 	// anonymous marshal
-	data, err = marshalForm(nil, anonymousData)
+	data, err = f.Marshal(nil, anonymousData)
 	a.NotError(err).Equal(string(data), anonymousString)
 
 	// anonymous unmarshal
 	anoobj := &anonymousObject{}
-	a.NotError(unmarshalForm(strings.NewReader(anonymousString), anoobj)).Equal(anoobj, anonymousData)
+	a.NotError(f.Unmarshal(strings.NewReader(anonymousString), anoobj)).Equal(anoobj, anonymousData)
 
 	// nest marshal
-	data, err = marshalForm(nil, nestData)
+	data, err = f.Marshal(nil, nestData)
 	a.NotError(err).Equal(string(data), nestString)
 
 	// nest unmarshal
 	nestObj := &nestObject{}
-	a.NotError(unmarshalForm(strings.NewReader(nestString), nestObj)).Equal(nestObj, nestData)
+	a.NotError(f.Unmarshal(strings.NewReader(nestString), nestObj)).Equal(nestObj, nestData)
 }

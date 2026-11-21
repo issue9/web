@@ -15,6 +15,7 @@ import (
 	"github.com/issue9/cache/drivers/memory"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/mux/v10"
+	"github.com/issue9/mux/v10/header"
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
@@ -62,8 +63,8 @@ func newOptions(a *assert.Assertion, o *Options) *Options {
 	}
 	if o.Negotiation == nil {
 		o.Negotiation = web.NewNegotiation(language.English, nil).
-			AddMediaType(negotiation.NewJSON()).
-			AddMediaType(negotiation.NewXML())
+			AddCodec(negotiation.NewJSON(), header.JSON, "application/probblem+json", "", web.PatchKindNone).
+			AddCodec(negotiation.NewXML(), header.XML, "application/problem+xml", "", web.PatchKindNone)
 	}
 
 	return o
