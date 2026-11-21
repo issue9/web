@@ -13,7 +13,6 @@ import (
 	"unique"
 
 	"github.com/issue9/errwrap"
-	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
@@ -31,13 +30,7 @@ type jsonp string
 // New 提供对 JSONP 编码的支持
 //
 // key 用于指定回调函数在地址中的名称
-func New(key string) negotiation.MediaType { return jsonp(key) }
-
-func (j jsonp) Name() string { return header.Javascript }
-
-func (j jsonp) Method() string { return "" }
-
-func (j jsonp) ProblemName() string { return header.Javascript }
+func New(key string) negotiation.Codec { return jsonp(key) }
 
 func (j jsonp) Marshal(ctx *web.Context, v any) ([]byte, error) {
 	if ctx == nil {

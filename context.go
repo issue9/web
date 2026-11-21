@@ -54,12 +54,12 @@ type Context struct {
 	originResponse   http.ResponseWriter // 原始的 http.ResponseWriter
 	writer           io.Writer
 	outputCompressor Compressor
-	outputMediaType  MediaType
+	outputMediaType  *MediaType
 	status           int // WriteHeader 保存的副本，非零表示已经输出。
 	wrote            bool
 
 	// 从客户端提交的 Content-Type 报头解析到的内容
-	inputMediaType MediaType
+	inputMediaType *MediaType
 	requestBody    io.Reader
 
 	// 区域和本地相关信息
@@ -125,7 +125,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 
 	var inputReader io.Reader = r.Body // 作为服务端不需要关闭 Request.Body，所以直接使用 io.Reader
-	var inputMedia MediaType
+	var inputMedia *MediaType
 	var inputCharset encoding.Encoding
 	if h = r.Header.Get(header.ContentType); h != "" {
 		if inputMedia, inputCharset, err = s.nego.contentType(h, r.Method); err != nil {

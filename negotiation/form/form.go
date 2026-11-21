@@ -49,8 +49,6 @@ import (
 	"maps"
 	"net/url"
 
-	"github.com/issue9/mux/v10/header"
-
 	"github.com/issue9/web"
 	"github.com/issue9/web/negotiation"
 )
@@ -65,19 +63,19 @@ type Unmarshaler interface {
 	UnmarshalForm([]byte) error
 }
 
-// New 提供对 www-form-urlencoded 编码的支持
-func New() negotiation.MediaType {
-	return negotiation.NewMediaType(header.FormData, "", "", marshalForm, unmarshalForm)
-}
+type form struct{}
 
-// marshalForm 针对 www-form-urlencoded 内容的解码实现
+// New 提供对 www-form-urlencoded 编码的支持
+func New() negotiation.Codec { return form{} }
+
+// Marshal 针对 www-form-urlencoded 内容的解码实现
 //
 // 按以下顺序解析内容：
 //   - 如果实现 [Marshaler] 接口，则调用该接口；
 //   - 如果实现 [encoding.TextMarshaler] 接口，则调用该接口；
 //   - 如果是 [url.Values] 对象，则调用其方法 Encode 解析；
 //   - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
-func marshalForm(_ *web.Context, v any) ([]byte, error) {
+func (form) Marshal(_ *web.Context, v any) ([]byte, error) {
 	if m, ok := v.(Marshaler); ok {
 		return m.MarshalForm()
 	}
@@ -94,13 +92,13 @@ func marshalForm(_ *web.Context, v any) ([]byte, error) {
 	return []byte(vals.Encode()), nil
 }
 
-// unmarshalForm 针对 www-form-urlencoded 内容的编码实现
+// Unmarshal 针对 www-form-urlencoded 内容的编码实现
 //
 // 按以下顺序解析内容：
 //   - 如果实现 [Unmarshaler] 接口，则调用该接口；
 //   - 如果是 [url.Values] 对象，则依次赋值每个对象；
 //   - 否则将对象的字段与 form-data 中的数据进行对比，可以使用 form 指定字段名。
-func unmarshalForm(r io.Reader, v any) error {
+func (form) Unmarshal(r io.Reader, v any) error {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return err

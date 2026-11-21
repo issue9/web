@@ -7,6 +7,8 @@ package config
 import (
 	"strconv"
 
+	"github.com/issue9/sliceutil"
+
 	"github.com/issue9/web"
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
@@ -49,6 +51,15 @@ type mediaTypeConfig struct {
 	//  - yaml
 	//  - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。
 	Target string `json:"target" yaml:"target" xml:"target,attr" toml:"target"`
+
+	// 媒体类型的名称
+	Name string `json:"name" yaml:"name" xml:"name,attr" toml:"name"`
+
+	// 出错时的媒体类型
+	Problem string `json:"problem" yaml:"problem" xml:"problem,attr" toml:"problem"`
+
+	// 绑定在特定的请求方法上
+	Method string `json:"method" yaml:"method" xml:"method,attr" toml:"method"`
 }
 
 func (conf *configOf[T]) buildNegotiation(f *filter.Filter) {
@@ -70,14 +81,20 @@ func (conf *configOf[T]) buildNegotiation(f *filter.Filter) {
 }
 
 func (conf *configOf[T]) sanitizeMediaTypes(c *web.Negotiation, f *filter.Filter) {
+	indexes := sliceutil.Dup(conf.MediaTypes, func(i, j *mediaTypeConfig) bool { return i.Name == j.Name })
+	if len(indexes) > 0 {
+		f.AddReason("mediaTypes["+strconv.Itoa(indexes[0])+"].name", locales.DuplicateValue)
+		return
+	}
+
 	for index, item := range conf.MediaTypes {
-		m, found := mediaTypeFactory.get(item.Target)
+		codec, found := codecFactory.get(item.Target)
 		if !found {
 			f.AddReason("mediaTypes["+strconv.Itoa(index)+"].target", locales.NotFound)
 			return
 		}
 
-		c.AddMediaType(m)
+		c.AddMediaType(web.NewMediaType(codec, item.Name, item.Problem, item.Method))
 	}
 
 	conf.negotiation = c

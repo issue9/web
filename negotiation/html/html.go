@@ -58,12 +58,6 @@ type HTML struct {
 
 func New() *HTML { return &HTML{} }
 
-func (h *HTML) Name() string { return header.HTML }
-
-func (h *HTML) ProblemName() string { return "" }
-
-func (h *HTML) Method() string { return "" }
-
 // Marshal 针对 HTML 内容的解码实现
 //
 // 参数 val 可以是以下几种可能：

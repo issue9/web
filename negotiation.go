@@ -41,48 +41,57 @@ type Compressor interface {
 	NewEncoder(w io.Writer) (io.WriteCloser, error)
 }
 
-// MediaType 媒体类型需要提供的接口
+// Codec 媒体类型需要提供的编码接口
 //
 // 实现者应该是一个无状态的对象。
-type MediaType interface {
-	// Name 获取媒体类型的名称
-	Name() string
-
-	// ProblemName 错误状态下的媒体类型
-	ProblemName() string
-
+type Codec interface {
 	// Marshal 对内容进行编码
 	Marshal(ctx *Context, v any) ([]byte, error)
 
 	// Marshal 解码内容到 v
 	Unmarshal(r io.Reader, v any) error
-
-	// Method 绑定的方法
-	//
-	// 如果此值非空，那么仅对该请求的内容有效。目前可以有以下几种可能的值：
-	//  - 空值，可用于处理所有的请求类型；
-	//  - [http.MethodPatch] 只能处理由 PATCH 请求提交的数据；
-	//  - [http.MethodQuery] 只能处理由 QUERY 请求提交的数据；//case https://github.com/issue9/web/issues/13
-	Method() string
 }
+
+// MediaType 媒体类型
+type MediaType struct {
+	Codec
+	name, problem, method string
+}
+
+// NewMediaType 创建新的媒体类型
+//
+// name 获取媒体类型的名称；
+// problem 错误状态下的媒体类型；
+// method 绑定的方法。
+// 如果此值非空，那么仅对该请求的内容有效。目前可以有以下几种可能的值：
+//   - 空值，可用于处理所有的请求类型；
+//   - [http.MethodPatch] 只能处理由 PATCH 请求提交的数据；
+//   - [http.MethodQuery] 只能处理由 QUERY 请求提交的数据；
+func NewMediaType(codec Codec, name, problem, method string) *MediaType {
+	return &MediaType{
+		Codec:   codec,
+		name:    name,
+		problem: problem,
+		method:  method,
+	}
+}
+
+func (mt *MediaType) Name() string        { return mt.name }
+func (mt *MediaType) ProblemName() string { return mt.problem }
+func (mt *MediaType) Method() string      { return mt.method }
 
 // Negotiation 提供与内容协商相关的功能
 type Negotiation struct {
-	// 压缩
+	l *locale.Locale // 本地化
 
 	disableCompress      bool
 	compressions         []*compression
 	acceptEncodingHeader string // 生成 AcceptEncoding 报头内容
 
-	// 媒体类型
-
-	mediaTypes        []MediaType
+	mediaTypes        []*MediaType
 	acceptHeader      string // 生成的 Accept 报头内容
 	acceptPatchHeader string // 生成的 Accept-Patch 报头内容
 	acceptQueryHeader string // 生成的 Accept-Query 报头内容
-
-	// 本地化
-	l *locale.Locale
 }
 
 type compression struct {
@@ -98,7 +107,7 @@ type compression struct {
 func NewNegotiation(lang language.Tag, conf *config.Config) *Negotiation {
 	return &Negotiation{
 		compressions: make([]*compression, 0, 10),
-		mediaTypes:   make([]MediaType, 0, 10),
+		mediaTypes:   make([]*MediaType, 0, 10),
 		l:            locale.New(lang, conf),
 	}
 }
@@ -188,45 +197,49 @@ func buildCompression(c Compressor, types []string) *compression {
 }
 
 // AddMediaType 添加媒体类型
-func (nego *Negotiation) AddMediaType(mt ...MediaType) *Negotiation {
-	if len(mt) == 0 {
-		panic("参数 mt 不能为空")
+func (nego *Negotiation) AddMediaType(mt ...*MediaType) *Negotiation {
+	for _, mm := range mt {
+		if slices.ContainsFunc(nego.mediaTypes, func(v *MediaType) bool { return v.Name() == mm.Name() }) {
+			panic(fmt.Sprintf("存在重复的项 %s", mm.Name()))
+		}
+
+		nego.mediaTypes = append(nego.mediaTypes, mm)
+
+		switch m := mm.Method(); m {
+		case "":
+			if nego.acceptHeader != "" {
+				nego.acceptHeader += ", "
+			}
+			nego.acceptHeader += mm.Name()
+		case http.MethodPatch:
+			if nego.acceptPatchHeader != "" {
+				nego.acceptPatchHeader += ", "
+			}
+			nego.acceptPatchHeader += mm.Name()
+		case "QUERY":
+			if nego.acceptQueryHeader != "" {
+				nego.acceptQueryHeader += ", "
+			}
+			nego.acceptQueryHeader += mm.Name()
+		}
 	}
 
-	for _, m := range mt {
-		nego.addMediaType(m)
-	}
 	return nego
 }
 
-func (nego *Negotiation) addMediaType(mt MediaType) {
-	if mt == nil {
-		panic("参数 mt 不能为 nil")
+// AddCodec 添加编码
+func (nego *Negotiation) AddCodec(codec Codec, name, problem, method string) *Negotiation {
+	if codec == nil {
+		panic("参数 codec 不能为 nil")
+	}
+	if name == "" {
+		panic("参数 name 不能为空")
+	}
+	if problem == "" {
+		problem = name
 	}
 
-	if slices.ContainsFunc(nego.mediaTypes, func(v MediaType) bool { return v.Name() == mt.Name() }) {
-		panic(fmt.Sprintf("存在重复的项 %s", mt.Name()))
-	}
-
-	nego.mediaTypes = append(nego.mediaTypes, mt)
-
-	switch m := mt.Method(); m {
-	case "":
-		if nego.acceptHeader != "" {
-			nego.acceptHeader += ", "
-		}
-		nego.acceptHeader += mt.Name()
-	case http.MethodPatch:
-		if nego.acceptPatchHeader != "" {
-			nego.acceptPatchHeader += ", "
-		}
-		nego.acceptPatchHeader += mt.Name()
-	case "QUERY":
-		if nego.acceptQueryHeader != "" {
-			nego.acceptQueryHeader += ", "
-		}
-		nego.acceptQueryHeader += mt.Name()
-	}
+	return nego.AddMediaType(NewMediaType(codec, name, problem, method))
 }
 
 func unableParse(v string) error { return localeutil.Error("unable parse %s", v) }
@@ -315,7 +328,7 @@ func (nego *Negotiation) acceptEncoding(contentType, h string) (c Compressor, er
 // 从 Accept 报头解析出所需要的解码函数
 //
 // 如果 h 为空，那么将被设置为默认值 ＊/*；
-func (nego *Negotiation) accept(h string) (MediaType, error) {
+func (nego *Negotiation) accept(h string) (*MediaType, error) {
 	// 规则如下：
 	//  - 按 q 从大到小进行排序；
 	//  - 忽略无法解析 q 的项；
@@ -427,11 +440,11 @@ func (nego *Negotiation) contentEncoding(name string, r io.Reader) (io.ReadClose
 // h 表示 Content-Type 报头的内容。如果字符集为 utf-8 或是未指定，返回的字符解码为 nil；
 // method 如果为空表示只从 [MediaType.Method] 为空的类型中查找，
 // 如果不为空，除了前者还会从 [MediaType.Method] 与 method 相同的类型中查找；
-func (nego *Negotiation) contentType(h, method string) (MediaType, encoding.Encoding, error) {
+func (nego *Negotiation) contentType(h, method string) (*MediaType, encoding.Encoding, error) {
 	mt, charset := qheader.ParseWithParam(h, "charset")
 
-	item, found := sliceutil.At(nego.mediaTypes, func(i MediaType, _ int) bool {
-		return (i.Name() == mt || i.ProblemName() == mt) && (method == "" || i.Method() == "" || i.Method() == method)
+	item, found := sliceutil.At(nego.mediaTypes, func(i *MediaType, _ int) bool {
+		return (i.Name() == mt) && (method == "" || i.Method() == "" || i.Method() == method)
 	})
 	if !found {
 		return nil, nil, NewError("not found serialization function for %s", mt)
@@ -457,8 +470,8 @@ func (nego *Negotiation) CanCompress() bool { return !nego.disableCompress }
 func (nego *Negotiation) SetCompress(enable bool) { nego.disableCompress = !enable }
 
 // MediaTypes 返回支持的所有媒体类型
-func (nego *Negotiation) MediaTypes() iter.Seq[MediaType] {
-	return func(yield func(MediaType) bool) {
+func (nego *Negotiation) MediaTypes() iter.Seq[*MediaType] {
+	return func(yield func(*MediaType) bool) {
 		for _, v := range nego.mediaTypes {
 			if !yield(v) {
 				break

@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	_ Marshaler             = &web.Problem{}
-	_ negotiation.MediaType = &HTML{}
+	_ Marshaler         = &web.Problem{}
+	_ negotiation.Codec = &HTML{}
 )
 
 func TestGetName(t *testing.T) {

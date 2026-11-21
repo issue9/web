@@ -8,16 +8,16 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"compress/lzw"
-	sj "encoding/json/v2"
-	sx "encoding/xml"
+	"encoding/json/v2"
+	"encoding/xml"
 	"fmt"
 	"slices"
 	"strings"
 	"time"
 
-	st "github.com/BurntSushi/toml"
+	"github.com/BurntSushi/toml"
 	"github.com/andybalholm/brotli"
-	sy "github.com/goccy/go-yaml"
+	"github.com/goccy/go-yaml"
 	"github.com/issue9/cache"
 	"github.com/issue9/cache/drivers/memcache"
 	"github.com/issue9/cache/drivers/memory"
@@ -65,7 +65,7 @@ var (
 	cacheFactory          = newRegister[CacheBuilder]()
 	compressorFactory     = newRegister[web.Compressor]()
 	idGeneratorFactory    = newRegister[IDGeneratorBuilder]()
-	mediaTypeFactory      = newRegister[web.MediaType]()
+	codecFactory          = newRegister[web.Codec]()
 	fileSerializerFactory = newRegister[fileSerializer]()
 	routerMatcherFactory  = newRegister[RouterMatcherBuilder]()
 
@@ -100,17 +100,10 @@ func RegisterCompressor(id string, c web.Compressor) { compressorFactory.registe
 // id 表示唯一 ID，这将在配置文件中被引用。如果同名会被覆盖；
 func RegisterIDGenerator(id string, b IDGeneratorBuilder) { idGeneratorFactory.register(b, id) }
 
-// RegisterMediaType 注册用于序列化用户提交数据的方法
+// RegisterCodec 注册用于序列化用户提交数据的方法
 //
 // name 为名称，这将在配置文件中被引用，如果存在同名，则会覆盖。
-func RegisterMediaType(mt web.MediaType, name string) {
-	for _, item := range mediaTypeFactory.items {
-		if item.Name() == mt.Name() {
-			panic(fmt.Sprintf("存在同名的媒体类型 %s", mt.Name()))
-		}
-	}
-	mediaTypeFactory.register(mt, name)
-}
+func RegisterCodec(mt web.Codec, name string) { codecFactory.register(mt, name) }
 
 // RegisterFileSerializer 注册用于文件序列化的方法
 //
@@ -190,22 +183,22 @@ func init() {
 		return u.String, u.Serve
 	})
 
-	// RegisterMeidaType
+	// RegisterCodec
 
-	RegisterMediaType(negotiation.NewJSON(), "json")
-	RegisterMediaType(negotiation.NewYAML(), "yaml")
-	RegisterMediaType(negotiation.NewCBOR(), "cbor")
-	RegisterMediaType(negotiation.NewXML(), "xml")
-	RegisterMediaType(form.New(), "form")
-	RegisterMediaType(negotiation.NewGOB(), "gob")
-	RegisterMediaType(negotiation.NewNOP("nop", "nop"), "nop")
+	RegisterCodec(negotiation.NewJSON(), "json")
+	RegisterCodec(negotiation.NewYAML(), "yaml")
+	RegisterCodec(negotiation.NewCBOR(), "cbor")
+	RegisterCodec(negotiation.NewXML(), "xml")
+	RegisterCodec(form.New(), "form")
+	RegisterCodec(negotiation.NewGOB(), "gob")
+	RegisterCodec(negotiation.NewNOP(), "nop")
 
 	// RegisterFileSerializer
 
-	RegisterFileSerializer("json", func(a any) ([]byte, error) { return sj.Marshal(a) }, func(b []byte, a any) error { return sj.Unmarshal(b, a) }, ".json")
-	RegisterFileSerializer("xml", sx.Marshal, sx.Unmarshal, ".xml")
-	RegisterFileSerializer("yaml", sy.Marshal, sy.Unmarshal, ".yaml", ".yml")
-	RegisterFileSerializer("toml", st.Marshal, st.Unmarshal, ".toml")
+	RegisterFileSerializer("json", func(a any) ([]byte, error) { return json.Marshal(a) }, func(b []byte, a any) error { return json.Unmarshal(b, a) }, ".json")
+	RegisterFileSerializer("xml", xml.Marshal, xml.Unmarshal, ".xml")
+	RegisterFileSerializer("yaml", yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
+	RegisterFileSerializer("toml", toml.Marshal, toml.Unmarshal, ".toml")
 	RegisterFileSerializer("jsonc", server.JSONCMarshal, server.JSONCUnmarshal, ".jsonc")
 
 	// micro
