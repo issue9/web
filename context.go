@@ -103,13 +103,13 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 
 	h := r.Header.Get(header.Accept)
-	mt, err := s.nego.accept(h) // h 空值相当于 */*，如果正确设置，肯定不会返回 nil。
+	outputMediaType, err := s.nego.accept(h) // h 空值相当于 */*，如果正确设置，肯定不会返回 nil。
 	if err != nil {
 		warn().LocaleString(parseHeaderErr(header.Accept, err))
 		s.errorPage(w, problems.NotAcceptable)
 		return nil
 	}
-	if mt == nil {
+	if outputMediaType == nil {
 		warn().LocaleString(Phrase("not found serialization for %s", h))
 		s.errorPage(w, problems.NotAcceptable)
 		return nil
@@ -117,7 +117,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 
 	var outputCompressor Compressor
 	if s.nego.CanCompress() {
-		if outputCompressor, err = s.nego.acceptEncoding(mt.Name(), r.Header.Get(header.AcceptEncoding)); err != nil {
+		if outputCompressor, err = s.nego.acceptEncoding(outputMediaType.Name(), r.Header.Get(header.AcceptEncoding)); err != nil {
 			warn().LocaleString(parseHeaderErr(header.AcceptEncoding, err))
 			s.errorPage(w, problems.NotAcceptable)
 			return nil
@@ -186,7 +186,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	ctx.originResponse = w
 	ctx.writer = w
 	ctx.outputCompressor = outputCompressor
-	ctx.outputMediaType = mt
+	ctx.outputMediaType = outputMediaType
 	ctx.status = 0
 	ctx.wrote = false
 

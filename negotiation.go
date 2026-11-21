@@ -45,10 +45,10 @@ type Compressor interface {
 //
 // 实现者应该是一个无状态的对象。
 type Codec interface {
-	// Marshal 对内容进行编码
+	// Marshal 对 v 进行编码
 	Marshal(ctx *Context, v any) ([]byte, error)
 
-	// Marshal 解码内容到 v
+	// Unmarshal 解码内容到 v
 	Unmarshal(r io.Reader, v any) error
 }
 

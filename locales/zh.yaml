@@ -242,9 +242,6 @@ messages:
 - key: not found
   message:
     msg: 未找到
-- key: not found charset for %s
-  message:
-    msg: 未找到符合报头 %s 的字符集
 - key: not found compress for %s
   message:
     msg: 未找到 %s 对应的压缩算法
@@ -254,9 +251,6 @@ messages:
 - key: not found serialization function for %s
   message:
     msg: 未找到适合 %s 的序列化函数
-- key: not found unmarshaler for the server content-type %s
-  message:
-    msg: 未找到服务端 content-type 指定的 %s 序列化函数
 - key: "param %[1]s has error: %[2]s"
   message:
     msg: "参数 %[1]s 包含错误: %[2]s"

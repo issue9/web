@@ -87,8 +87,8 @@ import (
 
 func newServer() (*web.Server, error) {
 	nego := web.NewNegotiation().
-		AddMediaType(negotiation.NewJSON()).
-		AddMediaType(negotiation.NewXML())
+		AddMediaType(web.NewMediaType(negotiation.NewJSON(), "application/json", "", "", web.PatchKindNone)).
+		AddMediaType(web.NewMediaType(negotiation.NewXML(), "application/json", "", "", web.PatchKindNone))
 
 	return server.NewHTTP("app", "1.0.0", &server.Options{Negotiation: nego})
 }

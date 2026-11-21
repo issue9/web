@@ -165,7 +165,10 @@
 | JSON | YAML | XML | TOML | 类型 | 描述 |
 |------|------|-----|------|------------------|------------------|
 | target | target | target,attr | target | string | 实际采用的解码方法<br />由 \[RegisterMediaType] 注册而来。默认可用为：<br />  - xml<br />  - cbor<br />  - json<br />  - form<br />  - gob<br />  - yaml<br />  - nop  没有具体实现的方法，对于上传等需要自行处理的情况可以指定此值。<br /> |
-| accept,omitempty | accept,omitempty | accept,attr,omitempty | accept,omitempty | string | 指定 Accept 报头可出现的位置，可以有以下两个值，也可以通过逗号进行组合。<br />  - request 出现在作为客户端请求时的 Accept 报头中；<br />  - response 出现在作为服务端响应时的 Accept 报头中，一般只有 OPTIONS 会有 Accept 报头；<br /> |
+| name | name | name,attr | name | string | 媒体类型的名称<br /> |
+| problem,omitempty | problem,omitempty | problem,attr,omitempty | problem,omitempty | string | 出错时的媒体类型<br /> |
+| method,omitempty | method,omitempty | method,attr,omitempty | method,omitempty | string | 绑定在特定的请求方法上<br /> |
+| patchKind,omitempty | patchKind,omitempty | patchKind,attr,omitempty | patchKind,omitempty | string | 当 Method 的值为 \[http.MethodPatch] 时此值表示可解析的对象类型<br />可用的值为：<br />  - 空值<br />  - patcher<br />  - merger<br /> |
 
 
 

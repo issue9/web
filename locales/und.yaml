@@ -226,9 +226,6 @@ messages:
 - key: not found
   message:
     msg: not found
-- key: not found charset for %s
-  message:
-    msg: not found charset for %s
 - key: not found compress for %s
   message:
     msg: not found compress for %s
@@ -238,9 +235,6 @@ messages:
 - key: not found serialization function for %s
   message:
     msg: not found serialization function for %s
-- key: not found unmarshaler for the server content-type %s
-  message:
-    msg: not found unmarshaler for the server content-type %s
 - key: "param %[1]s has error: %[2]s"
   message:
     msg: "param %[1]s has error: %[2]s"

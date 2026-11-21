@@ -41,7 +41,6 @@ type Queries struct {
 	filter  *filter.Filter
 	ctx     *Context
 	problem *Problem
-
 	queries url.Values
 }
 
