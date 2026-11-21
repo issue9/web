@@ -5,6 +5,7 @@
 package config
 
 import (
+	"net/http"
 	"strconv"
 
 	"github.com/issue9/sliceutil"
@@ -56,11 +57,21 @@ type mediaTypeConfig struct {
 	Name string `json:"name" yaml:"name" xml:"name,attr" toml:"name"`
 
 	// 出错时的媒体类型
-	Problem string `json:"problem" yaml:"problem" xml:"problem,attr" toml:"problem"`
+	Problem string `json:"problem,omitempty" yaml:"problem,omitempty" xml:"problem,attr,omitempty" toml:"problem,omitempty"`
 
 	// 绑定在特定的请求方法上
-	Method string `json:"method" yaml:"method" xml:"method,attr" toml:"method"`
+	Method string `json:"method,omitempty" yaml:"method,omitempty" xml:"method,attr,omitempty" toml:"method,omitempty"`
+
+	// 当 Method 的值为 [http.MethodPatch] 时此值表示可解析的对象类型
+	//
+	// 可用的值为：
+	//  - 空值
+	//  - patcher
+	//  - merger
+	PatchKind string `json:"patchKind,omitempty" yaml:"patchKind,omitempty" xml:"patchKind,attr,omitempty" toml:"patchKind,omitempty"`
 }
+
+var patchKinds = []string{"patcher", "merger"}
 
 func (conf *configOf[T]) buildNegotiation(f *filter.Filter) {
 	if len(conf.Compressors) == 0 && len(conf.MediaTypes) == 0 {
@@ -94,7 +105,24 @@ func (conf *configOf[T]) sanitizeMediaTypes(c *web.Negotiation, f *filter.Filter
 			return
 		}
 
-		c.AddMediaType(web.NewMediaType(codec, item.Name, item.Problem, item.Method))
+		kind := web.PatchKindNone
+		switch item.PatchKind {
+		case "patcher":
+			if item.Method != http.MethodPatch {
+				f.AddReason("mediaTypes["+strconv.Itoa(index)+"].pathKind", locales.InvalidValue)
+			}
+			kind = web.PatchKindPatcher
+		case "merger":
+			if item.Method != http.MethodPatch {
+				f.AddReason("mediaTypes["+strconv.Itoa(index)+"].pathKind", locales.InvalidValue)
+			}
+			kind = web.PatchKindMerger
+		case "":
+		default:
+			f.AddReason("mediaTypes["+strconv.Itoa(index)+"].pathKind", locales.InvalidValue)
+		}
+
+		c.AddMediaType(web.NewMediaType(codec, item.Name, item.Problem, item.Method, kind))
 	}
 
 	conf.negotiation = c

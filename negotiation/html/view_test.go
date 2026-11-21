@@ -23,7 +23,7 @@ func newServer(a *assert.Assertion, lang string, h *html.HTML) (*web.Server, sta
 	ts := startuptest.NewTestServerStartup(a)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Startup:     ts,
-		Negotiation: web.NewNegotiation(language.MustParse(lang), nil).AddCodec(h, "text/html", "", ""),
+		Negotiation: web.NewNegotiation(language.MustParse(lang), nil).AddCodec(h, "text/html", "", "", web.PatchKindNone),
 		Logs:        logs.New(logs.NewTermHandler(os.Stderr, nil)),
 	})
 	a.NotError(err).NotNil(s)

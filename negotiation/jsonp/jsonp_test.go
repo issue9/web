@@ -24,8 +24,9 @@ func TestJSONP(t *testing.T) {
 
 	a := assert.New(t, false)
 	ts := startuptest.NewTestServerStartup(a)
+	mt := web.NewMediaType(jsonp, header.Javascript, "", "", web.PatchKindNone)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		Negotiation: web.NewNegotiation(language.SimplifiedChinese, nil).AddCodec(jsonp, header.Javascript, "", ""),
+		Negotiation: web.NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt),
 		Startup:     ts,
 	})
 	a.NotError(err).NotNil(s)

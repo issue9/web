@@ -171,7 +171,8 @@ func sanitizeOptions(o *Options, t int) (*Options, error) {
 	}
 
 	if o.Negotiation == nil {
-		o.Negotiation = web.NewNegotiation(tag, c).AddCodec(negotiation.NewJSON(), header.JSON, "application/problem+json", "")
+		mt := web.NewMediaType(negotiation.NewJSON(), header.JSON, "application/problem+json", "", web.PatchKindNone)
+		o.Negotiation = web.NewNegotiation(tag, c).AddMediaType(mt)
 	}
 
 	switch t {

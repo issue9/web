@@ -56,29 +56,66 @@ type Codec interface {
 type MediaType struct {
 	Codec
 	name, problem, method string
+	kind                  PatchKind
 }
+
+type PatchKind = int8
+
+const (
+	PatchKindNone PatchKind = iota
+	PatchKindPatcher
+	PatchKindMerger
+)
 
 // NewMediaType 创建新的媒体类型
 //
-// name 获取媒体类型的名称；
+// name 媒体类型的名称；
 // problem 错误状态下的媒体类型；
-// method 绑定的方法。
-// 如果此值非空，那么仅对该请求的内容有效。目前可以有以下几种可能的值：
+// method 绑定的方法；
+// pathKind 在 method 的值为 [http.MethodPatch] 时可以使用此值表示可解析的对象类型；
+//
+// 如果 method 非空，表示该媒体类型仅对该类型的请求有效。以下几种请求方法有：
 //   - 空值，可用于处理所有的请求类型；
 //   - [http.MethodPatch] 只能处理由 PATCH 请求提交的数据；
 //   - [http.MethodQuery] 只能处理由 QUERY 请求提交的数据；
-func NewMediaType(codec Codec, name, problem, method string) *MediaType {
+//
+// 对于 patchKind 参数不为零值的情况，还提供了两个简便的方法 [NewPatcherMediaType] 和 [NewMergerMediaType]。
+func NewMediaType(codec Codec, name, problem, method string, patchKind PatchKind) *MediaType {
+	if codec == nil {
+		panic("参数 codec 不能为 nil")
+	}
+	if name == "" {
+		panic("参数 name 不能为空")
+	}
+	if problem == "" {
+		problem = name
+	}
+
+	if method != http.MethodPatch && patchKind != PatchKindNone {
+		panic("patchKind 只在 method 为 PATCH 时有效")
+	}
+
 	return &MediaType{
 		Codec:   codec,
 		name:    name,
 		problem: problem,
 		method:  method,
+		kind:    patchKind,
 	}
 }
 
-func (mt *MediaType) Name() string        { return mt.name }
-func (mt *MediaType) ProblemName() string { return mt.problem }
-func (mt *MediaType) Method() string      { return mt.method }
+func NewPatcherMediaType(codec Codec, name, problem string) *MediaType {
+	return NewMediaType(codec, name, problem, http.MethodPatch, PatchKindPatcher)
+}
+
+func NewMergerMediaType(codec Codec, name, problem string) *MediaType {
+	return NewMediaType(codec, name, problem, http.MethodPatch, PatchKindMerger)
+}
+
+func (mt *MediaType) Name() string         { return mt.name }
+func (mt *MediaType) ProblemName() string  { return mt.problem }
+func (mt *MediaType) Method() string       { return mt.method }
+func (mt *MediaType) PatchKind() PatchKind { return mt.kind }
 
 // Negotiation 提供与内容协商相关的功能
 type Negotiation struct {
@@ -228,18 +265,8 @@ func (nego *Negotiation) AddMediaType(mt ...*MediaType) *Negotiation {
 }
 
 // AddCodec 添加编码
-func (nego *Negotiation) AddCodec(codec Codec, name, problem, method string) *Negotiation {
-	if codec == nil {
-		panic("参数 codec 不能为 nil")
-	}
-	if name == "" {
-		panic("参数 name 不能为空")
-	}
-	if problem == "" {
-		problem = name
-	}
-
-	return nego.AddMediaType(NewMediaType(codec, name, problem, method))
+func (nego *Negotiation) AddCodec(codec Codec, name, problem, method string, kind PatchKind) *Negotiation {
+	return nego.AddMediaType(NewMediaType(codec, name, problem, method, kind))
 }
 
 func unableParse(v string) error { return localeutil.Error("unable parse %s", v) }

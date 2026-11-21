@@ -125,10 +125,10 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 
 	var inputReader io.Reader = r.Body // 作为服务端不需要关闭 Request.Body，所以直接使用 io.Reader
-	var inputMedia *MediaType
+	var inputMediaType *MediaType
 	var inputCharset encoding.Encoding
 	if h = r.Header.Get(header.ContentType); h != "" {
-		if inputMedia, inputCharset, err = s.nego.contentType(h, r.Method); err != nil {
+		if inputMediaType, inputCharset, err = s.nego.contentType(h, r.Method); err != nil {
 			warn().LocaleString(parseHeaderErr(header.ContentType, err))
 			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
@@ -190,7 +190,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	ctx.status = 0
 	ctx.wrote = false
 
-	ctx.inputMediaType = inputMedia
+	ctx.inputMediaType = inputMediaType
 	ctx.requestBody = inputReader
 	ctx.languageTag = tag
 	ctx.localePrinter = s.Negotiation().NewLocalePrinter(tag)
@@ -352,6 +352,14 @@ func (ctx *Context) Logs() *AttrLogs { return ctx.logs }
 
 func (ctx *Context) IsXHR() bool {
 	return strings.ToLower(ctx.Request().Header.Get(header.XRequestedWith)) == "xmlhttprequest"
+}
+
+func (ctx *Context) IsPatcher() bool {
+	return ctx.Request().Method == http.MethodPatch && ctx.inputMediaType.PatchKind() == PatchKindPatcher
+}
+
+func (ctx *Context) IsMerger() bool {
+	return ctx.Request().Method == http.MethodPatch && ctx.inputMediaType.PatchKind() == PatchKindMerger
 }
 
 var idempotentMethods = []string{

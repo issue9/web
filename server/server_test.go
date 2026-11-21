@@ -63,8 +63,8 @@ func newOptions(a *assert.Assertion, o *Options) *Options {
 	}
 	if o.Negotiation == nil {
 		o.Negotiation = web.NewNegotiation(language.English, nil).
-			AddCodec(negotiation.NewJSON(), header.JSON, "application/probblem+json", "").
-			AddCodec(negotiation.NewXML(), header.XML, "application/problem+xml", "")
+			AddCodec(negotiation.NewJSON(), header.JSON, "application/probblem+json", "", web.PatchKindNone).
+			AddCodec(negotiation.NewXML(), header.XML, "application/problem+xml", "", web.PatchKindNone)
 	}
 
 	return o

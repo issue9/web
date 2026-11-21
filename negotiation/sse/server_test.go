@@ -27,10 +27,15 @@ import (
 func TestServer(t *testing.T) {
 	a := assert.New(t, false)
 	ts := startuptest.NewHTTPServerStartup(a, false)
+	mt := web.NewMediaType(negotiation.NewJSON(), header.JSON, "", "", web.PatchKindNone)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Startup:     ts,
-		Negotiation: web.NewNegotiation(language.SimplifiedChinese, nil).AddCodec(negotiation.NewJSON(), header.JSON, "", ""),
-		Logs:        logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithCreated(logs.MicroLayout), logs.WithLevels(logs.AllLevels()...)),
+		Negotiation: web.NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt),
+		Logs: logs.New(
+			logs.NewTermHandler(os.Stderr, nil),
+			logs.WithCreated(logs.MicroLayout),
+			logs.WithLevels(logs.AllLevels()...),
+		),
 	})
 	a.NotError(err).NotNil(s)
 	e := NewServer[int64](s, 50*time.Millisecond, 5*time.Second, 10, web.StringPhrase("sse"))

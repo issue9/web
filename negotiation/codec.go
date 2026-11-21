@@ -17,12 +17,21 @@ import (
 	"github.com/issue9/web"
 )
 
-type Codec = web.Codec
+type (
+	Codec = web.Codec
 
-type codec struct {
-	marshal   web.MarshalFunc
-	unmarshal web.UnmarshalFunc
-}
+	codec struct {
+		marshal   web.MarshalFunc
+		unmarshal web.UnmarshalFunc
+	}
+
+	nopCodec  struct{}
+	cborCodec struct{}
+	gobCodec  struct{}
+	jsonCodec struct{}
+	xmlCodec  struct{}
+	yamlCodec struct{}
+)
 
 // NewCodec 声明一个媒体类型
 func NewCodec(m web.MarshalFunc, u web.UnmarshalFunc) Codec {
@@ -31,11 +40,8 @@ func NewCodec(m web.MarshalFunc, u web.UnmarshalFunc) Codec {
 		unmarshal: u,
 	}
 }
-
 func (m *codec) Marshal(ctx *web.Context, v any) ([]byte, error) { return m.marshal(ctx, v) }
 func (m *codec) Unmarshal(r io.Reader, v any) error              { return m.unmarshal(r, v) }
-
-type nopCodec struct{}
 
 // NewNOP 创建一个空的 [MediaType] 实例
 //
@@ -44,16 +50,12 @@ func NewNOP() Codec                                            { return nopCodec
 func (nopCodec) Marshal(_ *web.Context, v any) ([]byte, error) { return nil, ErrUnsupported() }
 func (nopCodec) Unmarshal(r io.Reader, v any) error            { return ErrUnsupported() }
 
-type cborCodec struct{}
-
 // NewCBOR 提供对 [CBOR] 编码的支持
 //
 // [CBOR]: https://www.rfc-editor.org/rfc/rfc8949.html
 func NewCBOR() Codec                                            { return cborCodec{} }
 func (cborCodec) Marshal(_ *web.Context, v any) ([]byte, error) { return cbor.Marshal(v) }
 func (cborCodec) Unmarshal(r io.Reader, v any) error            { return cbor.NewDecoder(r).Decode(v) }
-
-type gobCodec struct{}
 
 // NewGOB 提供对 [GOB] 编码的支持
 //
@@ -68,21 +70,15 @@ func (gobCodec) Marshal(_ *web.Context, v any) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-type jsonCodec struct{}
-
 // NewJSON 提供对 JSON 编码的支持
 func NewJSON() Codec                                            { return jsonCodec{} }
 func (jsonCodec) Marshal(_ *web.Context, v any) ([]byte, error) { return json.Marshal(v) }
 func (jsonCodec) Unmarshal(r io.Reader, v any) error            { return json.UnmarshalRead(r, v) }
 
-type xmlCodec struct{}
-
 // NewXML 提供对 XML 编码的支持
 func NewXML() Codec                                            { return xmlCodec{} }
 func (xmlCodec) Marshal(_ *web.Context, v any) ([]byte, error) { return xml.Marshal(v) }
 func (xmlCodec) Unmarshal(r io.Reader, v any) error            { return xml.NewDecoder(r).Decode(v) }
-
-type yamlCodec struct{}
 
 // NewYAML 提供对 YAML 编码的支持
 func NewYAML() Codec                                            { return yamlCodec{} }
