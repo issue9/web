@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Package mediatypetest 提供了用于测试 [web.MediaType] 的函数
-package mediatypetest
+// Package codectest 提供了用于测试 [web.Codec] 的函数
+package codectest
 
 import (
 	"bytes"

@@ -10,12 +10,12 @@ import (
 
 	"github.com/issue9/assert/v6"
 
-	"github.com/issue9/web/negotiation/mediatypetest"
+	"github.com/issue9/web/negotiation/codectest"
 )
 
 func TestNewCBOR(t *testing.T) {
 	a := assert.New(t, false)
-	mediatypetest.Test(a, NewCBOR())
+	codectest.Test(a, NewCBOR())
 }
 
 func TestNewGOB(t *testing.T) {
@@ -46,20 +46,20 @@ func TestNewGOB(t *testing.T) {
 	data, err = mt.Marshal(nil, nil)
 	a.Error(err).Nil(data)
 
-	mediatypetest.Test(a, mt)
+	codectest.Test(a, mt)
 }
 
 func TestNewJSON(t *testing.T) {
 	a := assert.New(t, false)
-	mediatypetest.Test(a, NewJSON())
+	codectest.Test(a, NewJSON())
 }
 
 func TestNewXML(t *testing.T) {
 	a := assert.New(t, false)
-	mediatypetest.Test(a, NewXML())
+	codectest.Test(a, NewXML())
 }
 
 func TestNewYAML(t *testing.T) {
 	a := assert.New(t, false)
-	mediatypetest.Test(a, NewYAML())
+	codectest.Test(a, NewYAML())
 }
