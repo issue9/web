@@ -20,6 +20,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/startuptest"
 )
 
@@ -31,13 +32,14 @@ var inst = &web.Problem{
 	Instance: "instance",
 }
 
-func Test(a *assert.Assertion, codec web.Codec) {
+func Test(a *assert.Assertion, codec negotiation.Codec[*web.Context]) {
 	ts := startuptest.NewTestServerStartup(a)
 	conf := config.Dir(nil, "./")
 	log := logs.New(logs.NewNopHandler())
 	unique := func() string { return "" }
 	cc := memory.New()
-	s := web.NewServer("test", "1.0.0", ts, time.Local, log, unique, cc, web.NewNegotiation(language.SimplifiedChinese, conf), header.XRequestID)
+	nego := negotiation.New[*web.Context](language.SimplifiedChinese, conf)
+	s := web.NewServer("test", "1.0.0", ts, time.Local, log, unique, cc, nego, header.XRequestID)
 	a.NotNil(s)
 
 	w := httptest.NewRecorder()

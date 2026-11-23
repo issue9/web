@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Package codecs 提供编解码的实现
+// Package codecs 提供用于内容协商的编解码的实现
 package codecs
 
 import (
@@ -16,14 +16,15 @@ import (
 	"github.com/goccy/go-yaml"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/negotiation"
 )
 
 type (
-	Codec = web.Codec
+	Codec = negotiation.Codec[*web.Context]
 
 	codec struct {
-		marshal   web.MarshalFunc
-		unmarshal web.UnmarshalFunc
+		marshal   negotiation.MarshalFunc[*web.Context]
+		unmarshal negotiation.UnmarshalFunc
 	}
 
 	nopCodec  struct{}
@@ -35,7 +36,7 @@ type (
 )
 
 // NewCodec 声明一个媒体类型
-func NewCodec(m web.MarshalFunc, u web.UnmarshalFunc) Codec {
+func NewCodec(m negotiation.MarshalFunc[*web.Context], u negotiation.UnmarshalFunc) Codec {
 	return &codec{
 		marshal:   m,
 		unmarshal: u,

@@ -23,6 +23,7 @@ import (
 	"golang.org/x/text/transform"
 
 	"github.com/issue9/web/internal/qheader"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/problems"
 )
 
@@ -53,7 +54,7 @@ type Context struct {
 
 	originResponse   http.ResponseWriter // 原始的 http.ResponseWriter
 	writer           io.Writer
-	outputCompressor Compressor
+	outputCompressor negotiation.Compressor
 	outputMediaType  *MediaType
 	status           int // WriteHeader 保存的副本，非零表示已经输出。
 	wrote            bool
@@ -103,7 +104,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	}
 
 	h := r.Header.Get(header.Accept)
-	outputMediaType, err := s.nego.accept(h) // h 空值相当于 */*，如果正确设置，肯定不会返回 nil。
+	outputMediaType, err := s.nego.Accept(h) // h 空值相当于 */*，如果正确设置，肯定不会返回 nil。
 	if err != nil {
 		warn().LocaleString(parseHeaderErr(header.Accept, err))
 		s.errorPage(w, problems.NotAcceptable)
@@ -115,9 +116,9 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 		return nil
 	}
 
-	var outputCompressor Compressor
+	var outputCompressor negotiation.Compressor
 	if s.nego.CanCompress() {
-		if outputCompressor, err = s.nego.acceptEncoding(outputMediaType.Name(), r.Header.Get(header.AcceptEncoding)); err != nil {
+		if outputCompressor, err = s.nego.AcceptEncoding(outputMediaType.Name(), r.Header.Get(header.AcceptEncoding)); err != nil {
 			warn().LocaleString(parseHeaderErr(header.AcceptEncoding, err))
 			s.errorPage(w, problems.NotAcceptable)
 			return nil
@@ -128,7 +129,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 	var inputMediaType *MediaType
 	var inputCharset encoding.Encoding
 	if h = r.Header.Get(header.ContentType); h != "" {
-		if inputMediaType, inputCharset, err = s.nego.contentType(h, r.Method); err != nil {
+		if inputMediaType, inputCharset, err = s.nego.ContentType(h, r.Method); err != nil {
 			warn().LocaleString(parseHeaderErr(header.ContentType, err))
 			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
@@ -137,7 +138,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 
 	var inputEncoding io.ReadCloser
 	if h = r.Header.Get(header.ContentEncoding); h != "" {
-		if inputEncoding, err = s.nego.contentEncoding(h, inputReader); err != nil {
+		if inputEncoding, err = s.nego.ContentEncoding(h, inputReader); err != nil {
 			warn().LocaleString(parseHeaderErr(header.ContentEncoding, err))
 			s.errorPage(w, problems.UnsupportedMediaType)
 			return nil
@@ -149,7 +150,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 		inputReader = transform.NewReader(inputReader, inputCharset.NewDecoder())
 	}
 
-	tag := s.Negotiation().acceptLanguage(r.Header.Get(header.AcceptLanguage))
+	tag := s.Negotiation().AcceptLanguage(r.Header.Get(header.AcceptLanguage))
 
 	// 以上是获取构建 Context 的必要参数，并未真正构建 Context，
 	// 保证 ID 不为空无任何意义，因为没有后续的执行链可追踪的。
@@ -252,7 +253,7 @@ func (ctx *Context) SetMediaType(mediaType string) {
 		return
 	}
 
-	item, err := ctx.s.nego.accept(mediaType)
+	item, err := ctx.s.nego.Accept(mediaType)
 	if err != nil {
 		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
 	}
@@ -284,7 +285,7 @@ func (ctx *Context) SetEncoding(enc string) {
 		return
 	}
 
-	c, err := ctx.s.nego.acceptEncoding(ctx.MediaType(false), enc)
+	c, err := ctx.s.nego.AcceptEncoding(ctx.MediaType(false), enc)
 	if err != nil {
 		panic(fmt.Sprintf("解析参数时发生了错误：%s", err.Error()))
 	}
@@ -355,11 +356,13 @@ func (ctx *Context) IsXHR() bool {
 }
 
 func (ctx *Context) IsPatcher() bool {
-	return ctx.Request().Method == http.MethodPatch && ctx.inputMediaType.PatchKind() == PatchKindPatcher
+	return ctx.Request().Method == http.MethodPatch &&
+		ctx.inputMediaType.PatchKind() == negotiation.PatchKindPatcher
 }
 
 func (ctx *Context) IsMerger() bool {
-	return ctx.Request().Method == http.MethodPatch && ctx.inputMediaType.PatchKind() == PatchKindMerger
+	return ctx.Request().Method == http.MethodPatch &&
+		ctx.inputMediaType.PatchKind() == negotiation.PatchKindMerger
 }
 
 var idempotentMethods = []string{

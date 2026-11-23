@@ -4,5 +4,5 @@
 
 //go:generate go run ./generate_compressors.go
 
-// Package compressors 提供压缩算法
+// Package compressors 提供用于内容协商的压缩算法
 package compressors

@@ -28,6 +28,7 @@ import (
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/internal/locale"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server"
 )
@@ -186,7 +187,7 @@ func Load[T comparable](configDir, filename string) (*server.Options, T, error) 
 			return nil, zero, nil
 		}
 
-		return &server.Options{Negotiation: web.NewNegotiation(tag, config.Dir(nil, configDir))}, zero, nil
+		return &server.Options{Negotiation: negotiation.New[*web.Context](tag, config.Dir(nil, configDir))}, zero, nil
 	}
 
 	conf, err := loadConfigOf[T](configDir, filename)

@@ -26,6 +26,7 @@ import (
 	"github.com/issue9/unique/v2"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/negotiation/codecs"
 	"github.com/issue9/web/negotiation/codecs/form"
 	"github.com/issue9/web/negotiation/compressors"
@@ -66,7 +67,7 @@ func (r *register[T]) get(name string) (T, bool) {
 var (
 	logHandlersFactory    = newRegister[LogsHandlerBuilder]()
 	cacheFactory          = newRegister[CacheBuilder]()
-	compressorFactory     = newRegister[web.Compressor]()
+	compressorFactory     = newRegister[negotiation.Compressor]()
 	idGeneratorFactory    = newRegister[IDGeneratorBuilder]()
 	codecFactory          = newRegister[web.Codec]()
 	fileSerializerFactory = newRegister[fileSerializer]()
@@ -96,7 +97,7 @@ func RegisterCache(b CacheBuilder, name ...string) { cacheFactory.register(b, na
 // RegisterCompressor 注册压缩方法
 //
 // id 表示此压缩方法的唯一 ID，这将在配置文件中被引用；
-func RegisterCompressor(id string, c web.Compressor) { compressorFactory.register(c, id) }
+func RegisterCompressor(id string, c negotiation.Compressor) { compressorFactory.register(c, id) }
 
 // RegisterIDGenerator 注册唯一 ID 生成器
 //

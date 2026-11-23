@@ -13,6 +13,7 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/negotiation"
 )
 
 type compressConfig struct {
@@ -78,7 +79,7 @@ func (conf *configOf[T]) buildNegotiation(f *filter.Filter) {
 		return
 	}
 
-	c := web.NewNegotiation(conf.languageTag, conf.config)
+	c := negotiation.New[*web.Context](conf.languageTag, conf.config)
 
 	for index, e := range conf.Compressors {
 		if enc, found := compressorFactory.get(e.ID); !found {
@@ -105,24 +106,24 @@ func (conf *configOf[T]) sanitizeMediaTypes(c *web.Negotiation, f *filter.Filter
 			return
 		}
 
-		kind := web.PatchKindNone
+		kind := negotiation.PatchKindNone
 		switch item.PatchKind {
 		case "patcher":
 			if item.Method != http.MethodPatch {
 				f.AddReason("mediaTypes["+strconv.Itoa(index)+"].pathKind", locales.InvalidValue)
 			}
-			kind = web.PatchKindPatcher
+			kind = negotiation.PatchKindPatcher
 		case "merger":
 			if item.Method != http.MethodPatch {
 				f.AddReason("mediaTypes["+strconv.Itoa(index)+"].pathKind", locales.InvalidValue)
 			}
-			kind = web.PatchKindMerger
+			kind = negotiation.PatchKindMerger
 		case "":
 		default:
 			f.AddReason("mediaTypes["+strconv.Itoa(index)+"].pathKind", locales.InvalidValue)
 		}
 
-		c.AddMediaType(web.NewMediaType(codec, item.Name, item.Problem, item.Method, kind))
+		c.AddMediaType(negotiation.NewMediaType(codec, item.Name, item.Problem, item.Method, kind))
 	}
 
 	conf.negotiation = c

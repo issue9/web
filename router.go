@@ -60,14 +60,14 @@ func buildNodeHandle(status int) types.BuildNodeHandler[HandlerFunc] {
 				return ResponserFunc(func(ctx *Context) {
 					nego := ctx.Server().Negotiation()
 
-					ctx.Header().Set(header.AcceptEncoding, nego.acceptEncodingHeader)
-					ctx.Header().Set(header.Accept, nego.acceptHeader)
-					ctx.Header().Set(header.AcceptLanguage, nego.acceptLanguageHeader())
-					if nego.acceptPatchHeader != "" {
-						ctx.Header().Set(header.AcceptPatch, nego.acceptPatchHeader)
+					ctx.Header().Set(header.AcceptEncoding, nego.AcceptEncodingHeader())
+					ctx.Header().Set(header.Accept, nego.AcceptHeader())
+					ctx.Header().Set(header.AcceptLanguage, nego.AcceptLanguageHeader())
+					if nego.AcceptPatchHeader() != "" {
+						ctx.Header().Set(header.AcceptPatch, nego.AcceptPatchHeader())
 					}
-					if nego.acceptQueryHeader != "" {
-						ctx.Header().Set("Accept-Query", nego.acceptQueryHeader)
+					if nego.AcceptQueryHeader() != "" {
+						ctx.Header().Set("Accept-Query", nego.AcceptQueryHeader())
 					}
 
 					ctx.WriteHeader(http.StatusOK)

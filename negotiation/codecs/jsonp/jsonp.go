@@ -16,7 +16,6 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/problems"
 )
 
@@ -30,7 +29,7 @@ type jsonp string
 // New 提供对 JSONP 编码的支持
 //
 // key 用于指定回调函数在地址中的名称
-func New(key string) negotiation.Codec { return jsonp(key) }
+func New(key string) web.Codec { return jsonp(key) }
 
 func (j jsonp) Marshal(ctx *web.Context, v any) ([]byte, error) {
 	if ctx == nil {

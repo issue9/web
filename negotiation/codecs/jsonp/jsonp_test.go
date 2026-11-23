@@ -14,6 +14,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
 )
@@ -24,9 +25,9 @@ func TestJSONP(t *testing.T) {
 
 	a := assert.New(t, false)
 	ts := startuptest.NewTestServerStartup(a)
-	mt := web.NewMediaType(jsonp, header.Javascript, "", "", web.PatchKindNone)
+	mt := negotiation.NewMediaType(jsonp, header.Javascript, "", "", negotiation.PatchKindNone)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
-		Negotiation: web.NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt),
+		Negotiation: negotiation.New[*web.Context](language.SimplifiedChinese, nil).AddMediaType(mt),
 		Startup:     ts,
 	})
 	a.NotError(err).NotNil(s)

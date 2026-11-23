@@ -20,6 +20,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/negotiation/codecs"
 	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server/registry"
@@ -56,15 +57,21 @@ func TestNewHTTP(t *testing.T) {
 
 func newOptions(a *assert.Assertion, o *Options) *Options {
 	if o == nil {
-		o = &Options{Startup: startuptest.NewHTTPServerStartup(a, false), Negotiation: web.NewNegotiation(language.English, nil)} // 指定不存在的语言
+		nego := negotiation.New[*web.Context](language.English, nil)
+		o = &Options{Startup: startuptest.NewHTTPServerStartup(a, false), Negotiation: nego} // 指定不存在的语言
 	}
+
 	if o.Logs == nil { // 默认重定向到 os.Stderr
-		o.Logs = logs.New(logs.NewTermHandler(os.Stderr, nil), logs.WithLocation(true), logs.WithCreated(logs.NanoLayout), logs.WithLevels(logs.AllLevels()...))
+		o.Logs = logs.New(logs.NewTermHandler(os.Stderr, nil),
+			logs.WithLocation(true),
+			logs.WithCreated(logs.NanoLayout),
+			logs.WithLevels(logs.AllLevels()...),
+		)
 	}
 	if o.Negotiation == nil {
-		o.Negotiation = web.NewNegotiation(language.English, nil).
-			AddCodec(codecs.NewJSON(), header.JSON, "application/probblem+json", "", web.PatchKindNone).
-			AddCodec(codecs.NewXML(), header.XML, "application/problem+xml", "", web.PatchKindNone)
+		o.Negotiation = negotiation.New[*web.Context](language.English, nil).
+			AddCodec(codecs.NewJSON(), header.JSON, "application/probblem+json", "", negotiation.PatchKindNone).
+			AddCodec(codecs.NewXML(), header.XML, "application/problem+xml", "", negotiation.PatchKindNone)
 	}
 
 	return o

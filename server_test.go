@@ -82,7 +82,9 @@ func newTestServer(a *assert.Assertion, sec bool) *testServer {
 	}
 	startup := NewHTTPServerStartup(hs)
 
-	srv.Server = NewServer("test", "1.0.0", startup, time.Local, log, u.String, cc, newNegotiation(a, conf), header.XRequestID)
+	nego := newNegotiation(a, conf)
+
+	srv.Server = NewServer("test", "1.0.0", startup, time.Local, log, u.String, cc, nego, header.XRequestID)
 	srv.Services().Add(Phrase("unique"), u.Serve)
 
 	a.NotError(srv.Negotiation().Catalog().SetString(language.SimplifiedChinese, "lang", "cn")).

@@ -14,6 +14,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/negotiation/codecs/html"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
@@ -21,9 +22,10 @@ import (
 
 func newServer(a *assert.Assertion, lang string, h *html.HTML) (*web.Server, startuptest.Startup) {
 	ts := startuptest.NewTestServerStartup(a)
+	mt := negotiation.NewMediaType(h, "text/html", "", "", negotiation.PatchKindNone)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Startup:     ts,
-		Negotiation: web.NewNegotiation(language.MustParse(lang), nil).AddCodec(h, "text/html", "", "", web.PatchKindNone),
+		Negotiation: negotiation.New[*web.Context](language.MustParse(lang), nil).AddMediaType(mt),
 		Logs:        logs.New(logs.NewTermHandler(os.Stderr, nil)),
 	})
 	a.NotError(err).NotNil(s)

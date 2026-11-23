@@ -120,7 +120,7 @@ func (c *Client) ParseResponse[R any, E any](rsp *http.Response) (r *R, p *Probl
 
 	var reader io.Reader = rsp.Body
 	encName := rsp.Header.Get(header.ContentEncoding)
-	encodingReader, err := c.nego.contentEncoding(encName, reader)
+	encodingReader, err := c.nego.ContentEncoding(encName, reader)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -199,8 +199,8 @@ func (c *Client) NewRequest(method, path string, body any) (req *http.Request, e
 	}
 
 	r.Header.Set(header.Accept, mediaTypeAccept(c.mediaType))
-	r.Header.Set(header.AcceptEncoding, c.nego.acceptEncodingHeader)
-	r.Header.Set(header.AcceptLanguage, c.nego.acceptLanguageHeader())
+	r.Header.Set(header.AcceptEncoding, c.nego.AcceptEncodingHeader())
+	r.Header.Set(header.AcceptLanguage, c.nego.AcceptLanguageHeader())
 	if c.requestIDKey != "" {
 		r.Header.Set(c.requestIDKey, c.requestIDGen())
 	}

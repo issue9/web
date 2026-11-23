@@ -9,14 +9,13 @@
 package web
 
 import (
-	"io"
-
 	"github.com/issue9/cache"
 	"github.com/issue9/localeutil"
 	"github.com/issue9/logs/v7"
 	"github.com/issue9/query/v3"
 
 	"github.com/issue9/web/internal/errs"
+	"github.com/issue9/web/negotiation"
 )
 
 // Version 当前框架的版本号
@@ -38,18 +37,11 @@ type (
 
 	StringPhrase = localeutil.StringPhrase
 
-	// MarshalFunc 序列化函数原型
-	//
-	// NOTE: MarshalFunc 的作用是输出内容，所以在实现中不能调用 [Context.Render] 等输出方法。
-	//
-	// NOTE: 不采用流的方式处理数据的原因是因为：编码过程中可能会出错，
-	// 此时需要修改状态码，流式的因为有内容输出，状态码也已经固定，无法修改。
-	MarshalFunc func(*Context, any) ([]byte, error)
+	Negotiation = negotiation.Negotiation[*Context]
 
-	// UnmarshalFunc 反序列化函数原型
-	//
-	// NOTE: 参数 [io.Reader] 必定不会为空。
-	UnmarshalFunc func(io.Reader, any) error
+	MediaType = negotiation.MediaType[*Context]
+
+	Codec = negotiation.Codec[*Context]
 )
 
 // NewCache 声明带有统一前缀的缓存接口

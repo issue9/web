@@ -15,7 +15,7 @@ import (
 	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/zstd"
 
-	"github.com/issue9/web"
+	"github.com/issue9/web/negotiation"
 )
 
 var (
@@ -67,7 +67,7 @@ var (
 )
 
 type (
-	Compressor = web.Compressor
+	Compressor = negotiation.Compressor
 
 	zstdCompressor struct{}
 

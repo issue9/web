@@ -19,6 +19,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/negotiation/codecs"
 )
 
@@ -31,8 +32,8 @@ func newServer(a *assert.Assertion, ts Startup) *web.Server {
 	cc := memory.New()
 	u := unique.NewNumber(100)
 
-	negoInst := web.NewNegotiation(language.SimplifiedChinese, conf)
-	negoInst.AddCodec(codecs.NewJSON(), header.JSON, "application/problem+json", "", web.PatchKindNone)
+	negoInst := negotiation.New[*web.Context](language.SimplifiedChinese, conf)
+	negoInst.AddCodec(codecs.NewJSON(), header.JSON, "application/problem+json", "", negotiation.PatchKindNone)
 
 	s := web.NewServer("id", "1.0.0", ts, time.Local, logs.New(logs.NewNopHandler()), u.String, cc, negoInst, header.XRequestID)
 	a.NotNil(s)

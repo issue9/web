@@ -17,6 +17,7 @@ import (
 	"github.com/issue9/mux/v10/header"
 
 	"github.com/issue9/web/internal/qheader"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/problems"
 	"github.com/issue9/web/selector"
 )
@@ -27,7 +28,7 @@ func TestClient_NewRequest(t *testing.T) {
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("https://example.com"))
-	mt := NewMediaType(newCodec(marshalJSON, unmarshalJSON), header.JSON, "", "", PatchKindNone)
+	mt := negotiation.NewMediaType(newCodec(marshalJSON, unmarshalJSON), header.JSON, "", "", negotiation.PatchKindNone)
 	c := NewClient(nil, nego, sel, mt, header.XRequestID, func() string { return "123" })
 	a.NotNil(c).
 		NotNil(c.mediaType).
@@ -37,7 +38,7 @@ func TestClient_NewRequest(t *testing.T) {
 	a.NotError(err).NotNil(req).
 		Equal(req.Header.Get(header.Accept), mediaTypeAccept(mt)).
 		Equal(req.Header.Get(header.XRequestID), "123").
-		Equal(req.Header.Get(header.AcceptEncoding), nego.acceptEncodingHeader).
+		Equal(req.Header.Get(header.AcceptEncoding), nego.AcceptEncodingHeader()).
 		Equal(req.Header.Get(header.ContentType), qheader.BuildContentType(header.JSON, header.UTF8))
 }
 
@@ -47,7 +48,7 @@ func TestClient_ParseResponse(t *testing.T) {
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer("https://example.com"))
-	mt := NewMediaType(newCodec(marshalJSON, unmarshalJSON), header.JSON, "", "", PatchKindNone)
+	mt := negotiation.NewMediaType(newCodec(marshalJSON, unmarshalJSON), header.JSON, "", "", negotiation.PatchKindNone)
 	c := NewClient(nil, nego, sel, mt, "", nil)
 	a.NotNil(c).
 		NotNil(c.mediaType)
@@ -112,7 +113,7 @@ func TestServer_NewClient(t *testing.T) {
 
 	sel := selector.NewRoundRobin(false, 1)
 	sel.Update(selector.NewPeer(s.st.URL))
-	mt := NewMediaType(newCodec(marshalJSON, unmarshalJSON), header.JSON, "", "", PatchKindNone)
+	mt := negotiation.NewMediaType(newCodec(marshalJSON, unmarshalJSON), header.JSON, "", "", negotiation.PatchKindNone)
 	c := s.NewClient(s.st.Client, sel, mt)
 	a.NotNil(c)
 

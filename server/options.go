@@ -23,6 +23,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
+	"github.com/issue9/web/negotiation"
 	"github.com/issue9/web/negotiation/codecs"
 	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server/registry"
@@ -169,8 +170,8 @@ func sanitizeOptions(o *Options, t int) (*Options, error) {
 	}
 
 	if o.Negotiation == nil {
-		mt := web.NewMediaType(codecs.NewJSON(), header.JSON, "application/problem+json", "", web.PatchKindNone)
-		o.Negotiation = web.NewNegotiation(tag, c).AddMediaType(mt)
+		mt := negotiation.NewMediaType(codecs.NewJSON(), header.JSON, "application/problem+json", "", negotiation.PatchKindNone)
+		o.Negotiation = negotiation.New[*web.Context](tag, c).AddMediaType(mt)
 	}
 
 	switch t {
