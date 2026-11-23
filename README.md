@@ -83,12 +83,13 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/negotiation"
+	"github.com/issue9/web/negotiation/codecs"
 )
 
 func newServer() (*web.Server, error) {
-	nego := web.NewNegotiation().
-		AddMediaType(web.NewMediaType(negotiation.NewJSON(), "application/json", "", "", web.PatchKindNone)).
-		AddMediaType(web.NewMediaType(negotiation.NewXML(), "application/json", "", "", web.PatchKindNone))
+	nego := negotiation.New().
+		AddMediaType(codecs.NewMediaType(codecs.NewJSON(), "application/json", "", "", negotiation.PatchKindNone)).
+		AddMediaType(codecs.NewMediaType(codecs.NewXML(), "application/json", "", "", negotiation.PatchKindNone))
 
 	return server.NewHTTP("app", "1.0.0", &server.Options{Negotiation: nego})
 }
