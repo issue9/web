@@ -11,7 +11,7 @@ import (
 
 	"github.com/issue9/assert/v6"
 
-	"github.com/issue9/web/negotiation"
+	"github.com/issue9/web/negotiation/codecs"
 )
 
 var (
@@ -102,7 +102,7 @@ func (s Sex) MarshalText() ([]byte, error) {
 	case 1:
 		return []byte("female"), nil
 	default:
-		return nil, negotiation.ErrUnsupported()
+		return nil, codecs.ErrUnsupported()
 	}
 }
 
@@ -113,7 +113,7 @@ func (s *Sex) UnmarshalText(v []byte) error {
 	case "female":
 		*s = 1
 	default:
-		return negotiation.ErrUnsupported()
+		return codecs.ErrUnsupported()
 	}
 	return nil
 }

@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-package negotiation
+// Package codecs 提供编解码的实现
+package codecs
 
 import (
 	"bytes"

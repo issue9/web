@@ -18,7 +18,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/negotiation"
+	"github.com/issue9/web/negotiation/codecs"
 	"github.com/issue9/web/problems"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
@@ -27,7 +27,7 @@ import (
 func TestServer(t *testing.T) {
 	a := assert.New(t, false)
 	ts := startuptest.NewHTTPServerStartup(a, false)
-	mt := web.NewMediaType(negotiation.NewJSON(), header.JSON, "", "", web.PatchKindNone)
+	mt := web.NewMediaType(codecs.NewJSON(), header.JSON, "", "", web.PatchKindNone)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Startup:     ts,
 		Negotiation: web.NewNegotiation(language.SimplifiedChinese, nil).AddMediaType(mt),

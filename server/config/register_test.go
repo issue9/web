@@ -9,7 +9,7 @@ import (
 
 	"github.com/issue9/assert/v6"
 
-	"github.com/issue9/web/negotiation"
+	"github.com/issue9/web/negotiation/codecs"
 	"github.com/issue9/web/server"
 )
 
@@ -35,11 +35,11 @@ func TestRegisterCodec(t *testing.T) {
 	v, f := codecFactory.get("json")
 	a.True(f).NotNil(v)
 
-	RegisterCodec(negotiation.NewJSON(), "json2")
+	RegisterCodec(codecs.NewJSON(), "json2")
 	v, f = codecFactory.get("json2")
 	a.True(f).NotNil(v)
 
 	a.PanicString(func() {
-		RegisterCodec(negotiation.NewJSON(), "json2")
+		RegisterCodec(codecs.NewJSON(), "json2")
 	}, "存在同名的媒体类型:json2")
 }

@@ -14,7 +14,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/negotiation/html"
+	"github.com/issue9/web/negotiation/codecs/html"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
 )

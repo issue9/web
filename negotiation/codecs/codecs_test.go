@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package negotiation
+package codecs
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/issue9/assert/v6"
 
-	"github.com/issue9/web/negotiation/codectest"
+	"github.com/issue9/web/negotiation/codecs/codectest"
 )
 
 func TestNewCBOR(t *testing.T) {

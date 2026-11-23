@@ -50,7 +50,7 @@ import (
 	"net/url"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/negotiation"
+	"github.com/issue9/web/negotiation/codecs"
 )
 
 // Marshaler 将一个普通对象转换成 form 类型
@@ -66,7 +66,7 @@ type Unmarshaler interface {
 type form struct{}
 
 // New 提供对 www-form-urlencoded 编码的支持
-func New() negotiation.Codec { return form{} }
+func New() codecs.Codec { return form{} }
 
 // Marshal 针对 www-form-urlencoded 内容的解码实现
 //

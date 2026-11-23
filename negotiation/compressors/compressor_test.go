@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package negotiation
+package compressors
 
 import (
 	"bytes"

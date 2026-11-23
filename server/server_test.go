@@ -20,7 +20,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/negotiation"
+	"github.com/issue9/web/negotiation/codecs"
 	"github.com/issue9/web/selector"
 	"github.com/issue9/web/server/registry"
 	"github.com/issue9/web/startuptest"
@@ -63,8 +63,8 @@ func newOptions(a *assert.Assertion, o *Options) *Options {
 	}
 	if o.Negotiation == nil {
 		o.Negotiation = web.NewNegotiation(language.English, nil).
-			AddCodec(negotiation.NewJSON(), header.JSON, "application/probblem+json", "", web.PatchKindNone).
-			AddCodec(negotiation.NewXML(), header.XML, "application/problem+xml", "", web.PatchKindNone)
+			AddCodec(codecs.NewJSON(), header.JSON, "application/probblem+json", "", web.PatchKindNone).
+			AddCodec(codecs.NewXML(), header.XML, "application/problem+xml", "", web.PatchKindNone)
 	}
 
 	return o

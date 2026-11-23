@@ -36,7 +36,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/issue9/web"
-	"github.com/issue9/web/negotiation"
+	"github.com/issue9/web/negotiation/codecs"
 )
 
 // Marshaler 自定义 HTML 输出需要实现的接口
@@ -83,7 +83,7 @@ func (h *HTML) Marshal(ctx *web.Context, val any) ([]byte, error) {
 func (h *HTML) marshal(ctx *web.Context, val any) ([]byte, error) {
 	tpl := h.buildCurrentTpl(ctx)
 	if tpl == nil {
-		return nil, negotiation.ErrUnsupported()
+		return nil, codecs.ErrUnsupported()
 	}
 
 	name, val := getName(val)
@@ -95,7 +95,7 @@ func (h *HTML) marshal(ctx *web.Context, val any) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func (h *HTML) Unmarshal(io.Reader, any) error { return negotiation.ErrUnsupported() }
+func (h *HTML) Unmarshal(io.Reader, any) error { return codecs.ErrUnsupported() }
 
 func getName(v any) (string, any) {
 	if m, ok := v.(Marshaler); ok {

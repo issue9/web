@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	pkg  = "negotiation"
+	pkg  = "compressors"
 	file = "generated_compressors.go"
 )
 

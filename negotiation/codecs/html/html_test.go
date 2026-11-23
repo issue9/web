@@ -8,14 +8,14 @@ import (
 	"testing"
 
 	"github.com/issue9/assert/v6"
-	"github.com/issue9/web/negotiation"
 
 	"github.com/issue9/web"
+	"github.com/issue9/web/negotiation/codecs"
 )
 
 var (
-	_ Marshaler         = &web.Problem{}
-	_ negotiation.Codec = &HTML{}
+	_ Marshaler    = &web.Problem{}
+	_ codecs.Codec = &HTML{}
 )
 
 func TestGetName(t *testing.T) {
