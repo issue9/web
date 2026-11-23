@@ -12,7 +12,6 @@ import (
 	"github.com/issue9/web"
 	"github.com/issue9/web/filter"
 	"github.com/issue9/web/locales"
-	"github.com/issue9/web/negotiation"
 )
 
 func TestConfigOf_buildNegotiation(t *testing.T) {
@@ -45,8 +44,8 @@ func TestConfigOf_sanitizeMediaTypes(t *testing.T) {
 
 	conf := &configOf[empty]{
 		MediaTypes: []*mediaTypeConfig{
-			{Target: "json"},
-			{Target: "xml"},
+			{Target: "json", Name: "application/json"},
+			{Target: "xml", Name: "application/xml"},
 		},
 	}
 	e, f := buildFilter()
@@ -55,27 +54,12 @@ func TestConfigOf_sanitizeMediaTypes(t *testing.T) {
 
 	conf = &configOf[empty]{
 		MediaTypes: []*mediaTypeConfig{
-			{Target: "json"},
-			{Target: "not-exists"},
+			{Target: "json", Name: "application/json"},
+			{Target: "not-exists", Name: "application/not-exists"},
 		},
 	}
 	e, f = buildFilter()
 	conf.buildNegotiation(f)
 	a.True(f.HasError()).
 		Equal(e, filter.Map{"mediaTypes[1].target": []web.LocaleStringer{locales.NotFound}})
-}
-
-func TestRegisterMediaType(t *testing.T) {
-	a := assert.New(t, false)
-
-	v, f := codecFactory.get("json")
-	a.True(f).NotNil(v)
-
-	a.PanicString(func() {
-		RegisterCodec(negotiation.NewJSON(), "json2")
-	}, "存在同名的媒体类型")
-
-	RegisterCodec(negotiation.NewJSON(), "json2")
-	v, f = codecFactory.get("json2")
-	a.True(f).NotNil(v)
 }

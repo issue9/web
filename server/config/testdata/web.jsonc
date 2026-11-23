@@ -17,13 +17,16 @@
     "timezone": "Africa/Addis_Ababa",
     "mediaTypes": [
         {
-            "target": "json"
+            "target": "json",
+            "name": "application/json"
         },
         {
-            "target": "xml"
+            "target": "xml",
+            "name": "application/xml"
         },
         {
-            "target": "nop"
+            "target": "nop",
+            "name": "nop"
         }
     ]
 }

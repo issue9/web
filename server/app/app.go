@@ -6,6 +6,7 @@
 package app
 
 import (
+	"runtime/debug"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -91,8 +92,8 @@ func (app *app) Exec() (err error) {
 RESTART:
 	app.restart.Store(false)
 	err = app.getServer().Serve()
-	app.exit <- struct{}{} // 在 Serve 返回之后再通知 RestartServer 可以返回了。
-	if app.restart.Load() { // 等待 Serve 过程中，如果调用 RestartServer，会将 app.restart 设置为 true。
+	app.exit <- struct{}{}  // 在 Serve 返回之后再通知 RestartServer 可以返回了。
+	if app.restart.Load() { // 如果是调用了 [App.Restart] 重启，那必然设置了重启标记位。
 		goto RESTART
 	}
 	return err
@@ -194,4 +195,16 @@ func statusString(s service.Status) string {
 
 func isDaemonControl(c string) bool {
 	return c == "status" || slices.Contains(service.ControlAction[:], c)
+}
+
+// GetVersion 获得应用的版本号
+//
+// [web.Version] 是框架本身的版本号，当前函数是从构建信息中获取应用的版本号。
+//
+// 在没有构建信息(-buildinfo 编译参数为 false)，或是在非 VCS 环境下构建的项目会返回 v 作为版本号。
+func GetVersion(v string) string {
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return v
 }

@@ -5,28 +5,41 @@
 package config
 
 import (
-	"encoding/json/v2"
 	"testing"
 
 	"github.com/issue9/assert/v6"
+
+	"github.com/issue9/web/negotiation"
+	"github.com/issue9/web/server"
 )
-
-func jm(a any) ([]byte, error) { return json.Marshal(a) }
-
-func ju(b []byte, a any) error { return json.Unmarshal(b, a) }
 
 func TestRegisterFileSerializer(t *testing.T) {
 	a := assert.New(t, false)
 
 	a.PanicString(func() {
-		RegisterFileSerializer("new", jm, ju, ".json")
+		RegisterFileSerializer("new", server.JSONMarshal, server.JSONUnmarshal, ".json")
 	}, "扩展名 .json 已经注册到 json")
 
-	RegisterFileSerializer("new", jm, ju, ".js")
+	RegisterFileSerializer("new", server.JSONMarshal, server.JSONUnmarshal, ".js")
 	v, f := fileSerializerFactory.get("new")
 	a.True(f).NotNil(v).Equal(v.exts, []string{".js"})
 
 	a.TB().Cleanup(func() {
 		delete(fileSerializerFactory.items, "new")
 	})
+}
+
+func TestRegisterCodec(t *testing.T) {
+	a := assert.New(t, false)
+
+	v, f := codecFactory.get("json")
+	a.True(f).NotNil(v)
+
+	RegisterCodec(negotiation.NewJSON(), "json2")
+	v, f = codecFactory.get("json2")
+	a.True(f).NotNil(v)
+
+	a.PanicString(func() {
+		RegisterCodec(negotiation.NewJSON(), "json2")
+	}, "存在同名的媒体类型:json2")
 }

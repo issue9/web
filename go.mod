@@ -21,12 +21,12 @@ require (
 	github.com/issue9/query/v3 v3.2.0
 	github.com/issue9/scheduled v0.26.0
 	github.com/issue9/sliceutil v0.19.0
-	github.com/issue9/source v0.13.1
+	github.com/issue9/source v0.13.2
 	github.com/issue9/term/v3 v3.5.1
 	github.com/issue9/unique/v2 v2.3.0
 	github.com/jellydator/ttlcache/v3 v3.4.1
 	github.com/kardianos/service v1.3.0
-	github.com/klauspost/compress v1.20.4
+	github.com/klauspost/compress v1.20.5
 	github.com/puzpuzpuz/xsync/v4 v4.5.0
 	golang.org/x/crypto v0.59.0
 	golang.org/x/text v0.44.0
@@ -41,7 +41,7 @@ require (
 	github.com/redis/go-redis/v9 v9.23.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.uber.org/atomic v1.12.0 // indirect
-	golang.org/x/mod v0.42.0 // indirect
+	golang.org/x/mod v0.43.0 // indirect
 	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect

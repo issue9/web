@@ -8,7 +8,6 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"compress/lzw"
-	"encoding/json/v2"
 	"encoding/xml"
 	"fmt"
 	"slices"
@@ -49,6 +48,9 @@ func (r *register[T]) register(v T, name ...string) {
 	}
 
 	for _, n := range name {
+		if _, found := r.items[n]; found {
+			panic("存在同名的媒体类型:" + n)
+		}
 		r.items[n] = v
 	}
 }
@@ -137,17 +139,11 @@ func init() {
 
 	// RegisterCache
 
-	RegisterCache(func(dsn string) (cache.Driver, error) {
-		return memory.New(), nil
-	}, "memory")
-
+	RegisterCache(func(dsn string) (cache.Driver, error) { return memory.New(), nil }, "memory")
+	RegisterCache(func(dsn string) (cache.Driver, error) { return redis.NewFromURL(dsn) }, "redis")
 	RegisterCache(func(dsn string) (cache.Driver, error) {
 		return memcache.New(strings.Split(dsn, ";")...), nil
 	}, "memcached", "memcache")
-
-	RegisterCache(func(dsn string) (cache.Driver, error) {
-		return redis.NewFromURL(dsn)
-	}, "redis")
 
 	// RegisterCompression
 
@@ -195,7 +191,7 @@ func init() {
 
 	// RegisterFileSerializer
 
-	RegisterFileSerializer("json", func(a any) ([]byte, error) { return json.Marshal(a) }, func(b []byte, a any) error { return json.Unmarshal(b, a) }, ".json")
+	RegisterFileSerializer("json", server.JSONMarshal, server.JSONUnmarshal, ".json")
 	RegisterFileSerializer("xml", xml.Marshal, xml.Unmarshal, ".xml")
 	RegisterFileSerializer("yaml", yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml")
 	RegisterFileSerializer("toml", toml.Marshal, toml.Unmarshal, ".toml")

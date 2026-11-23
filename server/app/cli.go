@@ -236,7 +236,7 @@ func (o *CLIOptions[T]) sanitize() error {
 		return locales.NewFieldError("ID", locales.CanNotBeEmpty)
 	}
 	if o.Version == "" {
-		o.Version = web.GetAppVersion("")
+		o.Version = GetVersion("")
 		if o.Version == "" {
 			return locales.NewFieldError("Version", locales.CanNotBeEmpty)
 		}

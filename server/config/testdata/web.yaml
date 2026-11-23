@@ -10,5 +10,8 @@ http:
 timezone: Africa/Addis_Ababa
 mediaTypes:
     - target: json
+      name: application/json
     - target: xml
+      name: application/xml
     - target: nop
+      name: nop

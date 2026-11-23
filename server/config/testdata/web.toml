@@ -4,7 +4,7 @@ http.port = ":8082"
 http.headers = [{ key = "H1", val = "v1" }, { key = "H2", val = "v2" }]
 timezone = "Africa/Addis_Ababa"
 mediaTypes = [
-    { target = "json" },
-    { target = "xml" },
-    { target = "nop" },
+    { target = "json", name="application/json" },
+    { target = "xml", name="application/xml" },
+    { target = "nop", name="nop" },
 ]

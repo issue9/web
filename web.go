@@ -10,7 +10,6 @@ package web
 
 import (
 	"io"
-	"runtime/debug"
 
 	"github.com/issue9/cache"
 	"github.com/issue9/localeutil"
@@ -20,8 +19,8 @@ import (
 	"github.com/issue9/web/internal/errs"
 )
 
-// Version 当前框架的版本
-const Version = "1.0.0-beta.0"
+// Version 当前框架的版本号
+const Version = "1.0.0-beta.1"
 
 type (
 	Logger   = logs.Logger
@@ -52,17 +51,6 @@ type (
 	// NOTE: 参数 [io.Reader] 必定不会为空。
 	UnmarshalFunc func(io.Reader, any) error
 )
-
-// GetAppVersion 获得应用的版本号
-//
-// 只有 -buildinfo 参数不为 false 编译的程序才会带版本信息，否则始终返回 v。
-// 如果是在无 VCS 环境下构建的项目（从 buildinfo 中读到的是 devel），也会返回 v 作为版本号。
-func GetAppVersion(v string) string {
-	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "(devel)" {
-		return info.Main.Version
-	}
-	return v
-}
 
 // NewCache 声明带有统一前缀的缓存接口
 func NewCache(prefix string, c Cache) Cache { return cache.Prefix(c, prefix) }

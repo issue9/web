@@ -54,8 +54,6 @@ type (
 		// 日志系统
 		//
 		// 如果此值为空，表示不会输出任何信息。
-		//
-		// 会调用 [logs.Logs.SetLocale] 设置为 [Language] 的值。
 		Logs *logs.Logs
 
 		// 指定服务的启动器
@@ -111,12 +109,12 @@ type (
 	}
 )
 
-func jsonMarshal(a any) ([]byte, error) { return json.Marshal(a) }
+func JSONMarshal(a any) ([]byte, error) { return json.Marshal(a) }
 
-func jsonUnmarshal(b []byte, a any) error { return json.Unmarshal(b, a) }
+func JSONUnmarshal(b []byte, a any) error { return json.Unmarshal(b, a) }
 
 // JSONCMarshal jsonc 编码函数
-func JSONCMarshal(a any) ([]byte, error) { return json.Marshal(a) }
+func JSONCMarshal(a any) ([]byte, error) { return JSONMarshal(a) }
 
 // JSONCUnmarshal jsonc 解码函数
 func JSONCUnmarshal(b []byte, a any) error { return jsonc.Unmarshal(b, a) }
@@ -127,7 +125,7 @@ func sanitizeOptions(o *Options, t int) (*Options, error) {
 	}
 
 	s := make(config.Serializer, 4)
-	s.Add(jsonMarshal, jsonUnmarshal, ".json").
+	s.Add(JSONMarshal, JSONUnmarshal, ".json").
 		Add(JSONCMarshal, JSONCUnmarshal, ".jsonc").
 		Add(yaml.Marshal, yaml.Unmarshal, ".yaml", ".yml").
 		Add(xml.Marshal, xml.Unmarshal, ".xml").

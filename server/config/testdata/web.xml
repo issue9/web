@@ -9,8 +9,8 @@
     </http>
     <timezone>Africa/Addis_Ababa</timezone>
     <mediaTypes>
-        <mediaType target="json" />
-        <mediaType target="xml" />
-        <mediaType target="nop" />
+        <mediaType target="json" name="application/json" />
+        <mediaType target="xml" name="application/xml" />
+        <mediaType target="nop" name="nop" />
     </mediaTypes>
 </web>
