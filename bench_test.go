@@ -110,11 +110,13 @@ func BenchmarkContext_Render(b *testing.B) {
 	})
 }
 
-func BenchmarkContext_Unmarshal(b *testing.B) {
+func BenchmarkContext_RequestBody(b *testing.B) {
 	a := assert.New(b, false)
 	srv := newTestServer(a, false)
 
 	b.ReportAllocs()
+
+	var body io.Reader
 	for b.Loop() {
 		w := httptest.NewRecorder()
 		r := rest.Post(a, "/path", []byte(objectJSONString)).
@@ -123,12 +125,32 @@ func BenchmarkContext_Unmarshal(b *testing.B) {
 			Header(header.AcceptEncoding, header.Identity).
 			Request()
 		ctx := srv.NewContext(w, r, types.NewRoute())
-
-		obj := &object{}
-		a.NotError(ctx.Unmarshal(obj)).
-			Equal(obj, objectInst)
+		body = ctx.RequestBody()
 		ctx.freeContext()
 	}
+	a.NotNil(body)
+}
+
+func BenchmarkContext_Unmarshal(b *testing.B) {
+	a := assert.New(b, false)
+	srv := newTestServer(a, false)
+
+	b.ReportAllocs()
+
+	obj := &object{}
+	var err error
+	for b.Loop() {
+		w := httptest.NewRecorder()
+		r := rest.Post(a, "/path", []byte(objectJSONString)).
+			Header(header.ContentType, qheader.BuildContentType(header.JSON, header.UTF8)).
+			Header(header.Accept, header.JSON).
+			Header(header.AcceptEncoding, header.Identity).
+			Request()
+		ctx := srv.NewContext(w, r, types.NewRoute())
+		err = ctx.Unmarshal(obj)
+		ctx.freeContext()
+	}
+	a.NotError(err).Equal(obj, objectInst)
 }
 
 // 一次普通的 POST 请求过程
@@ -157,7 +179,7 @@ func BenchmarkPost(b *testing.B) {
 	}
 }
 
-func BenchmarkContext_Object(b *testing.B) {
+func BenchmarkContext_Response(b *testing.B) {
 	a := assert.New(b, false)
 	s := newTestServer(a, false)
 	o := &object{}
@@ -175,7 +197,7 @@ func BenchmarkContext_Object(b *testing.B) {
 	}
 }
 
-func BenchmarkContext_Object_withHeader(b *testing.B) {
+func BenchmarkContext_Response_withHeader(b *testing.B) {
 	a := assert.New(b, false)
 	s := newTestServer(a, false)
 	o := &object{}

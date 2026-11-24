@@ -112,7 +112,7 @@ func (ctx *Context) Write(bs []byte) (n int, err error) {
 		return 0, nil
 	}
 
-	if !ctx.Wrote() { // 在第一次有内容输出时，才决定构建 Compress 和 Charset 的 io.Writer
+	if !ctx.Wrote() { // 在第一次有内容输出时，才决定构建 Compress 的 io.Writer
 		closes := make([]io.Closer, 0, 2)
 
 		if ctx.outputCompressor != nil {

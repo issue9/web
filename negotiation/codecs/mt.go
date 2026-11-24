@@ -11,7 +11,7 @@ import (
 	"github.com/issue9/web/negotiation"
 )
 
-type MediaType = negotiation.MediaType[*web.Context]
+type MediaType = web.MediaType
 
 func NewMediaType(codec Codec, name, problem, method string, patchKind negotiation.PatchKind) *MediaType {
 	return negotiation.NewMediaType(codec, name, problem, method, patchKind)

@@ -58,8 +58,6 @@ const (
 //   - 空值，可用于处理所有的类型；
 //   - [http.MethodPatch] 只能处理由 PATCH 请求提交的数据；
 //   - [http.MethodQuery] 只能处理由 QUERY 请求提交的数据；
-//
-// 对于 patchKind 参数不为零值的情况，还提供了两个简便的方法 [NewPatcherMediaType] 和 [NewMergerMediaType]。
 func NewMediaType[T any](codec Codec[T], name, problem, method string, patchKind PatchKind) *MediaType[T] {
 	if codec == nil {
 		panic("参数 codec 不能为 nil")

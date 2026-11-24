@@ -20,7 +20,7 @@ import (
 )
 
 type (
-	Codec = negotiation.Codec[*web.Context]
+	Codec = web.Codec
 
 	codec struct {
 		marshal   negotiation.MarshalFunc[*web.Context]
@@ -45,7 +45,7 @@ func NewCodec(m negotiation.MarshalFunc[*web.Context], u negotiation.UnmarshalFu
 func (m *codec) Marshal(ctx *web.Context, v any) ([]byte, error) { return m.marshal(ctx, v) }
 func (m *codec) Unmarshal(r io.Reader, v any) error              { return m.unmarshal(r, v) }
 
-// NewNOP 创建一个空的 [MediaType] 实例
+// NewNOP 创建一个空的 [Codec] 实例
 //
 // 调用创建对象的方法都将返回 [negotiation.ErrUnsupported] 错误，名称也都为空。
 func NewNOP() Codec                                            { return nopCodec{} }

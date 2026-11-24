@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 // Package negotiation 提供与内容协商相关的功能
-//
-// 当前包为了与主包解耦，将 [Context] 抽象为为泛型 T。
 package negotiation
 
 import (

@@ -125,7 +125,6 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 		}
 	}
 
-	var inputReader io.Reader = r.Body // 作为服务端不需要关闭 Request.Body，所以直接使用 io.Reader
 	var inputMediaType *MediaType
 	var inputCharset encoding.Encoding
 	if h = r.Header.Get(header.ContentType); h != "" {
@@ -136,6 +135,7 @@ func (s *Server) NewContext(w http.ResponseWriter, r *http.Request, route *types
 		}
 	}
 
+	var inputReader io.Reader = r.Body // 作为服务端不需要关闭 Request.Body，所以直接使用 io.Reader
 	var inputEncoding io.ReadCloser
 	if h = r.Header.Get(header.ContentEncoding); h != "" {
 		if inputEncoding, err = s.nego.ContentEncoding(h, inputReader); err != nil {
