@@ -15,9 +15,10 @@ import (
 	"github.com/issue9/localeutil"
 	"github.com/issue9/mux/v10/header"
 	"github.com/issue9/sliceutil"
-	"github.com/issue9/web/internal/qheader"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/htmlindex"
+
+	"github.com/issue9/web/internal/qheader"
 )
 
 // Codec 媒体类型需要提供的编码接口
@@ -50,11 +51,11 @@ const (
 //
 // name 媒体类型的名称；
 // problem 错误状态下的媒体类型；
-// method 绑定的方法；
+// method 绑定的方法，如果该值不为空那么 problem 参数将无效；
 // pathKind 在 method 的值为 [http.MethodPatch] 时可以使用此值表示可解析的对象类型；
 //
-// 如果 method 非空，表示该媒体类型仅对该类型的请求有效。以下几种请求方法有：
-//   - 空值，可用于处理所有的请求类型；
+// method 有以下几种请求方法有：
+//   - 空值，可用于处理所有的类型；
 //   - [http.MethodPatch] 只能处理由 PATCH 请求提交的数据；
 //   - [http.MethodQuery] 只能处理由 QUERY 请求提交的数据；
 //

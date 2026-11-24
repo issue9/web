@@ -17,11 +17,11 @@ func TestNewPatcherMediaType(t *testing.T) {
 	a := assert.New(t, false)
 
 	codec := NewJSON()
-	mt := NewPatcherMediaType(codec, "name", "problem")
+	mt := NewPatcherMediaType(codec, "name")
 	a.Equal(mt.Codec, codec).
 		StrictEqual(mt.Method(), http.MethodPatch).
 		StrictEqual(mt.Name(), "name").
-		StrictEqual(mt.ProblemName(), "problem").
+		Empty(mt.ProblemName()).
 		StrictEqual(mt.Method(), http.MethodPatch).
 		StrictEqual(mt.PatchKind(), negotiation.PatchKindPatcher)
 }

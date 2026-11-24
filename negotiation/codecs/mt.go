@@ -17,10 +17,12 @@ func NewMediaType(codec Codec, name, problem, method string, patchKind negotiati
 	return negotiation.NewMediaType(codec, name, problem, method, patchKind)
 }
 
-func NewPatcherMediaType(codec Codec, name, problem string) *MediaType {
-	return NewMediaType(codec, name, problem, http.MethodPatch, negotiation.PatchKindPatcher)
+// NewPatcherMediaType 声明 patchKind 值为 [negotiation.PatchKindPatcher] 的 [MediaType]
+func NewPatcherMediaType(codec Codec, name string) *MediaType {
+	return NewMediaType(codec, name, "", http.MethodPatch, negotiation.PatchKindPatcher)
 }
 
-func NewMergerMediaType(codec Codec, name, problem string) *MediaType {
-	return NewMediaType(codec, name, problem, http.MethodPatch, negotiation.PatchKindMerger)
+// NewPatcherMediaType 声明 patchKind 值为 [negotiation.PatchKindMerger] 的 [MediaType]
+func NewMergerMediaType(codec Codec, name string) *MediaType {
+	return NewMediaType(codec, name, "", http.MethodPatch, negotiation.PatchKindMerger)
 }
