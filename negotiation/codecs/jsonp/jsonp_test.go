@@ -15,6 +15,7 @@ import (
 
 	"github.com/issue9/web"
 	"github.com/issue9/web/negotiation"
+	"github.com/issue9/web/negotiation/codecs"
 	"github.com/issue9/web/server"
 	"github.com/issue9/web/startuptest"
 )
@@ -25,7 +26,7 @@ func TestJSONP(t *testing.T) {
 
 	a := assert.New(t, false)
 	ts := startuptest.NewTestServerStartup(a)
-	mt := negotiation.NewMediaType(jsonp, header.Javascript, "", "", negotiation.PatchKindNone)
+	mt := codecs.NewMediaType(jsonp, header.Javascript, "", "", negotiation.PatchKindNone)
 	s, err := server.NewHTTP("test", "1.0.0", &server.Options{
 		Negotiation: negotiation.New[*web.Context](language.SimplifiedChinese, nil).AddMediaType(mt),
 		Startup:     ts,

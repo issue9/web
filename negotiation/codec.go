@@ -65,9 +65,6 @@ func NewMediaType[T any](codec Codec[T], name, problem, method string, patchKind
 	if name == "" {
 		panic("参数 name 不能为空")
 	}
-	if problem == "" {
-		problem = name
-	}
 
 	if method != http.MethodPatch && patchKind != PatchKindNone {
 		panic("patchKind 只在 method 为 PATCH 时有效")

@@ -36,7 +36,7 @@ func WithOptionsMethod(enable bool) Option {
 //
 // 这将开启 [Document.Handler] 对 [header.HTML] 类型的支持。
 // 此选项仅是定义了 [Document.Handler] 输出的一些内容，
-// 还需要向 [github.com/issue9/web/negotiation/html] 添加模板。
+// 还需要向 [github.com/issue9/web/negotiation/codecs/html] 添加模板。
 //
 // tpl 表示 HTML 模板名称，该模板由 [html.Install] 注册；
 // assets 资源基地址，apidoc 的浏览工具一般都是在一个 html 文件中引入一些依赖文件，
@@ -44,7 +44,7 @@ func WithOptionsMethod(enable bool) Option {
 // https://unpkg.com/swagger-ui-dist@5.18.2；
 // logo LOGO 图标，可能还会被用于 favicon 等功能，请确保格式能被正确处理，可以为空；
 //
-// NOTE: [github.com/issue9/webuse/openapi] 下实现了部分简单的模板。
+// NOTE: [github.com/issue9/webuse/openapis] 下实现了部分简单的模板。
 func WithHTML(tpl, assets, logo string) Option {
 	return func(d *Document) { d.WithHTML(tpl, assets, logo) }
 }

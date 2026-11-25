@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/issue9/config"
 	"github.com/issue9/mux/v10/header"
@@ -36,7 +37,7 @@ type UnmarshalFunc func(io.Reader, any) error
 type Negotiation[T any] struct {
 	l *locale.Locale // 本地化
 
-	disableCompress      bool
+	disableCompress      atomic.Bool
 	compressions         []*compression
 	acceptEncodingHeader string // 生成 AcceptEncoding 报头内容
 

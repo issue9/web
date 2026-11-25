@@ -63,7 +63,7 @@ func TestNegotiation_Accept(t *testing.T) {
 		a.NotError(err).NotNil(item).
 			NotNil(item.Marshal).
 			StrictEqual(item.Name(), header.JSON).
-			StrictEqual(item.ProblemName(), header.JSON)
+			Empty(item.ProblemName())
 	})
 
 	t.Run("*/*", func(t *testing.T) {

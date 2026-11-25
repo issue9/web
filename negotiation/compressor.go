@@ -206,11 +206,11 @@ func (nego *Negotiation[T]) ContentEncoding(name string, r io.Reader) (io.ReadCl
 }
 
 // CanCompress 当前是否拥有压缩功能
-func (nego *Negotiation[T]) CanCompress() bool { return !nego.disableCompress }
+func (nego *Negotiation[T]) CanCompress() bool { return !nego.disableCompress.Load() }
 
 // SetCompress 设置压缩功能
 //
 // 在服务器性能吃紧的情况下可以采用此方法禁用压缩。
-func (nego *Negotiation[T]) SetCompress(enable bool) { nego.disableCompress = !enable }
+func (nego *Negotiation[T]) SetCompress(enable bool) { nego.disableCompress.Store(!enable) }
 
 func (nego *Negotiation[T]) AcceptEncodingHeader() string { return nego.acceptEncodingHeader }
