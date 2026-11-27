@@ -9,20 +9,20 @@ require (
 	github.com/fxamacker/cbor/v2 v2.10.0
 	github.com/goccy/go-yaml v1.19.2
 	github.com/issue9/assert/v6 v6.0.1
-	github.com/issue9/cache v0.21.1
+	github.com/issue9/cache v0.22.0
 	github.com/issue9/cmdopt v0.16.1
 	github.com/issue9/config v0.11.0
 	github.com/issue9/conv v1.4.0
 	github.com/issue9/errwrap v0.4.1
 	github.com/issue9/localeutil v0.35.2
-	github.com/issue9/logs/v7 v7.8.0
+	github.com/issue9/logs/v7 v7.9.0
 	github.com/issue9/messages v0.2.0
 	github.com/issue9/mux/v10 v10.0.0-beta.6
 	github.com/issue9/query/v3 v3.2.0
 	github.com/issue9/scheduled v0.26.0
 	github.com/issue9/sliceutil v0.19.0
 	github.com/issue9/source v0.13.2
-	github.com/issue9/term/v3 v3.5.1
+	github.com/issue9/term/v3 v3.5.2
 	github.com/issue9/unique/v2 v2.3.0
 	github.com/jellydator/ttlcache/v3 v3.4.1
 	github.com/kardianos/service v1.3.0
@@ -38,7 +38,7 @@ require (
 	github.com/bradfitz/gomemcache v0.0.0-20260422231931-4d751bb6e37c // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/issue9/rands/v3 v3.3.0 // indirect
-	github.com/redis/go-redis/v9 v9.23.0 // indirect
+	github.com/redis/go-redis/v9 v9.24.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.uber.org/atomic v1.12.0 // indirect
 	golang.org/x/mod v0.43.0 // indirect
